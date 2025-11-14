@@ -33,6 +33,12 @@ import {
 } from "@mui/icons-material";
 import Invoices from "./Invoices";
 import CustomIcon from "./CustomIcon";
+import Clients from "./Clients";
+import Templates from "./Templates";
+import Companies from "./Companies";
+import Vendors from "./Vendors";
+import Consultants from "./Consultants";
+import Projects from "./Projects";
 
 const drawerWidthExpanded = 240;
 const drawerWidthCollapsed = 60;
@@ -284,37 +290,37 @@ const dashboardItems = [
     key: "clients",
     label: "Clients",
     icon: <ClientsIcon />,
-    component: <div>Clients content</div>,
+    component: <Clients/>,
   },
   {
     key: "companies",
     label: "Companies",
     icon: <CompaniesIcon />,
-    component: <div>Companies content</div>,
+    component:<Companies/>,
   },
   {
     key: "vendors",
     label: "Vendors",
     icon: <VendorsIcon />,
-    component: <div>Vendors content</div>,
+    component: <Vendors/>,
   },
   {
     key: "consultants",
     label: "Consultants",
     icon: <ConsultantsIcon />,
-    component: <div>Consultants content</div>,
+    component: <Consultants/>,
   },
   {
     key: "projects",
     label: "Projects",
     icon: <ProjectsIcon />,
-    component: <div>Projects content</div>,
+    component: <Projects/>,
   },
   {
     key: "templates",
     label: "Templates",
     icon: <TemplatesIcon />,
-    component: <div>Templates content</div>,
+    component: <Templates/>,
   },
   {
     key: "invoices",
