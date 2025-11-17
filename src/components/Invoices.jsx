@@ -454,6 +454,7 @@ export default function Invoice() {
 
   return (
     <Box>
+          <Typography variant="h4" sx={{ fontWeight: "bold", mb: 3 }}>Invoices</Typography>
       <Tabs value={tabIdx} onChange={(_, v) => setTabIdx(v)} sx={{ mb: 2 }}>
         <Tab label="List Templates" />
         <Tab label="Invoice" disabled={!selectedTemplateId} />

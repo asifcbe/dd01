@@ -86,7 +86,7 @@ export default function Projects() {
   const handleMenuClose = (idx) => { setMenuAnchorEls((prev) => prev.map((el, i) => (i === idx ? null : el))); };
 
   return (
-    <Box sx={{ p: { xs: 1, sm: 3 }, maxWidth: 1200, mx: "auto" }}>
+    <Box>
       <Typography variant="h4" sx={{ fontWeight: "bold", mb: 3 }}>Projects</Typography>
       <Grid container spacing={3}>
         {projects.map((project, idx) => (

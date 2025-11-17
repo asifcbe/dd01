@@ -136,6 +136,7 @@ export default function Templates() {
 
   return (
     <Box>
+          <Typography variant="h4" sx={{ fontWeight: "bold", mb: 3 }}>Templates</Typography>
       <Tabs value={tabIdx} onChange={(_, v) => setTabIdx(v)} sx={{ mb: 2 }}>
         <Tab label="List Templates" />
         <Tab label="Tree View" disabled={!selectedTemplateId} />

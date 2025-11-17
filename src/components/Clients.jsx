@@ -197,7 +197,7 @@ const handleDeleteClient = (idx) => {
   };
 
   return (
-    <Box sx={{ p: { xs: 1, sm: 3 }, maxWidth: 1200, mx: "auto" }}>
+    <Box>
       <Typography
         variant="h4"
         sx={{ fontWeight: "bold", mb: 3, letterSpacing: 1 }}

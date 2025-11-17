@@ -15,8 +15,7 @@ import {
   Divider,
   Container,
   Avatar,
-  Menu,
-  MenuItem,
+  Button,
   useMediaQuery,
 } from "@mui/material";
 import {
@@ -43,18 +42,60 @@ import Projects from "./Projects";
 const drawerWidthExpanded = 240;
 const drawerWidthCollapsed = 60;
 
+const dashboardItems = [
+  {
+    key: "clients",
+    label: "Clients",
+    icon: <ClientsIcon />,
+    component: <Clients />,
+  },
+  {
+    key: "companies",
+    label: "Companies",
+    icon: <CompaniesIcon />,
+    component: <Companies />,
+  },
+  {
+    key: "vendors",
+    label: "Vendors",
+    icon: <VendorsIcon />,
+    component: <Vendors />,
+  },
+  {
+    key: "consultants",
+    label: "Consultants",
+    icon: <ConsultantsIcon />,
+    component: <Consultants />,
+  },
+  {
+    key: "projects",
+    label: "Projects",
+    icon: <ProjectsIcon />,
+    component: <Projects />,
+  },
+  {
+    key: "templates",
+    label: "Templates",
+    icon: <TemplatesIcon />,
+    component: <Templates />,
+  },
+  {
+    key: "invoices",
+    label: "Invoices",
+    icon: <InvoicesIcon />,
+    component: <Invoices />,
+  },
+];
+
 export default function Dashboard({ user, onLogout }) {
   const [mobileOpen, setMobileOpen] = React.useState(false);
-  const [drawerOpen, setDrawerOpen] = React.useState(true); // new state for desktop drawer collapsed
+  const [drawerOpen, setDrawerOpen] = React.useState(true); // Desktop drawer collapsed or expanded
   const [selectedKey, setSelectedKey] = React.useState(dashboardItems[0].key);
-  const [anchorEl, setAnchorEl] = React.useState(null);
 
   const isMobile = useMediaQuery((theme) => theme.breakpoints.down("sm"));
 
   const handleDrawerToggle = () => setMobileOpen(!mobileOpen);
   const handleDrawerOpenToggle = () => setDrawerOpen(!drawerOpen);
-  const handleAvatarClick = (e) => setAnchorEl(e.currentTarget);
-  const handleMenuClose = () => setAnchorEl(null);
 
   const drawerWidth = drawerOpen ? drawerWidthExpanded : drawerWidthCollapsed;
 
@@ -68,9 +109,9 @@ export default function Dashboard({ user, onLogout }) {
       >
         {drawerOpen && (
           <Box sx={{ display: "flex", alignItems: "center" }}>
-            <CustomIcon/>
+            <CustomIcon />
             <Typography
-              sx={{ color: "primary.main", ml: 1, fontWeight: "bold" ,fontSize:"16px"}}
+              sx={{ color: "primary.main", ml: 1, fontWeight: "bold", fontSize: "16px" }}
             >
               Invoice Generator
             </Typography>
@@ -156,32 +197,24 @@ export default function Dashboard({ user, onLogout }) {
               <MenuIcon />
             </IconButton>
           )}
+
           <Typography variant="h6" sx={{ flexGrow: 1, color: "primary.main" }}>
-            {selectedItem?.label}
+            {/* {selectedItem?.label} */}
           </Typography>
 
-          <Box display="flex" alignItems="center">
+          <Box display="flex" alignItems="center" gap={1}>
             <Avatar
               src={user.avatar}
-              sx={{ width: 36, height: 36, cursor: "pointer" }}
+              sx={{ width: 36, height: 36 }}
               alt={user.name}
-              onClick={handleAvatarClick}
             />
-            <Typography sx={{ ml: 1, fontWeight: 500, color: "primary.main" }}>
+            <Typography sx={{ fontWeight: 500, color: "primary.main" }}>
               {user.name}
             </Typography>
+            <Button variant="outlined" size="small" onClick={onLogout}>
+              Log Out
+            </Button>
           </Box>
-
-          <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={handleMenuClose}>
-            <MenuItem
-              onClick={() => {
-                onLogout();
-                handleMenuClose();
-              }}
-            >
-              Logout
-            </MenuItem>
-          </Menu>
         </Toolbar>
       </AppBar>
 
@@ -232,100 +265,55 @@ export default function Dashboard({ user, onLogout }) {
 
       {/* Main content */}
       <Box
-  component="main"
-  sx={{
-    flexGrow: 1,
-    width: { sm: `calc(100% - ${drawerWidth}px)` },
-    mt: 10,
-    height: "calc(100vh - 64px - 56px)", // full viewport minus AppBar(64px) and Footer(56px approx)
-    transition: "width 0.3s",
-    display: "flex",
-    flexDirection: "column",
-  }}
->
-  <Container
-    maxWidth={false}
-    sx={{
-      bgcolor: "white",
-      borderRadius: 1,
-      boxShadow: 1,
-      flexGrow: 1,
-      p: 0,
-      display: "flex",
-      flexDirection: "column",
-    }}
-  >
-    <Box
-      sx={{
-        flexGrow: 1,
-        overflowY: "auto", // scrolling if content is tall
-        width: "100%",
-        p: 0 // padding inside content area, you can adjust or remove
-      }}
-    >
-      {selectedItem?.component}
-    </Box>
-  </Container>
+        component="main"
+        sx={{
+          flexGrow: 1,
+          width: { sm: `calc(100% - ${drawerWidth}px)` },
+          mt: 10,
+          height: "calc(100vh - 64px - 56px)", // full viewport minus AppBar(64px) and Footer(56px approx)
+          transition: "width 0.3s",
+          display: "flex",
+          flexDirection: "column",
+        }}
+      >
+        <Container
+          maxWidth={false}
+          sx={{
+            bgcolor: "white",
+            borderRadius: 1,
+            boxShadow: 1,
+            flexGrow: 1,
+            p: 0,
+            display: "flex",
+            flexDirection: "column",
+          }}
+        >
+          <Box
+            sx={{
+              flexGrow: 1,
+              overflowY: "auto", // scrolling if content is tall
+              width: "100%",
+              p: 0, // padding inside content area, you can adjust or remove
+            }}
+          >
+            {selectedItem?.component}
+          </Box>
+        </Container>
 
-  {/* Footer */}
-  <Box
-  component="footer"
-  sx={{
-    textAlign: "center",
-    mt: "auto",
-    color: "grey.600",
-    letterSpacing: 1,
-    fontSize: 10,            // reduced vertical padding
-  }}
->
-  <Divider sx={{ mb: 1 }} />© {new Date().getFullYear()} Invoice Generator
-</Box>
-</Box>
+        {/* Footer */}
+        <Box
+          component="footer"
+          sx={{
+            textAlign: "center",
+            mt: "auto",
+            color: "grey.600",
+            letterSpacing: 1,
+            fontSize: 10, // reduced vertical padding
+          }}
+        >
+          <Divider sx={{ mb: 1 }} />© {new Date().getFullYear()} Invoice Generator
+        </Box>
+      </Box>
     </Box>
   );
 }
-
-const dashboardItems = [
-  {
-    key: "clients",
-    label: "Clients",
-    icon: <ClientsIcon />,
-    component: <Clients/>,
-  },
-  {
-    key: "companies",
-    label: "Companies",
-    icon: <CompaniesIcon />,
-    component:<Companies/>,
-  },
-  {
-    key: "vendors",
-    label: "Vendors",
-    icon: <VendorsIcon />,
-    component: <Vendors/>,
-  },
-  {
-    key: "consultants",
-    label: "Consultants",
-    icon: <ConsultantsIcon />,
-    component: <Consultants/>,
-  },
-  {
-    key: "projects",
-    label: "Projects",
-    icon: <ProjectsIcon />,
-    component: <Projects/>,
-  },
-  {
-    key: "templates",
-    label: "Templates",
-    icon: <TemplatesIcon />,
-    component: <Templates/>,
-  },
-  {
-    key: "invoices",
-    label: "Invoices",
-    icon: <InvoicesIcon />,
-    component: <Invoices/>,
-  },
-];
