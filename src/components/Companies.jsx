@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState,useEffect } from "react";
 import {
   Box,
   Button,
@@ -25,22 +25,7 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import BusinessIcon from "@mui/icons-material/Business";
 
 export default function Companies() {
-  const [companies, setCompanies] = useState([
-    {
-      name: "Google LLC",
-      email: "contact@google.com",
-      country: "USA",
-      phone: "1234567890",
-      address: "1600 Amphitheatre Parkway, Mountain View, CA",
-    },
-    {
-      name: "Tata Consultancy",
-      email: "info@tcs.com",
-      country: "India",
-      phone: "9988776655",
-      address: "Mumbai, Maharashtra",
-    },
-  ]);
+  const [companies, setCompanies] = useState([]);
   const [open, setOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [toEditIdx, setToEditIdx] = useState(null);
@@ -59,6 +44,27 @@ export default function Companies() {
     phone: "",
     address: "",
   });
+
+
+ useEffect(() => {
+  fetch("api/participants?type1=Company", {
+    method: "GET",
+  })
+    .then((response) => {
+      if (response.status === 401) {
+        // handle unauthorized case, e.g., redirect to login
+        throw new Error("Unauthorized");
+      }
+      return response.json();
+    })
+    .then((data) => {
+      setCompanies(data);
+      setMenuAnchorEls(Array(data.length).fill(null));
+    })
+    .catch((error) => {
+      console.error("Error fetching companies:", error);
+    });
+}, []);
 
   const handleOpen = () => setOpen(true);
   const handleClose = () => {

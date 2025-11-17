@@ -7,33 +7,97 @@ import {
   Typography,
   Tabs,
   Tab,
-  Avatar
+  Avatar,
+  Alert,
 } from "@mui/material";
 import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
-
+import axios from "axios";
 export default function AuthCard({ onLogin, onSignup }) {
   const [tab, setTab] = useState("signin");
+  const [form, setForm] = useState({
+    org: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
+  });
+  const [error, setError] = useState("");
 
   const handleChange = (event, newVal) => setTab(newVal);
 
-  const handleSignIn = (e) => {
-    e.preventDefault();
-    onLogin();
+  const handleInputChange = (e) => {
+    setForm({ ...form, [e.target.name]: e.target.value });
+    setError("");
   };
 
-  const handleSignUp = (e) => {
+  const callApi = async (url, payload) => {
+    try {
+      const res = await fetch(url, {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "*/*",
+        },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+      if (res.ok) return { ok: true, data };
+      setError(data?.error || "Authentication failed");
+      return { ok: false, data };
+    } catch (e) {
+      setError("Network error");
+      return { ok: false, data: null };
+    }
+  };
+
+  const handleSignIn = async (e) => {
     e.preventDefault();
-    onSignup();
+    setError("");
+    const payload = {
+      org: form.org.trim(),
+      email: form.email.trim(),
+      password: form.password,
+    };
+    axios
+      .post("/api/signin", payload, { withCredentials: true })
+      .then((response) => {
+        if (response.status === 200) onLogin();
+      })
+      .catch((err) => {
+        setError(err.message);
+        setLoading(false);
+      });
+
+    // onLogin();
+  };
+
+  const handleSignUp = async (e) => {
+    e.preventDefault();
+    setError("");
+    if (form.password !== form.confirmPassword) {
+      setError("Passwords do not match");
+      return;
+    }
+    const payload = {
+      org: form.org.trim(),
+      email: form.email.trim(),
+      password: form.password,
+    };
+    const result = await callApi(
+      "/signup",
+      payload
+    );
+    if (result.ok) onSignup();
   };
 
   return (
     <Box
       sx={{
-        height: "100vh",           // Full viewport height
-        display: "flex",           // Use flexbox
-        justifyContent: "center",  // Center horizontally
-        alignItems: "center",      // Center vertically
-        bgcolor: "background.default" // Optional background color
+        height: "100vh",
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        bgcolor: "background.default",
       }}
     >
       <Container
@@ -45,7 +109,7 @@ export default function AuthCard({ onLogin, onSignup }) {
           bgcolor: "background.paper",
           display: "flex",
           flexDirection: "column",
-          alignItems: "center"
+          alignItems: "center",
         }}
       >
         <Avatar sx={{ m: 1, bgcolor: "primary.main" }}>
@@ -66,17 +130,38 @@ export default function AuthCard({ onLogin, onSignup }) {
             "& .MuiTab-root": {
               fontWeight: "bold",
               fontSize: 12,
-              color: "text.primary"
+              color: "text.primary",
             },
-            "& .Mui-selected": { color: "primary.main" }
+            "& .Mui-selected": { color: "primary.main" },
           }}
         >
           <Tab label="Sign In" value="signin" />
           <Tab label="Sign Up" value="signup" />
         </Tabs>
 
+        {error && (
+          <Alert severity="error" sx={{ mb: 2, width: "100%" }}>
+            {error}
+          </Alert>
+        )}
+
         {tab === "signin" ? (
-          <Box component="form" noValidate onSubmit={handleSignIn} sx={{ mt: 1 }}>
+          <Box
+            component="form"
+            noValidate
+            onSubmit={handleSignIn}
+            sx={{ mt: 1 }}
+          >
+            <TextField
+              margin="normal"
+              required
+              fullWidth
+              label="Organization"
+              name="org"
+              value={form.org}
+              onChange={handleInputChange}
+              size="small"
+            />
             <TextField
               margin="normal"
               required
@@ -85,6 +170,8 @@ export default function AuthCard({ onLogin, onSignup }) {
               name="email"
               autoComplete="email"
               autoFocus
+              value={form.email}
+              onChange={handleInputChange}
               size="small"
             />
             <TextField
@@ -95,6 +182,8 @@ export default function AuthCard({ onLogin, onSignup }) {
               label="Password"
               type="password"
               autoComplete="current-password"
+              value={form.password}
+              onChange={handleInputChange}
               size="small"
             />
             <Button
@@ -107,16 +196,20 @@ export default function AuthCard({ onLogin, onSignup }) {
             </Button>
           </Box>
         ) : (
-          <Box component="form" noValidate onSubmit={handleSignUp} sx={{ mt: 1 }}>
+          <Box
+            component="form"
+            noValidate
+            onSubmit={handleSignUp}
+            sx={{ mt: 1 }}
+          >
             <TextField
               margin="normal"
               required
               fullWidth
-              id="name"
-              label="Full Name"
-              name="name"
-              autoComplete="name"
-              autoFocus
+              label="Organization"
+              name="org"
+              value={form.org}
+              onChange={handleInputChange}
               size="small"
             />
             <TextField
@@ -127,6 +220,8 @@ export default function AuthCard({ onLogin, onSignup }) {
               label="Email Address"
               name="email"
               autoComplete="email"
+              value={form.email}
+              onChange={handleInputChange}
               size="small"
             />
             <TextField
@@ -137,6 +232,8 @@ export default function AuthCard({ onLogin, onSignup }) {
               label="Password"
               type="password"
               autoComplete="new-password"
+              value={form.password}
+              onChange={handleInputChange}
               size="small"
             />
             <TextField
@@ -147,6 +244,8 @@ export default function AuthCard({ onLogin, onSignup }) {
               label="Confirm Password"
               type="password"
               autoComplete="new-password"
+              value={form.confirmPassword}
+              onChange={handleInputChange}
               size="small"
             />
             <Button
