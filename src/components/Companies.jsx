@@ -1,4 +1,4 @@
-import React, { useState,useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Box,
   Button,
@@ -17,59 +17,60 @@ import {
   MenuItem,
   Fade,
   Avatar,
-  Divider
+  Divider,
+  FormControl,
+  InputLabel,
+  Select,
 } from "@mui/material";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import BusinessIcon from "@mui/icons-material/Business";
 
+const countryList = ["UK", "USA", "India", "Germany", "France", "Ireland"];
+
 export default function Companies() {
   const [companies, setCompanies] = useState([]);
   const [open, setOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [toEditIdx, setToEditIdx] = useState(null);
-  const [menuAnchorEls, setMenuAnchorEls] = useState(Array(companies.length).fill(null));
+  const [menuAnchorEls, setMenuAnchorEls] = useState([]);
   const [newCompany, setNewCompany] = useState({
     name: "",
     email: "",
     country: "",
-    phone: "",
+    mobile: "",
     address: "",
   });
   const [editCompany, setEditCompany] = useState({
     name: "",
     email: "",
     country: "",
-    phone: "",
+    mobile: "",
     address: "",
   });
 
-
- useEffect(() => {
-  fetch("api/participants?type1=Company", {
-    method: "GET",
-  })
-    .then((response) => {
-      if (response.status === 401) {
-        // handle unauthorized case, e.g., redirect to login
-        throw new Error("Unauthorized");
-      }
-      return response.json();
-    })
-    .then((data) => {
-      setCompanies(data);
-      setMenuAnchorEls(Array(data.length).fill(null));
-    })
-    .catch((error) => {
-      console.error("Error fetching companies:", error);
-    });
-}, []);
+  useEffect(() => {
+    fetch("api/participants?type1=Company", { method: "GET" })
+      .then((response) => {
+        if (response.status === 401) {
+          throw new Error("Unauthorized");
+        }
+        return response.json();
+      })
+      .then((data) => {
+        setCompanies(data);
+        setMenuAnchorEls(Array(data.length).fill(null));
+      })
+      .catch((error) => {
+        console.error("Error fetching companies:", error);
+      });
+  }, []);
 
   const handleOpen = () => setOpen(true);
   const handleClose = () => {
     setOpen(false);
-    setNewCompany({ name: "", email: "", country: "", phone: "", address: "" });
+    setNewCompany({ name: "", email: "", country: "", mobile: "", address: "" });
   };
 
   const handleEditOpen = (idx) => {
@@ -114,7 +115,9 @@ export default function Companies() {
   };
 
   const handleMenuOpen = (event, idx) => {
-    setMenuAnchorEls((prev) => prev.map((el, i) => (i === idx ? event.currentTarget : el)));
+    setMenuAnchorEls((prev) =>
+      prev.map((el, i) => (i === idx ? event.currentTarget : el))
+    );
   };
   const handleMenuClose = (idx) => {
     setMenuAnchorEls((prev) => prev.map((el, i) => (i === idx ? null : el)));
@@ -136,7 +139,7 @@ export default function Companies() {
                   bgcolor: "#f7fafc",
                   ":hover": { boxShadow: 8, borderColor: "primary.light" },
                   border: "1px solid #f0f2fa",
-                  position: 'relative'
+                  position: "relative",
                 }}
               >
                 <CardHeader
@@ -159,7 +162,9 @@ export default function Companies() {
                     </IconButton>
                   }
                   sx={{
-                    background: "#f0f2fa", borderBottom: "1px solid #e0e2ea", minHeight: 60
+                    background: "#f0f2fa",
+                    borderBottom: "1px solid #e0e2ea",
+                    minHeight: 60,
                   }}
                 />
                 <Menu
@@ -186,7 +191,7 @@ export default function Companies() {
                       <b>Country:</b> {company.country}
                     </Typography>
                     <Typography sx={{ fontSize: 15, color: "grey.700" }}>
-                      <b>Phone:</b> {company.phone}
+                      <b>Mobile:</b> {company.mobile}
                     </Typography>
                     <Typography sx={{ fontSize: 15, color: "grey.700" }}>
                       <b>Address:</b> {company.address}
@@ -198,19 +203,35 @@ export default function Companies() {
           </Grid>
         ))}
       </Grid>
-      <Box sx={{ mt: 5, textAlign: 'left' }}>
+      <Box sx={{ mt: 5, textAlign: "left" }}>
         <Button variant="contained" size="large" onClick={handleOpen}>
           Add Company
         </Button>
       </Box>
+
       {/* Add Company Dialog */}
       <Dialog open={open} onClose={handleClose}>
         <DialogTitle>Add Company</DialogTitle>
         <DialogContent>
           <TextField margin="normal" fullWidth label="Name" name="name" value={newCompany.name} onChange={handleChange} />
           <TextField margin="normal" fullWidth label="Email" name="email" value={newCompany.email} onChange={handleChange} />
-          <TextField margin="normal" fullWidth label="Country" name="country" value={newCompany.country} onChange={handleChange} />
-          <TextField margin="normal" fullWidth label="Phone" name="phone" value={newCompany.phone} onChange={handleChange} />
+          <FormControl margin="normal" fullWidth>
+            <InputLabel id="add-country-label">Country</InputLabel>
+            <Select
+              labelId="add-country-label"
+              name="country"
+              value={newCompany.country}
+              label="Country"
+              onChange={handleChange}
+            >
+              {countryList.map((country) => (
+                <MenuItem key={country} value={country}>
+                  {country}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+          <TextField margin="normal" fullWidth label="Mobile" name="mobile" value={newCompany.mobile} onChange={handleChange} />
           <TextField margin="normal" fullWidth label="Address" name="address" value={newCompany.address} onChange={handleChange} />
         </DialogContent>
         <DialogActions sx={{ p: 2 }}>
@@ -218,14 +239,30 @@ export default function Companies() {
           <Button onClick={handleAddCompany} variant="contained">Add</Button>
         </DialogActions>
       </Dialog>
+
       {/* Edit Company Dialog */}
       <Dialog open={editOpen} onClose={handleEditClose}>
         <DialogTitle>Edit Company</DialogTitle>
         <DialogContent>
           <TextField margin="normal" fullWidth label="Name" name="name" value={editCompany.name} onChange={handleEditChange} />
           <TextField margin="normal" fullWidth label="Email" name="email" value={editCompany.email} onChange={handleEditChange} />
-          <TextField margin="normal" fullWidth label="Country" name="country" value={editCompany.country} onChange={handleEditChange} />
-          <TextField margin="normal" fullWidth label="Phone" name="phone" value={editCompany.phone} onChange={handleEditChange} />
+          <FormControl margin="normal" fullWidth>
+            <InputLabel id="edit-country-label">Country</InputLabel>
+            <Select
+              labelId="edit-country-label"
+              name="country"
+              value={editCompany.country}
+              label="Country"
+              onChange={handleEditChange}
+            >
+              {countryList.map((country) => (
+                <MenuItem key={country} value={country}>
+                  {country}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+          <TextField margin="normal" fullWidth label="Mobile" name="mobile" value={editCompany.mobile} onChange={handleEditChange} />
           <TextField margin="normal" fullWidth label="Address" name="address" value={editCompany.address} onChange={handleEditChange} />
         </DialogContent>
         <DialogActions sx={{ p: 2 }}>

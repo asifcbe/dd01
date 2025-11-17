@@ -1,52 +1,85 @@
-import React, { useState,useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Box, Button, Card, CardContent, CardHeader, IconButton, Typography, Grid,
   Dialog, DialogTitle, DialogContent, DialogActions, TextField, Menu, MenuItem,
-  Fade, Avatar, Divider
+  Fade, Avatar, Divider, FormControl, InputLabel, Select
 } from "@mui/material";
 import LocalMallIcon from "@mui/icons-material/LocalMall";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 
+const countryList = ["UK", "USA", "India", "Germany", "France", "Ireland"];
+
 export default function Vendors() {
   const [vendors, setVendors] = useState([]);
   const [open, setOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [toEditIdx, setToEditIdx] = useState(null);
-  const [menuAnchorEls, setMenuAnchorEls] = useState(Array(vendors.length).fill(null));
-  const [newVendor, setNewVendor] = useState({ name: "", contact: "", email: "", phone: "", address: "" });
-  const [editVendor, setEditVendor] = useState({ name: "", contact: "", email: "", phone: "", address: "" });
- useEffect(() => {
-  fetch("api/participants?type1=Vendor", {
-    method: "GET",
-  })
-    .then((response) => {
-      if (response.status === 401) {
-        // handle unauthorized case, e.g., redirect to login
-        throw new Error("Unauthorized");
-      }
-      return response.json();
-    })
-    .then((data) => {
-      setVendors(data);
-      setMenuAnchorEls(Array(data.length).fill(null));
-    })
-    .catch((error) => {
-      console.error("Error fetching companies:", error);
-    });
-}, []);
+  const [menuAnchorEls, setMenuAnchorEls] = useState([]);
+  const [newVendor, setNewVendor] = useState({ name: "", email: "", country: "", mobile: "", address: "" });
+  const [editVendor, setEditVendor] = useState({ name: "", email: "", country: "", mobile: "", address: "" });
+
+  useEffect(() => {
+    fetch("api/participants?type1=Vendor", { method: "GET" })
+      .then(response => {
+        if (response.status === 401) throw new Error("Unauthorized");
+        return response.json();
+      })
+      .then(data => {
+        setVendors(data);
+        setMenuAnchorEls(Array(data.length).fill(null));
+      })
+      .catch(error => {
+        console.error("Error fetching vendors:", error);
+      });
+  }, []);
+
   const handleOpen = () => setOpen(true);
-  const handleClose = () => { setOpen(false); setNewVendor({ name: "", contact: "", email: "", phone: "", address: "" }); };
-  const handleEditOpen = (idx) => { setToEditIdx(idx); setEditVendor(vendors[idx]); setEditOpen(true); };
-  const handleEditClose = () => { setEditOpen(false); setToEditIdx(null); };
-  const handleChange = (e) => { setNewVendor((prev) => ({ ...prev, [e.target.name]: e.target.value })); };
-  const handleEditChange = (e) => { setEditVendor((prev) => ({ ...prev, [e.target.name]: e.target.value })); };
-  const handleAddVendor = () => { setVendors((prev) => [...prev, newVendor]); setMenuAnchorEls((prev) => [...prev, null]); handleClose(); };
-  const handleEditVendor = () => { setVendors((prev) => prev.map((c, i) => (i === toEditIdx ? editVendor : c))); handleEditClose(); };
-  const handleDeleteVendor = (idx) => { setVendors((prev) => prev.filter((_, i) => i !== idx)); setMenuAnchorEls((prev) => prev.filter((_, i) => i !== idx)); };
-  const handleMenuOpen = (event, idx) => { setMenuAnchorEls((prev) => prev.map((el, i) => (i === idx ? event.currentTarget : el))); };
-  const handleMenuClose = (idx) => { setMenuAnchorEls((prev) => prev.map((el, i) => (i === idx ? null : el))); };
+  const handleClose = () => {
+    setOpen(false);
+    setNewVendor({ name: "", email: "", country: "", mobile: "", address: "" });
+  };
+
+  const handleEditOpen = (idx) => {
+    setToEditIdx(idx);
+    setEditVendor(vendors[idx]);
+    setEditOpen(true);
+  };
+  const handleEditClose = () => {
+    setEditOpen(false);
+    setToEditIdx(null);
+  };
+
+  const handleChange = (e) => {
+    setNewVendor(prev => ({ ...prev, [e.target.name]: e.target.value }));
+  };
+  const handleEditChange = (e) => {
+    setEditVendor(prev => ({ ...prev, [e.target.name]: e.target.value }));
+  };
+
+  const handleAddVendor = () => {
+    setVendors(prev => [...prev, newVendor]);
+    setMenuAnchorEls(prev => [...prev, null]);
+    handleClose();
+  };
+
+  const handleEditVendor = () => {
+    setVendors(prev => prev.map((v, i) => (i === toEditIdx ? editVendor : v)));
+    handleEditClose();
+  };
+
+  const handleDeleteVendor = (idx) => {
+    setVendors(prev => prev.filter((_, i) => i !== idx));
+    setMenuAnchorEls(prev => prev.filter((_, i) => i !== idx));
+  };
+
+  const handleMenuOpen = (event, idx) => {
+    setMenuAnchorEls(prev => prev.map((el, i) => (i === idx ? event.currentTarget : el)));
+  };
+  const handleMenuClose = (idx) => {
+    setMenuAnchorEls(prev => prev.map((el, i) => (i === idx ? null : el)));
+  };
 
   return (
     <Box sx={{ p: { xs: 1, sm: 3 }, maxWidth: 1200, mx: "auto" }}>
@@ -80,9 +113,9 @@ export default function Vendors() {
                 <Divider sx={{ mb: 2, mt: 0 }} />
                 <CardContent>
                   <Box sx={{ display: "grid", gap: 1 }}>
-                    <Typography sx={{ fontSize: 15, color: "grey.700" }}><b>Contact:</b> {vendor.contact}</Typography>
                     <Typography sx={{ fontSize: 15, color: "grey.700" }}><b>Email:</b> {vendor.email}</Typography>
-                    <Typography sx={{ fontSize: 15, color: "grey.700" }}><b>Phone:</b> {vendor.mobile}</Typography>
+                    <Typography sx={{ fontSize: 15, color: "grey.700" }}><b>Country:</b> {vendor.country}</Typography>
+                    <Typography sx={{ fontSize: 15, color: "grey.700" }}><b>Mobile:</b> {vendor.mobile}</Typography>
                     <Typography sx={{ fontSize: 15, color: "grey.700" }}><b>Address:</b> {vendor.address}</Typography>
                   </Box>
                 </CardContent>
@@ -98,9 +131,22 @@ export default function Vendors() {
         <DialogTitle>Add Vendor</DialogTitle>
         <DialogContent>
           <TextField margin="normal" fullWidth label="Name" name="name" value={newVendor.name} onChange={handleChange} />
-          <TextField margin="normal" fullWidth label="Contact" name="contact" value={newVendor.contact} onChange={handleChange} />
           <TextField margin="normal" fullWidth label="Email" name="email" value={newVendor.email} onChange={handleChange} />
-          <TextField margin="normal" fullWidth label="Phone" name="phone" value={newVendor.mobile} onChange={handleChange} />
+          <FormControl fullWidth margin="normal">
+            <InputLabel id="add-country-label">Country</InputLabel>
+            <Select
+              labelId="add-country-label"
+              name="country"
+              value={newVendor.country}
+              label="Country"
+              onChange={handleChange}
+            >
+              {countryList.map(country => (
+                <MenuItem key={country} value={country}>{country}</MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+          <TextField margin="normal" fullWidth label="Mobile" name="mobile" value={newVendor.mobile} onChange={handleChange} />
           <TextField margin="normal" fullWidth label="Address" name="address" value={newVendor.address} onChange={handleChange} />
         </DialogContent>
         <DialogActions sx={{ p: 2 }}>
@@ -112,9 +158,22 @@ export default function Vendors() {
         <DialogTitle>Edit Vendor</DialogTitle>
         <DialogContent>
           <TextField margin="normal" fullWidth label="Name" name="name" value={editVendor.name} onChange={handleEditChange} />
-          <TextField margin="normal" fullWidth label="Contact" name="contact" value={editVendor.contact} onChange={handleEditChange} />
           <TextField margin="normal" fullWidth label="Email" name="email" value={editVendor.email} onChange={handleEditChange} />
-          <TextField margin="normal" fullWidth label="Phone" name="phone" value={editVendor.mobile} onChange={handleEditChange} />
+          <FormControl fullWidth margin="normal">
+            <InputLabel id="edit-country-label">Country</InputLabel>
+            <Select
+              labelId="edit-country-label"
+              name="country"
+              value={editVendor.country}
+              label="Country"
+              onChange={handleEditChange}
+            >
+              {countryList.map(country => (
+                <MenuItem key={country} value={country}>{country}</MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+          <TextField margin="normal" fullWidth label="Mobile" name="mobile" value={editVendor.mobile} onChange={handleEditChange} />
           <TextField margin="normal" fullWidth label="Address" name="address" value={editVendor.address} onChange={handleEditChange} />
         </DialogContent>
         <DialogActions sx={{ p: 2 }}>
