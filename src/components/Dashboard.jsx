@@ -30,7 +30,7 @@ import {
   DesignServices as TemplatesIcon,
   ReceiptLong as InvoicesIcon,
 } from "@mui/icons-material";
-import Invoices from "./Invoices";
+import Invoices from "./Invoice";
 import CustomIcon from "./CustomIcon";
 import Clients from "./Clients";
 import Templates from "./Templates";

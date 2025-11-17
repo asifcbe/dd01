@@ -142,7 +142,7 @@ export default function Templates() {
         <Tab label="Tree View" disabled={!selectedTemplateId} />
       </Tabs>
       {tabIdx === 0 && (
-        <Grid container spacing={4} justifyContent="center">
+        <Grid container spacing={4} >
           {templateList.map((template) => (
             <Grid
               item
