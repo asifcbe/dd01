@@ -4,20 +4,16 @@ import {
   Tabs,
   Tab,
   Typography,
-  Card,
-  CardContent,
-  CardHeader,
-  Grid,
   List,
   ListItem,
   ListItemText,
+  Button,
   IconButton,
   Menu,
   MenuItem,
-  Divider,
-  Button,
   Snackbar,
   Alert,
+  Divider,
 } from "@mui/material";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import EditIcon from "@mui/icons-material/Edit";
@@ -204,8 +200,6 @@ a:hover {
   text-decoration: underline;
 }
 `;
-
-
   return (
     <div>
       <style>{styles}</style>
@@ -219,7 +213,7 @@ export default function Invoice() {
   const [templateListObj, setTemplateListObj] = useState({});
   const [templateList, setTemplateList] = useState([]);
   const [selectedTemplateId, setSelectedTemplateId] = useState(null);
-  const [invoiceHtml, setInvoiceHtml] = useState(null); // holds raw HTML string
+  const [invoiceHtml, setInvoiceHtml] = useState(null);
   const [menuAnchors, setMenuAnchors] = useState({});
   const [loadingInvoice, setLoadingInvoice] = useState(false);
   const [notification, setNotification] = useState(null);
@@ -243,7 +237,9 @@ export default function Invoice() {
     if (!selectedTemplateId) return;
 
     setLoadingInvoice(true);
-    let htmlString=`<div class="container p-0">
+    // Simulate fetching invoice HTML for selected template
+    // Replace this with actual API call if needed
+    const htmlString = `<div class="container p-0">
     <div class="card">
         <div class="card-body">
             <div id="invoice">
@@ -416,24 +412,10 @@ export default function Invoice() {
             </div>
         </div>
     </div>
-</div>`
+</div>`;
     setInvoiceHtml(htmlString);
-        setLoadingInvoice(false);
-        setTabIdx(1);
-    // fetch(`api/invoice/print-view?template_id=${selectedTemplateId}`, { credentials: "include" })
-    //   .then((res) => {
-    //     if (!res.ok) throw new Error("Failed to fetch invoice");
-    //     return res.text();
-    //   })
-    //   .then((htmlString) => {
-    //     setInvoiceHtml(htmlString);
-    //     setLoadingInvoice(false);
-    //     setTabIdx(1);
-    //   })
-    //   .catch(() => {
-    //     setNotification({ severity: "error", message: "Failed to load invoice" });
-    //     setLoadingInvoice(false);
-    //   });
+    setLoadingInvoice(false);
+    setTabIdx(1);
   }, [selectedTemplateId]);
 
   const handleMenuOpen = (event, templateId) => {
@@ -447,6 +429,7 @@ export default function Invoice() {
     alert(`Edit Template ${templateId}`);
     handleMenuClose(templateId);
   };
+
   const handleDeleteTemplate = (templateId) => {
     alert(`Delete Template ${templateId}`);
     handleMenuClose(templateId);
@@ -454,125 +437,70 @@ export default function Invoice() {
 
   return (
     <Box>
-          <Typography variant="h4" sx={{ fontWeight: "bold", mb: 3 }}>Invoices</Typography>
+      <Typography variant="h4" sx={{ fontWeight: "bold", mb: 3 }}>
+        Invoices
+      </Typography>
       <Tabs value={tabIdx} onChange={(_, v) => setTabIdx(v)} sx={{ mb: 2 }}>
         <Tab label="List Templates" />
         <Tab label="Invoice" disabled={!selectedTemplateId} />
       </Tabs>
+
       {tabIdx === 0 && (
-        <Grid container spacing={4} justifyContent="center">
+        <List>
           {templateList.map((template) => (
-            <Grid
-              item
-              xs={12}
-              sm={6}
-              md={4}
-              key={template.id}
-              sx={{ display: "flex", justifyContent: "center" }}
-            >
-              <Card
-                elevation={4}
-                sx={{
-                  width: 370,
-                  maxWidth: "100%",
-                  minHeight: 320,
-                  borderRadius: 3,
-                  display: "flex",
-                  flexDirection: "column",
-                  justifyContent: "space-between",
-                  boxShadow: 5,
-                  p: 0,
-                  mx: "auto",
-                }}
+            <React.Fragment key={template.id}>
+              <ListItem
+                secondaryAction={
+                  <Box sx={{ display: "flex", alignItems: "center" }}>
+                    <Button
+                      variant="contained"
+                      size="small"
+                      onClick={() => setSelectedTemplateId(template.id)}
+                      sx={{ minWidth: 120, mr: 1 }}
+                    >
+                      View Invoice
+                    </Button>
+
+                    <IconButton
+                      edge="end"
+                      onClick={(event) => handleMenuOpen(event, template.id)}
+                    >
+                      <MoreVertIcon />
+                    </IconButton>
+                    <Menu
+                      anchorEl={menuAnchors[template.id]}
+                      open={Boolean(menuAnchors[template.id])}
+                      onClose={() => handleMenuClose(template.id)}
+                      anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+                      transformOrigin={{ vertical: "top", horizontal: "right" }}
+                    >
+                      <MenuItem onClick={() => handleEditTemplate(template.id)}>
+                        <EditIcon fontSize="small" sx={{ mr: 1 }} /> Edit
+                      </MenuItem>
+                      <MenuItem onClick={() => handleDeleteTemplate(template.id)}>
+                        <DeleteIcon
+                          fontSize="small"
+                          sx={{ mr: 1, color: "#f44336" }}
+                        />{" "}
+                        Delete
+                      </MenuItem>
+                    </Menu>
+                  </Box>
+                }
+                divider
+                sx={{ pr: 15 }}
               >
-                <CardHeader
-                  title={
-                    <Typography variant="h6" fontWeight="bold" noWrap>
-                      {template.name}
-                    </Typography>
-                  }
-                  action={
-                    <>
-                      <IconButton
-                        onClick={(e) => handleMenuOpen(e, template.id)}
-                        sx={{ color: "#868ca0" }}
-                      >
-                        <MoreVertIcon />
-                      </IconButton>
-                      <Menu
-                        anchorEl={menuAnchors[template.id]}
-                        open={Boolean(menuAnchors[template.id])}
-                        onClose={() => handleMenuClose(template.id)}
-                        anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
-                        transformOrigin={{ vertical: "top", horizontal: "right" }}
-                      >
-                        <MenuItem onClick={() => handleEditTemplate(template.id)}>
-                          <EditIcon fontSize="small" sx={{ mr: 1 }} /> Edit
-                        </MenuItem>
-                        <MenuItem onClick={() => handleDeleteTemplate(template.id)}>
-                          <DeleteIcon fontSize="small" sx={{ mr: 1, color: "#f44336" }} /> Delete
-                        </MenuItem>
-                      </Menu>
-                    </>
-                  }
-                  sx={{
-                    background: "#f0f2fa",
-                    minHeight: 60,
-                    px: 2,
-                  }}
+                <ListItemText
+                  primary={template.name}
+                  secondary={template.description || "No description available."}
                 />
-                <Divider sx={{ mb: 0, mt: 0 }} />
-                <CardContent sx={{ px: 2, py: 1 }}>
-                  <Typography
-                    variant="subtitle2"
-                    color="text.secondary"
-                    sx={{ mb: 1 }}
-                  >
-                    {template.description || "No description available."}
-                  </Typography>
-                  <Typography sx={{ mb: 0, fontWeight: "bold" }}>
-                    Projects:
-                  </Typography>
-                  {template.projects && template.projects.length > 0 ? (
-                    <List dense disablePadding>
-                      {template.projects.map((project) => (
-                        <ListItem key={project.id} sx={{ pl: 1 }}>
-                          <ListItemText
-                            primary={
-                              <span>
-                                <b>{project.given_by}</b> &rarr; <b>{project.taken_by}</b>
-                              </span>
-                            }
-                            secondary={
-                              <span style={{ fontSize: 11 }}>
-                                {project.rate_amount} {project.currency} ({project.rate_mode})
-                              </span>
-                            }
-                          />
-                        </ListItem>
-                      ))}
-                    </List>
-                  ) : (
-                    <Typography variant="body2" color="text.secondary">
-                      No projects
-                    </Typography>
-                  )}
-                </CardContent>
-                <Box sx={{ p: 1, pt: 0, textAlign: "right" }}>
-                  <Button
-                    variant="contained"
-                    size="small"
-                    onClick={() => setSelectedTemplateId(template.id)}
-                    sx={{ minWidth: 120 }}
-                  >
-                    View Invoice
-                  </Button>
-                </Box>
-              </Card>
-            </Grid>
+              </ListItem>
+              <Divider component="li" />
+            </React.Fragment>
           ))}
-        </Grid>
+        </List>
       )}
+
       {tabIdx === 1 && (
         <Box
           sx={{
@@ -594,6 +522,7 @@ export default function Invoice() {
           )}
         </Box>
       )}
+
       <Snackbar
         open={Boolean(notification)}
         autoHideDuration={3000}
