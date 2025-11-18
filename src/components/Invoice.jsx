@@ -4,524 +4,193 @@ import {
   Tabs,
   Tab,
   Typography,
-  List,
-  ListItem,
-  ListItemText,
   Button,
-  IconButton,
-  Menu,
-  MenuItem,
+  Table,
+  TableHead,
+  TableBody,
+  TableCell,
+  TableRow,
+  TableContainer,
+  Paper,
   Snackbar,
   Alert,
-  Divider,
+  CircularProgress,
 } from "@mui/material";
-import MoreVertIcon from "@mui/icons-material/MoreVert";
-import EditIcon from "@mui/icons-material/Edit";
-import DeleteIcon from "@mui/icons-material/Delete";
 
-// Component to render raw invoice HTML with styles
-const InvoiceRawHtml = ({ rawHtml }) => {
-  const styles = `
-.container {
-  max-width: 950px;
-  margin: 30px auto;
-  font-family: "Segoe UI", "Roboto", Arial, sans-serif;
-  background: #fff;
-  border-radius: 12px;
-  box-shadow: 0 2px 18px rgba(0,0,0,0.07);
-  padding: 32px 28px 18px 28px;
-  color: #212a34;
+import InvoiceTemplate from "./InvoiceTemplate"; // your CSS-based invoice component
+
+// Helper to flatten nested invoice items with thru chain
+function flattenInvoiceItems(invoiceItems) {
+  const rows = [];
+  function walk(itemArr, thru = []) {
+    itemArr.forEach((item) => {
+      const newThru = [...thru];
+      if (item.given_to && item.given_to.length) {
+        newThru.push(item.name + ", " + item.address);
+        walk(item.given_to, newThru);
+      } else {
+        rows.push({
+          id: item.id,
+          name: item.name,
+          location: item.address,
+          thru: newThru.reverse(),
+          rateMode: item.project?.rate_mode || "",
+          duration: 0,
+          rateAmount: item.project?.rate_amount || 0,
+          currency: item.project?.currency || "",
+          total: 0,
+        });
+      }
+    });
+  }
+  invoiceItems.forEach((itemGroup) => walk(itemGroup));
+  return rows;
 }
-.card {
-  border: none;
-  background: none;
-  box-shadow: none;
+
+// Extract invoice view data dynamically from API response
+function extractInvoiceViewData(data) {
+  const from = {
+    name: data.company?.name || "",
+    mobile: data.company?.mobile || "",
+    email: data.company?.email || "",
+    address: data.company?.address || "",
+  };
+  const to = {
+    name: data.client?.name || "",
+    mobile: data.client?.mobile || "",
+    email: data.client?.email || "",
+    address: data.client?.address || "",
+  };
+
+  // Calculate subtotal, tax, total dynamically if possible
+  let subtotal = 0;
+  flattenInvoiceItems(data.invoice_items || []).forEach(item => {
+    subtotal += Number(item.rateAmount) || 0;
+  });
+  const tax = subtotal * 0.1;  // assuming 10% tax
+  const total = subtotal + tax;
+
+  return {
+    invoiceId: `INV-${data.template_id || 1}`,
+    from,
+    to,
+    invoiceDate: data.invoice_date || "",
+    dueDate: data.due_date || "",
+    items: flattenInvoiceItems(data.invoice_items || []),
+    subtotal: subtotal.toLocaleString(),
+    tax: tax.toLocaleString(),
+    total: total.toLocaleString(),
+    notice: data.notice || "A finance charge of 1.5% will be made on unpaid balances after 30 days.",
+  };
 }
-.card-header,
-.card-body {
-  padding: 0;
-}
-.toolbar {
-  text-align: right;
-  margin-bottom: 12px;
-}
-.toolbar .btn {
-  background: #8E39F8;
-  color: #fff;
-  border-radius: 6px;
-  border: none;
-  padding: 6px 16px;
-  margin-left: 8px;
-  font-weight: 600;
-  font-size: 15px;
-  cursor: pointer;
-  box-shadow: 0 2px 6px rgba(108,72,195,0.10);
-  transition: background 0.2s;
-}
-.toolbar .btn-danger { background: #dc3545; }
-.toolbar .btn-dark { background: #232a34; }
-.toolbar .btn:hover { background: #651bbf; }
-.toolbar .btn-danger:hover { background: #a71d2a; }
-.toolbar .btn-dark:hover { background: #101418; }
-hr {
-  margin: 16px 0 0 0;
-  border: 0;
-  border-top: 1px solid #e0e6ed;
-}
-header {
-  border-bottom: 2px solid #e0e6ed;
-  padding-bottom: 12px;
-  margin-bottom: 18px;
-}
-header .row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-header .company-details h2 {
-  font-size: 28px;
-  color: #3283F5;
-  margin: 0;
-}
-header .company-details {
-  text-align: right;
-}
-.invoice-details h1 {
-  font-size: 32px;
-  color: #3283F5;
-  font-weight: 700;
-  margin-bottom: 6px;
-}
-.invoice-details > div { font-size: 15px; color: #212a34; }
-.contacts {
-  display: flex;
-  justify-content: space-between;
-  margin-top: 20px;
-  margin-bottom: 12px;
-}
-.contacts .invoice-to, .contacts .invoice-details {
-  min-width: 220px;
-}
-.contacts .invoice-to .text-gray-light {
-  font-size: 15px;
-  color: #7a7f81;
-  margin-bottom: 8px;
-  font-weight: 500;
-}
-.contacts .invoice-to h2 {
-  font-size: 24px;
-  margin-bottom: 5px;
-}
-table {
-  width: 100%;
-  border-collapse: collapse;
-  margin-top: 14px;
-}
-thead th {
-  background: #f4f8fc;
-  color: #383e4b;
-  font-size: 16px;
-  font-weight: 600;
-  padding: 10px 0;
-  border-bottom: 2px solid #e0e6ed;
-  text-align: left;
-}
-tbody tr {
-  background: #fafbfc;
-}
-tbody tr:nth-child(even) {
-  background: #eaf4fe;
-}
-tbody td {
-  padding: 11px 7px;
-  font-size: 15px;
-  vertical-align: top;
-  border-bottom: 1px solid #eaeaea;
-}
-td.no, th.no {
-  font-weight: bold;
-  font-size: 18px;
-  text-align: center;
-  background: #3283F5;
-  color: #fff;
-  min-width: 44px;
-  border-radius: 5px 0 0 5px;
-}
-td.total, th.total {
-  background: #3283F5;
-  color: #fff;
-  font-weight: bold;
-  text-align: right;
-  min-width: 44px;
-  border-radius: 0 5px 5px 0;
-}
-tfoot tr {
-  background: transparent;
-}
-tfoot td {
-  font-size: 16px;
-  font-weight: 600;
-  padding: 10px 7px;
-  color: #212a34;
-  border-top: 2px solid #e0e6ed;
-}
-tfoot tr:last-child td {
-  color: #3283F5;
-  font-size: 18px;
-}
-.thanks {
-  font-weight: 700;
-  font-size: 22px;
-  margin: 30px 0 14px 0;
-}
-.notices {
-  background: #eaf4fe;
-  border-left: 5px solid #3283F5;
-  padding: 12px 18px;
-  color: #212a34;
-  font-size: 15px;
-  border-radius: 7px;
-  margin-bottom: 22px;
-  margin-top: 10px;
-}
-footer {
-  margin-top: 35px;
-  font-size: 14px;
-  color: #8e8e8f;
-  text-align: center;
-  border-top: 1px solid #e0e6ed;
-  padding-top: 9px;
-}
-a {
-  color: #3283F5;
-  text-decoration: none;
-}
-a:hover {
-  text-decoration: underline;
-}
-`;
+
+function TabPanel({ children, value, index }) {
   return (
-    <div>
-      <style>{styles}</style>
-      <div className="container" dangerouslySetInnerHTML={{ __html: rawHtml }} />
+    <div role="tabpanel" hidden={value !== index} aria-labelledby={`tab-${index}`}>
+      {value === index && <Box sx={{ p: 3 }}>{children}</Box>}
     </div>
   );
-};
+}
 
-export default function Invoice() {
-  const [tabIdx, setTabIdx] = useState(0);
-  const [templateListObj, setTemplateListObj] = useState({});
-  const [templateList, setTemplateList] = useState([]);
-  const [selectedTemplateId, setSelectedTemplateId] = useState(null);
-  const [invoiceHtml, setInvoiceHtml] = useState(null);
-  const [menuAnchors, setMenuAnchors] = useState({});
+export default function Invoices() {
+  const [tabIndex, setTabIndex] = useState(0);
+  const [templates, setTemplates] = useState({});
+  const [loadingTemplates, setLoadingTemplates] = useState(false);
+  const [selectedTemplate, setSelectedTemplate] = useState(null);
+  const [invoiceData, setInvoiceData] = useState(null);
   const [loadingInvoice, setLoadingInvoice] = useState(false);
   const [notification, setNotification] = useState(null);
 
   useEffect(() => {
-    fetch("api/templates", { method: "GET", credentials: "include" })
-      .then((res) => {
-        if (!res.ok) throw new Error("Failed to fetch templates");
-        return res.json();
-      })
+    setLoadingTemplates(true);
+    fetch("api/templates", { credentials: "include" })
+      .then((res) => res.json())
       .then((data) => {
-        setTemplateListObj(data);
-        setTemplateList(Object.values(data));
+        setTemplates(data);
+        setLoadingTemplates(false);
       })
-      .catch(() =>
-        setNotification({ severity: "error", message: "Failed to load templates" })
-      );
+      .catch(() => {
+        setNotification({ severity: "error", message: "Failed to load templates" });
+        setLoadingTemplates(false);
+      });
   }, []);
 
-  useEffect(() => {
-    if (!selectedTemplateId) return;
+  const templateArray = Object.values(templates);
 
+  const fetchInvoiceData = (template_id) => {
     setLoadingInvoice(true);
-    // Simulate fetching invoice HTML for selected template
-    // Replace this with actual API call if needed
-    const htmlString = `<div class="container p-0">
-    <div class="card">
-        <div class="card-body">
-            <div id="invoice">
-                <div class="toolbar hidden-print">
-                    <div class="text-end">
-                        <button type="button" class="btn btn-purple edit">Edit</button>
-                        <button type="button" class="btn btn-purple save d-none">Save</button>
-                        <button type="button" class="btn btn-danger export">Export as PDF</button>
-                        <button type="button" class="btn btn-dark print">Print</button>
-                    </div>
-                    <hr>
-                </div>
-                <div class="invoice overflow-auto">
-                    <form template_id="1">
-                        <div style="min-width: 600px">
-                            <header>
-                                <div class="row">
-                                    <div class="col">
-                                        <a href="javascript:;">
-                                        <img src="assets/images/logo-icon.png" width="80" alt="">
-                                        </a>
-                                    </div>
-                                    <div class="col company-details">
-                                        <h2 class="from_name">
-                                            <a target="_blank" href="javascript:;">Reed Ireland</a>
-                                        </h2>
-                                        <div class="from_mobile">7845945951</div>
-                                        <div class="from_email">reedIreland@gmail.com</div>
-                                        <div class="from_address">Dublin</div>
-                                    </div>
-                                </div>
-                            </header>
-                            <main>
-                                <div class="row contacts">
-                                    <div class="col invoice-to">
-                                        <div class="text-gray-light">INVOICE TO:</div>
-                                        <h2 class="to_name">Yahoo Finance</h2>
-                                        <div class="to_mobile">7845945950</div>
-                                        <div class="to_email">yahoo@outlook.com</div>
-                                        <div class="to_address">California</div>
-                                    </div>
-                                    <div class="col invoice-details">
-                                        <h1 class="invoice-id">INV-1</h1>
-                                        <div class="row align-items-right mt-3 justify-content-end">
-                                            <label class="col-auto col-form-label text-end pe-1">Invoice Date: </label>
-                                            <div class="invoice_date col-auto ps-0">
-                                                <input type="text" class="form-control" style="width: 120px;"
-                                                    value="17, Nov 2025"/>
-                                                <p class="mt-2 mb-0">17, Nov 2025</p>
-                                            </div>
-                                        </div>
-                                        <div class="row align-items-right justify-content-end">
-                                            <label class="col-auto col-form-label text-end pe-1">Due Date: </label>
-                                            <div class="due_date col-auto ps-0">
-                                                <input type="text" class="form-control" style="width: 120px;"
-                                                    value="17, Dec 2025"/>
-                                                <p class="mt-2 mb-0">17, Dec 2025</p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <table>
-                                    <thead>
-                                        <tr>
-                                            <th>#</th>
-                                            <th class="text-left">DESCRIPTION</th>
-                                            <th class="text-right">RATE MODE</th>
-                                            <th class="text-right">DURATION</th>
-                                            <th class="text-right">RATE AMOUNT</th>
-                                            <th class="text-right">CURRRENCY</th>
-                                            <th class="text-right">TOTAL</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        
-                                            
-                                            
-                                            <tr contract_id="5">
-                                                <td class="no">01</td>
-                                                <td class="text-left">
-                                                    <h3><a target="_blank" href="#">
-                                                        Dinesh,</a> Madurai, Tamil Nadu</h3>
-                                                    
-                                                        <p class="m-0"><b>thru: </b>Sivarama Tech, Chennai, Tamil Nadu</p>
-                                                    
-                                                        <p class="m-0"><b>thru: </b>Sreerama Tech, Bangalore, Karnataka</p>
-                                                    
-                                                </td>
-                                                <td class="rate-mode">Daily</td>
-                                                <td class="duration">
-                                                    <input type="text" class="form-control d-none" style="width: 40%;"/>
-                                                    <p>0</p>
-                                                </td>
-                                                <td class="rate-amount">30000.0</td>
-                                                <td class="currency">INR</td>
-                                                <td class="total">0</td>
-                                            </tr>
-                                        
-                                            
-                                            
-                                            <tr contract_id="6">
-                                                <td class="no">02</td>
-                                                <td class="text-left">
-                                                    <h3><a target="_blank" href="#">
-                                                        Palanisamy,</a> Salem, Tamil Nadu</h3>
-                                                    
-                                                        <p class="m-0"><b>thru: </b>Sreerama Tech, Bangalore, Karnataka</p>
-                                                    
-                                                </td>
-                                                <td class="rate-mode">Monthly</td>
-                                                <td class="duration">
-                                                    <input type="text" class="form-control d-none" style="width: 40%;"/>
-                                                    <p>0</p>
-                                                </td>
-                                                <td class="rate-amount">20000.0</td>
-                                                <td class="currency">INR</td>
-                                                <td class="total">0</td>
-                                            </tr>
-                                        
-                                            
-                                            
-                                            <tr contract_id="7">
-                                                <td class="no">03</td>
-                                                <td class="text-left">
-                                                    <h3><a target="_blank" href="#">
-                                                        Macron,</a> Paris</h3>
-                                                    
-                                                </td>
-                                                <td class="rate-mode">Monthly</td>
-                                                <td class="duration">
-                                                    <input type="text" class="form-control d-none" style="width: 40%;"/>
-                                                    <p>0</p>
-                                                </td>
-                                                <td class="rate-amount">20000.0</td>
-                                                <td class="currency">INR</td>
-                                                <td class="total">0</td>
-                                            </tr>
-                                        
-                                    </tbody>
-                                    <tfoot>
-                                        <tr>
-                                            <td colspan="2"></td>
-                                            <td colspan="2">SUBTOTAL</td>
-                                            <td>1,00,000</td>
-                                        </tr>
-                                        <tr>
-                                            <td colspan="2"></td>
-                                            <td colspan="2">TAX 10%</td>
-                                            <td>10,000</td>
-                                        </tr>
-                                        <tr>
-                                            <td colspan="2"></td>
-                                            <td colspan="2">GRAND TOTAL</td>
-                                            <td>1,10,000</td>
-                                        </tr>
-                                    </tfoot>
-                                </table>
-                                <div class="thanks">Thank you!</div>
-                                <div class="notices">
-                                    <div>NOTICE:</div>
-                                    <div class="notice">A finance charge of 1.5% will be made on unpaid balances after 30 days.</div>
-                                </div>
-                            </main>
-                            <footer>Invoice was created on a computer and is valid without the signature and seal.</footer>
-                        </div>
-                        <!--DO NOT DELETE THIS div. IT is responsible for showing footer always at the bottom-->
-                        <div></div>
-                    </form>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>`;
-    setInvoiceHtml(htmlString);
-    setLoadingInvoice(false);
-    setTabIdx(1);
-  }, [selectedTemplateId]);
-
-  const handleMenuOpen = (event, templateId) => {
-    setMenuAnchors((prev) => ({ ...prev, [templateId]: event.currentTarget }));
-  };
-  const handleMenuClose = (templateId) => {
-    setMenuAnchors((prev) => ({ ...prev, [templateId]: null }));
+    fetch(`api/invoice/print-view?template_id=${template_id}`, { credentials: "include" })
+      .then((res) => res.json())
+      .then((data) => {
+        setInvoiceData(data);
+        setLoadingInvoice(false);
+      })
+      .catch(() => {
+        setNotification({ severity: "error", message: "Failed to load invoice" });
+        setLoadingInvoice(false);
+      });
   };
 
-  const handleEditTemplate = (templateId) => {
-    alert(`Edit Template ${templateId}`);
-    handleMenuClose(templateId);
-  };
-
-  const handleDeleteTemplate = (templateId) => {
-    alert(`Delete Template ${templateId}`);
-    handleMenuClose(templateId);
+  const handleInvoiceButtonClick = (template) => {
+    setSelectedTemplate(template);
+    setTabIndex(1);
+    fetchInvoiceData(template.id);
   };
 
   return (
     <Box>
-      <Typography variant="h4" sx={{ fontWeight: "bold", mb: 3 }}>
-        Invoices
-      </Typography>
-      <Tabs value={tabIdx} onChange={(_, v) => setTabIdx(v)} sx={{ mb: 2 }}>
-        <Tab label="List Templates" />
-        <Tab label="Invoice" disabled={!selectedTemplateId} />
+      <Tabs value={tabIndex} onChange={(_, v) => setTabIndex(v)} aria-label="Invoice tabs">
+        <Tab label="Templates" id="invoice-tab-0" aria-controls="invoice-tabpanel-0" />
+        <Tab label="Invoice" id="invoice-tab-1" aria-controls="invoice-tabpanel-1" />
       </Tabs>
 
-      {tabIdx === 0 && (
-        <List>
-          {templateList.map((template) => (
-            <React.Fragment key={template.id}>
-              <ListItem
-                secondaryAction={
-                  <Box sx={{ display: "flex", alignItems: "center" }}>
-                    <Button
-                      variant="contained"
-                      size="small"
-                      onClick={() => setSelectedTemplateId(template.id)}
-                      sx={{ minWidth: 120, mr: 1 }}
-                    >
-                      View Invoice
-                    </Button>
+      <TabPanel value={tabIndex} index={0}>
+        {loadingTemplates ? (
+          <CircularProgress />
+        ) : templateArray.length === 0 ? (
+          <Typography>No templates found.</Typography>
+        ) : (
+          <TableContainer component={Paper}>
+            <Table>
+              <TableHead>
+                <TableRow>
+                  <TableCell>Name</TableCell>
+                  <TableCell>Description</TableCell>
+                  <TableCell align="right">Action</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {templateArray.map((tpl) => (
+                  <TableRow key={tpl.id}>
+                    <TableCell>{tpl.name}</TableCell>
+                    <TableCell>{tpl.description || "No description"}</TableCell>
+                    <TableCell align="right">
+                      <Button
+                        variant="contained"
+                        onClick={() => handleInvoiceButtonClick(tpl)}
+                      >
+                        View Invoice
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        )}
+      </TabPanel>
 
-                    <IconButton
-                      edge="end"
-                      onClick={(event) => handleMenuOpen(event, template.id)}
-                    >
-                      <MoreVertIcon />
-                    </IconButton>
-                    <Menu
-                      anchorEl={menuAnchors[template.id]}
-                      open={Boolean(menuAnchors[template.id])}
-                      onClose={() => handleMenuClose(template.id)}
-                      anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
-                      transformOrigin={{ vertical: "top", horizontal: "right" }}
-                    >
-                      <MenuItem onClick={() => handleEditTemplate(template.id)}>
-                        <EditIcon fontSize="small" sx={{ mr: 1 }} /> Edit
-                      </MenuItem>
-                      <MenuItem onClick={() => handleDeleteTemplate(template.id)}>
-                        <DeleteIcon
-                          fontSize="small"
-                          sx={{ mr: 1, color: "#f44336" }}
-                        />{" "}
-                        Delete
-                      </MenuItem>
-                    </Menu>
-                  </Box>
-                }
-                divider
-                sx={{ pr: 15 }}
-              >
-                <ListItemText
-                  primary={template.name}
-                  secondary={template.description || "No description available."}
-                />
-              </ListItem>
-              <Divider component="li" />
-            </React.Fragment>
-          ))}
-        </List>
-      )}
-
-      {tabIdx === 1 && (
-        <Box
-          sx={{
-            p: 2,
-            bgcolor: "#f9faff",
-            borderRadius: 2,
-            height: 600,
-            overflowY: "auto",
-          }}
-        >
-          {loadingInvoice ? (
-            <Typography sx={{ p: 2 }}>Loading invoice...</Typography>
-          ) : invoiceHtml ? (
-            <InvoiceRawHtml rawHtml={invoiceHtml} />
-          ) : (
-            <Typography sx={{ p: 2 }}>
-              Select a template and click "View Invoice" to see details.
-            </Typography>
-          )}
-        </Box>
-      )}
+      <TabPanel value={tabIndex} index={1}>
+        {loadingInvoice ? (
+          <CircularProgress />
+        ) : invoiceData ? (
+          <InvoiceTemplate {...extractInvoiceViewData(invoiceData)} />
+        ) : (
+          <Typography>
+            Please select a template and click 'View Invoice' to see invoice.
+          </Typography>
+        )}
+      </TabPanel>
 
       <Snackbar
         open={Boolean(notification)}
