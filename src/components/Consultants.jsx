@@ -131,7 +131,7 @@ export default function Consultants() {
       </Typography>
       <Grid container spacing={3}>
         {consultants.map((consultant, idx) => (
-          <Grid item xs={12} sm={6} md={4} key={idx}>
+          <Grid item xs={12} sm={6} md={4} key={idx} sx={{ p: 1 }}>
             <Fade in>
               <Card
                 elevation={4}
@@ -141,6 +141,7 @@ export default function Consultants() {
                   ":hover": { boxShadow: 8, borderColor: "primary.light" },
                   border: "1px solid #e9ecf0",
                   position: "relative",
+                  width:'300px',
                 }}
               >
                 <CardHeader
@@ -202,7 +203,7 @@ export default function Consultants() {
           </Grid>
         ))}
       </Grid>
-      <Box sx={{ mt: 5, textAlign: "left" }}>
+      <Box sx={{ mt: 5, textAlign: "left",p:1 }}>
         <Button variant="contained" size="large" onClick={handleOpen}>
           Add Consultant
         </Button>

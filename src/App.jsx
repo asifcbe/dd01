@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import AuthCard from "./components/AuthCard.jsx"; // Make sure your AuthCard uses centering Box wrapper from earlier
 import Dashboard from "./components/Dashboard.jsx";
 import { CssBaseline, ThemeProvider, createTheme } from "@mui/material";
-
+import axios from "axios";
 const theme = createTheme();
 
 export default function App() {
@@ -11,6 +11,20 @@ export default function App() {
     name: "Jane Doe",
     avatar: "https://i.pravatar.cc/300"
   });
+const logOut=async ()=>{
+  
+    try {
+      const res = await axios.post("/api/signout", {}, {
+        withCredentials: true,
+      });
+      if (res.status === 200) {
+        setLoggedIn(false);
+      }
+    } catch (err) {
+      console.log(err)
+    }
+  }
+
 
   return (
     <ThemeProvider theme={theme}>
@@ -22,7 +36,7 @@ export default function App() {
           onSignup={() => setLoggedIn(true)}
         />
       ) : (
-        <Dashboard user={user} onLogout={() => setLoggedIn(false)} />
+        <Dashboard user={user} onLogout={logOut} />
       )}
       </div>
     </ThemeProvider>

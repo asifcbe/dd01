@@ -18,6 +18,8 @@ import {
   Button,
   useMediaQuery,
 } from "@mui/material";
+import LogoutIcon from "@mui/icons-material/Logout";
+
 import {
   Menu as MenuIcon,
   ChevronLeft as ChevronLeftIcon,
@@ -111,7 +113,12 @@ export default function Dashboard({ user, onLogout }) {
           <Box sx={{ display: "flex", alignItems: "center" }}>
             <CustomIcon />
             <Typography
-              sx={{ color: "primary.main", ml: 1, fontWeight: "bold", fontSize: "16px" }}
+              sx={{
+                color: "primary.main",
+                ml: 1,
+                fontWeight: "bold",
+                fontSize: "16px",
+              }}
             >
               Invoice Generator
             </Typography>
@@ -171,19 +178,30 @@ export default function Dashboard({ user, onLogout }) {
   const selectedItem = dashboardItems.find((item) => item.key === selectedKey);
 
   return (
-    <Box sx={{ display: "flex", minHeight: "100vh", bgcolor: "background.default" }}>
+    <Box
+      sx={{
+        display: "flex",
+        minHeight: "100vh",
+        bgcolor: "background.default",
+      }}
+    >
       <CssBaseline />
 
       {/* AppBar */}
-      <AppBar
-        position="fixed"
+      <Box
         sx={{
+          position: "fixed",
+          top: 0,
           width: { sm: `calc(100% - ${drawerWidth}px)` },
           ml: { sm: `${drawerWidth}px` },
           bgcolor: "white",
           color: "primary.main",
+          borderBottom: "1px solid #e0e0e0",
+          zIndex: 1200, // Ensures it stays above other content
+          // boxShadow: '0px 1px 2px -1px rgba(0,0,0,0.2), 0px 4px 5px 0px rgba(0,0,0,0.14), 0px 1px 10px 0px rgba(0,0,0,0.12)', // Optional: adds AppBar-like shadow
+          px: 2, // Optional: horizontal padding
+          // py: 1, // Optional: vertical padding
         }}
-        elevation={1}
       >
         <Toolbar>
           {isMobile && (
@@ -211,12 +229,12 @@ export default function Dashboard({ user, onLogout }) {
             <Typography sx={{ fontWeight: 500, color: "primary.main" }}>
               {user.name}
             </Typography>
-            <Button variant="outlined" size="small" onClick={onLogout}>
-              Log Out
-            </Button>
+            <IconButton onClick={onLogout} color="primary" aria-label="logout">
+              <LogoutIcon />
+            </IconButton>
           </Box>
         </Toolbar>
-      </AppBar>
+      </Box>
 
       {/* Sidebar nav */}
       <Box
@@ -281,7 +299,7 @@ export default function Dashboard({ user, onLogout }) {
           sx={{
             bgcolor: "white",
             borderRadius: 1,
-            boxShadow: 1,
+            // boxShadow: 1,
             flexGrow: 1,
             p: 0,
             display: "flex",
@@ -311,7 +329,8 @@ export default function Dashboard({ user, onLogout }) {
             fontSize: 10, // reduced vertical padding
           }}
         >
-          <Divider sx={{ mb: 1 }} />© {new Date().getFullYear()} Invoice Generator
+          <Divider sx={{ mb: 1 }} />© {new Date().getFullYear()} Invoice
+          Generator
         </Box>
       </Box>
     </Box>

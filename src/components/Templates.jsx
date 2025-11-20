@@ -150,7 +150,7 @@ export default function Templates() {
               sm={6}
               md={4}
               key={template.id}
-              sx={{ display: "flex", justifyContent: "center" }}
+              sx={{ display: "flex", justifyContent: "center" ,p: 1}  }
             >
               <Card
                 elevation={4}
@@ -260,8 +260,8 @@ export default function Templates() {
         <Box sx={{ height: 600, bgcolor: "#f9faff", borderRadius: 2 }}>
           {nodes.length > 0 ? (
             <ReactFlow nodes={nodes} edges={edges} fitView>
-              <Background />
-              <Controls />
+              <Background color="black"/>
+              <Controls showInteractive={false} showZoom={true} />
             </ReactFlow>
           ) : (
             <Typography sx={{ p: 2 }}>Loading tree view...</Typography>

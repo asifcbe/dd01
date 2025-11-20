@@ -86,11 +86,11 @@ export default function Vendors() {
       <Typography variant="h4" sx={{ fontWeight: "bold", mb: 3 }}>Vendors</Typography>
       <Grid container spacing={3}>
         {vendors.map((vendor, idx) => (
-          <Grid item xs={12} sm={6} md={4} key={idx}>
+          <Grid item xs={12} sm={6} md={4} key={idx} sx={{ p: 1 }}>
             <Fade in>
               <Card elevation={4} sx={{
                 borderRadius: 3, bgcolor: "#f7fafc", ":hover": { boxShadow: 8, borderColor: "primary.light" },
-                border: "1px solid #f0f2fa", position: 'relative'
+                border: "1px solid #f0f2fa", position: 'relative',width:'300px',
               }}>
                 <CardHeader
                   avatar={<Avatar sx={{ bgcolor: "primary.main", width: 40, height: 40 }}><LocalMallIcon /></Avatar>}
@@ -124,7 +124,7 @@ export default function Vendors() {
           </Grid>
         ))}
       </Grid>
-      <Box sx={{ mt: 5, textAlign: 'left' }}>
+      <Box sx={{ mt: 5, textAlign: 'left' ,p:1}}>
         <Button variant="contained" size="large" onClick={handleOpen}>Add Vendor</Button>
       </Box>
       <Dialog open={open} onClose={handleClose}>

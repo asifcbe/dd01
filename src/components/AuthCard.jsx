@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Box,
   Container,
@@ -9,6 +9,7 @@ import {
   Tab,
   Avatar,
   Alert,
+  CircularProgress,
 } from "@mui/material";
 import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
 import axios from "axios";
@@ -22,10 +23,37 @@ export default function AuthCard({ onLogin, onSignup }) {
     confirmPassword: "",
   });
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(true); // <-- loading state
 
-  // Track logged-in state and user info
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [user, setUser] = useState(null);
+
+  // On mount, check login status
+  useEffect(() => {
+    async function checkLogin() {
+      setLoading(true);
+      try {
+        const res = await axios.get("/api/participants?type1=Client", {
+          withCredentials: true,
+        });
+        if (res.status === 200) {
+          const userEmail = res.data?.email || "User";
+          setUser({ name: userEmail });
+          setIsLoggedIn(true);
+          onLogin();
+        } else {
+          setIsLoggedIn(false);
+          setUser(null);
+        }
+      } catch {
+        setIsLoggedIn(false);
+        setUser(null);
+      } finally {
+        setLoading(false);
+      }
+    }
+    checkLogin();
+  }, []);
 
   const handleChange = (event, newVal) => setTab(newVal);
 
@@ -34,48 +62,28 @@ export default function AuthCard({ onLogin, onSignup }) {
     setError("");
   };
 
-  const callApi = async (url, payload) => {
-    try {
-      const res = await fetch(url, {
-        method: "POST",
-        credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "*/*",
-        },
-        body: JSON.stringify(payload),
-      });
-      const data = await res.json();
-      if (res.ok) return { ok: true, data };
-      setError(data?.error || "Authentication failed");
-      return { ok: false, data };
-    } catch (e) {
-      setError("Network error");
-      return { ok: false, data: null };
-    }
-  };
-
   const handleSignIn = async (e) => {
     e.preventDefault();
     setError("");
-
+    setLoading(true);
     const payload = {
       org: form.org.trim(),
       email: form.email.trim(),
       password: form.password,
     };
-
     try {
-      const response = await axios.post("/api/signin", payload, {
+      const res = await axios.post("/api/signin", payload, {
         withCredentials: true,
       });
-      if (response.status === 200) {
+      if (res.status === 200) {
+        setUser({ name: form.email });
         setIsLoggedIn(true);
-        setUser({ name: form.email }); // Replace with actual user info if available
         onLogin();
       }
     } catch (err) {
-      setError(err.message);
+      setError(err.response?.data?.error || err.message || "Sign in failed");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -86,20 +94,60 @@ export default function AuthCard({ onLogin, onSignup }) {
       setError("Passwords do not match");
       return;
     }
-    const payload = {
-      org: form.org.trim(),
-      email: form.email.trim(),
-      password: form.password,
-    };
-    const result = await callApi("/signup", payload);
-    if (result.ok) onSignup();
+    setLoading(true);
+    try {
+      const res = await axios.post(
+        "/api/signup",
+        {
+          org: form.org.trim(),
+          email: form.email.trim(),
+          password: form.password,
+        },
+        { withCredentials: true }
+      );
+      if (res.status === 200) {
+        onSignup();
+        setTab("signin");
+      }
+    } catch (err) {
+      setError(err.response?.data?.error || err.message || "Sign up failed");
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    setLoading(true);
+    try {
+      await axios.post("/api/logout", {}, { withCredentials: true });
+    } catch {
+      // Ignore errors
+    }
     setIsLoggedIn(false);
     setUser(null);
-    // Optionally call a logout API here to invalidate session
+    setLoading(false);
   };
+
+  if (loading) {
+    return (
+      <Box
+        sx={{
+          height: "100vh",
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          bgcolor: "background.default",
+          flexDirection:'column'
+        }}
+      >
+        <CircularProgress />
+        <Typography color='primary' component="h1" variant="h6">
+              Logging In
+            </Typography>
+        
+      </Box>
+    );
+  }
 
   return (
     <Box
@@ -126,7 +174,7 @@ export default function AuthCard({ onLogin, onSignup }) {
         {isLoggedIn ? (
           <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
             <Typography component="h1" variant="h6" sx={{ fontWeight: "bold" }}>
-              {user.name}
+              {user?.name}
             </Typography>
             <Button variant="outlined" onClick={handleLogout}>
               Log Out
@@ -286,3 +334,4 @@ export default function AuthCard({ onLogin, onSignup }) {
     </Box>
   );
 }
+
