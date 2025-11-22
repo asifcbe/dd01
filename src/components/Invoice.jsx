@@ -184,7 +184,7 @@ export default function Invoices() {
         {loadingInvoice ? (
           <CircularProgress />
         ) : invoiceData ? (
-          <InvoiceTemplate {...extractInvoiceViewData(invoiceData)} />
+          <InvoiceTemplate template={selectedTemplate} {...extractInvoiceViewData(invoiceData)} />
         ) : (
           <Typography>
             Please select a template and click 'View Invoice' to see invoice.
