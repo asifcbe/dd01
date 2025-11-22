@@ -322,6 +322,7 @@ export default function Dashboard({ user, onLogout }) {
         <Box
           component="footer"
           sx={{
+            height: "2vh",
             textAlign: "center",
             mt: "auto",
             color: "grey.600",
