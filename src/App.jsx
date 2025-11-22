@@ -3,7 +3,9 @@ import AuthCard from "./components/AuthCard.jsx"; // Make sure your AuthCard use
 import Dashboard from "./components/Dashboard.jsx";
 import { CssBaseline, ThemeProvider, createTheme } from "@mui/material";
 import axios from "axios";
+import "./App.css";
 const theme = createTheme();
+
 
 export default function App() {
   const [loggedIn, setLoggedIn] = useState(false);

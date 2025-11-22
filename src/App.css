@@ -1,0 +1,7 @@
+.expense-row:hover .row-action-icon {
+  opacity: 1 !important;
+}
+.row-action-icon {
+  opacity: 0;
+  pointer-events: auto;
+}
