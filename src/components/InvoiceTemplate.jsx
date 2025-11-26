@@ -751,24 +751,33 @@ export default function InvoiceTemplate({
                                   {!isEditing ? (
                                     exp.label
                                   ) : (
-                                    <input
-                                      type="text"
-                                      value={exp.label}
-                                      onChange={(e) =>
-                                        handleSavedExpenseChange(
-                                          idx,
-                                          eIdx,
-                                          "label",
-                                          e.target.value
-                                        )
-                                      }
-                                      style={{
-                                        width: "100%",
-                                        borderRadius: 3,
-                                        border: "1px solid #bbb",
-                                        padding: 4,
-                                      }}
-                                    />
+                                    <Select
+                                size="small"
+                                value={
+                                  exp.label
+                                }
+                                onChange={(e) =>
+                                  handleExpenseChange(
+                                    idx,
+                                    additionalExpenses[idx].length - 1,
+                                    "label",
+                                    e.target.value
+                                  )
+                                }
+                                displayEmpty
+                                sx={{
+                                  height:'20px'
+                                }}
+                              >
+                                <MenuItem value="" disabled>
+                                  Expense
+                                </MenuItem>
+                                {options.map((option) => (
+                                  <MenuItem key={option} value={option}>
+                                    {option}
+                                  </MenuItem>
+                                ))}
+                              </Select>
                                   )}
                                 </td>
                                 <td>
@@ -899,15 +908,11 @@ export default function InvoiceTemplate({
                                 }
                                 displayEmpty
                                 sx={{
-                                  width: "100%",
-                                  fontSize: 10, // smaller text
-                                  borderRadius: 1,
-                                  border: "1px solid #bbb",
-                                  padding: 1,
+                                  height:'20px'
                                 }}
                               >
                                 <MenuItem value="" disabled>
-                                  Select Expense Label
+                                  Expense
                                 </MenuItem>
                                 {options.map((option) => (
                                   <MenuItem key={option} value={option}>

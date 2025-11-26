@@ -3,7 +3,7 @@ import AuthCard from "./components/AuthCard.jsx"; // Make sure your AuthCard use
 import Dashboard from "./components/Dashboard.jsx";
 import { CssBaseline, ThemeProvider, createTheme } from "@mui/material";
 import axios from "axios";
-import "./App.css";
+import "./App.scss";
 const theme = createTheme();
 
 

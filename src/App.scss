@@ -6,6 +6,8 @@
   pointer-events: auto;
 }
 
-#invoicetable td, input {
+#invoicetable{
+  td, input {
     text-align: center !important;
+}
 }
