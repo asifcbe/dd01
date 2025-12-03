@@ -1,10 +1,14 @@
 import React, { useState, useRef, useEffect } from "react";
-import { Typography, TextField, IconButton } from "@mui/material";
+import { Typography, TextField, IconButton, Collapse, Box } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import DeleteIcon from "@mui/icons-material/Delete";
+import DescriptionIcon from "@mui/icons-material/Description";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import ExpandLessIcon from "@mui/icons-material/ExpandLess";
 import { LocalizationProvider, DatePicker } from "@mui/x-date-pickers";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import { Select, MenuItem } from "@mui/material";
+
 const options = ["Option 1", "Option 2", "Option 3"];
 const COLORTHEMES = [
   {
@@ -49,6 +53,7 @@ function formatDateToISO(dateStr) {
   };
   return `${year}-${months[monthStr]}-${day.padStart(2, "0")}`;
 }
+
 function formatISOToDisplay(dateISO) {
   if (!dateISO) return "";
   const months = [
@@ -154,10 +159,12 @@ export default function InvoiceTemplate({
         amount: "",
         duration: 0,
         currency: "INR",
+        description: "",
       },
     ])
   );
 
+  const [expandedDescriptions, setExpandedDescriptions] = useState({});
   const [taxPercent, setTaxPercent] = useState(10);
   const [taxAmount, setTaxAmount] = useState(invoice.tax);
   const [grandTotal, setGrandTotal] = useState(invoice.total);
@@ -207,6 +214,7 @@ export default function InvoiceTemplate({
         amount: "",
         duration: 0,
         currency: localInvoiceItems[idx].currency,
+        description: "",
       },
     ];
     setAdditionalExpenses(newAdditionalExpenses);
@@ -240,6 +248,10 @@ export default function InvoiceTemplate({
         (_, i) => i !== expIdx
       );
       setSavedExpenses(newSavedExpenses);
+      const key = `${mainIdx}-${expIdx}`;
+      const newExpanded = { ...expandedDescriptions };
+      delete newExpanded[key];
+      setExpandedDescriptions(newExpanded);
     } else {
       const addExpIdx = expIdx - savedExpenses[mainIdx].length;
       const newAdditionalExpenses = [...additionalExpenses];
@@ -274,6 +286,14 @@ export default function InvoiceTemplate({
     setIsEditing(false);
   };
 
+  const toggleDescription = (mainIdx, expIdx) => {
+    const key = `${mainIdx}-${expIdx}`;
+    setExpandedDescriptions((prev) => ({
+      ...prev,
+      [key]: !prev[key],
+    }));
+  };
+
   const handlePrint = () => {
     const printContent = componentRef.current.cloneNode(true);
     const printWindow = window.open("", "", "width=800,height=600");
@@ -298,6 +318,14 @@ export default function InvoiceTemplate({
       th {
         background: ${theme.notice}; color: ${theme.header};
         font-weight: 700; text-align: left;
+      }
+      .description-box {
+        background: #f9f9f9;
+        border-left: 3px solid ${theme.accent};
+        padding: 8px 12px;
+        margin: 4px 0;
+        font-size: 14px;
+        color: #555;
       }
       @media print {
         body {margin: 0;}
@@ -605,7 +633,6 @@ export default function InvoiceTemplate({
                 <tbody>
                   {localInvoiceItems.map((item, idx) => {
                     const parentBg = idx % 2 === 0 ? "#fff" : theme.notice;
-
                     const savedCount = savedExpenses[idx]?.length || 0;
                     const hasChildren =
                       savedCount > 0 ||
@@ -613,7 +640,7 @@ export default function InvoiceTemplate({
 
                     return (
                       <React.Fragment key={item.id}>
-                        {/* Parent row, border bottom only if no children */}
+                        {/* Parent row */}
                         <tr
                           style={{
                             background: parentBg,
@@ -729,154 +756,303 @@ export default function InvoiceTemplate({
                               isLastSaved &&
                               (!isEditing ||
                                 additionalExpenses[idx].length === 0);
+                            const descriptionKey = `${idx}-${eIdx}`;
+                            const isDescriptionExpanded =
+                              expandedDescriptions[descriptionKey];
+
                             return (
-                              <tr
+                              <React.Fragment
                                 key={`saved-exp-${idx}-${eIdx}`}
-                                style={{
-                                  background: parentBg,
-                                  borderBottom: isLastChildRow
-                                    ? "1px solid #e0e6ed"
-                                    : "none",
-                                }}
                               >
-                                <td style={{ background: theme.accent }} />
-                                <td
+                                <tr
                                   style={{
-                                    fontStyle: !isEditing ? "italic" : "normal",
-                                    color: !isEditing ? "#555" : "#000",
-                                    verticalAlign: "middle",
-                                    padding: 4,
+                                    background: parentBg,
+                                    borderBottom:
+                                      isLastChildRow && !isDescriptionExpanded
+                                        ? "1px solid #e0e6ed"
+                                        : "none",
                                   }}
                                 >
-                                  {!isEditing ? (
-                                    exp.label
-                                  ) : (
-                                    <Select
-                                size="small"
-                                value={
-                                  exp.label
-                                }
-                                onChange={(e) =>
-                                  handleExpenseChange(
-                                    idx,
-                                    additionalExpenses[idx].length - 1,
-                                    "label",
-                                    e.target.value
-                                  )
-                                }
-                                displayEmpty
-                                sx={{
-                                  height:'20px'
-                                }}
-                              >
-                                <MenuItem value="" disabled>
-                                  Expense
-                                </MenuItem>
-                                {options.map((option) => (
-                                  <MenuItem key={option} value={option}>
-                                    {option}
-                                  </MenuItem>
-                                ))}
-                              </Select>
-                                  )}
-                                </td>
-                                <td>
-                                  {/* <input
-                                    type="text"
-                                    value={localInvoiceItems[idx].ratemode}
-                                    disabled
+                                  <td
                                     style={{
-                                      width: 100,
-                                      borderRadius: 3,
-                                      border: "1px solid #eee",
-                                      backgroundColor: "#f9f9f9",
-                                      padding: 4,
-                                      color: "#777",
+                                      background: theme.accent,
+                                      borderBottom: "none",
                                     }}
-                                  /> */}
-                                  {localInvoiceItems[idx].ratemode}
-                                </td>
-                                <td style={{ padding: 4, textAlign: "center" }}>
-                                  {!isEditing ? (
-                                    exp.duration ?? 0
-                                  ) : (
-                                    <input
-                                      type="number"
-                                      min="0"
-                                      value={exp.duration ?? 0}
-                                      onChange={(e) =>
-                                        handleSavedExpenseChange(
-                                          idx,
-                                          eIdx,
-                                          "duration",
-                                          Number(e.target.value)
-                                        )
-                                      }
-                                      style={{
-                                        width: 60,
-                                        borderRadius: 3,
-                                        border: "1px solid #bbb",
-                                        padding: 4,
-                                      }}
-                                    />
-                                  )}
-                                </td>
-                                <td style={{ padding: 4, textAlign: "right" }}>
-                                  {!isEditing ? (
-                                    exp.amount
-                                  ) : (
-                                    <input
-                                      type="number"
-                                      min="0"
-                                      value={exp.amount}
-                                      onChange={(e) =>
-                                        handleSavedExpenseChange(
-                                          idx,
-                                          eIdx,
-                                          "amount",
-                                          Number(e.target.value)
-                                        )
-                                      }
-                                      style={{
-                                        width: 90,
-                                        borderRadius: 3,
-                                        border: "1px solid #bbb",
-                                        padding: 4,
-                                      }}
-                                    />
-                                  )}
-                                </td>
-                                <td>{exp.currency}</td>
-                                <td
-                                  style={{
-                                    fontWeight: "bold",
-                                    display: "flex",
-                                    alignItems: "center",
-                                    gap: 6,
-                                    justifyContent: "center",
-                                    padding: 4,
-                                  }}
-                                >
-                                  {(
-                                    (exp.duration && exp.duration > 0
+                                  />
+                                  <td
+                                    style={{
+                                      fontStyle: !isEditing
+                                        ? "italic"
+                                        : "normal",
+                                      color: !isEditing ? "#555" : "#000",
+                                      verticalAlign: "middle",
+                                      padding: "11px 8px", // CHANGED
+                                    }}
+                                  >
+                                    {!isEditing ? (
+                                      <>
+                                        {exp.label}
+                                        {exp.description && (
+                                          <IconButton
+                                            size="small"
+                                            onClick={() =>
+                                              toggleDescription(idx, eIdx)
+                                            }
+                                            sx={{ padding: 0, ml: 1 }}
+                                          >
+                                            {isDescriptionExpanded ? (
+                                              <ExpandLessIcon fontSize="small" />
+                                            ) : (
+                                              <ExpandMoreIcon fontSize="small" />
+                                            )}
+                                          </IconButton>
+                                        )}
+                                      </>
+                                    ) : (
+                                      <Select
+                                        size="small"
+                                        value={exp.label}
+                                        onChange={(e) =>
+                                          handleSavedExpenseChange(
+                                            idx,
+                                            eIdx,
+                                            "label",
+                                            e.target.value
+                                          )
+                                        }
+                                        displayEmpty
+                                        sx={{ height: "20px" }}
+                                      >
+                                        <MenuItem value="" disabled>
+                                          Expense
+                                        </MenuItem>
+                                        {options.map((option) => (
+                                          <MenuItem
+                                            key={option}
+                                            value={option}
+                                          >
+                                            {option}
+                                          </MenuItem>
+                                        ))}
+                                      </Select>
+                                    )}
+                                  </td>
+                                  <td
+                                    style={{
+                                      verticalAlign: "middle",
+                                      padding: "11px 8px", // CHANGED
+                                    }}
+                                  >
+                                    {localInvoiceItems[idx].ratemode}
+                                  </td>
+                                  <td
+                                    style={{
+                                      padding: "11px 8px", // CHANGED
+                                      textAlign: "center",
+                                      verticalAlign: "middle",
+                                    }}
+                                  >
+                                    {!isEditing ? (
+                                      exp.duration ?? 0
+                                    ) : (
+                                      <input
+                                        type="number"
+                                        min="0"
+                                        value={exp.duration ?? 0}
+                                        onChange={(e) =>
+                                          handleSavedExpenseChange(
+                                            idx,
+                                            eIdx,
+                                            "duration",
+                                            Number(e.target.value)
+                                          )
+                                        }
+                                        style={{
+                                          width: 60,
+                                          borderRadius: 3,
+                                          border: "1px solid #bbb",
+                                          padding: 4,
+                                        }}
+                                      />
+                                    )}
+                                  </td>
+                                  <td
+                                    style={{
+                                      padding: "11px 8px", // CHANGED
+                                      textAlign: "right",
+                                      verticalAlign: "middle",
+                                    }}
+                                  >
+                                    {!isEditing ? (
+                                      exp.amount
+                                    ) : (
+                                      <input
+                                        type="number"
+                                        min="0"
+                                        value={exp.amount}
+                                        onChange={(e) =>
+                                          handleSavedExpenseChange(
+                                            idx,
+                                            eIdx,
+                                            "amount",
+                                            Number(e.target.value)
+                                          )
+                                        }
+                                        style={{
+                                          width: 90,
+                                          borderRadius: 3,
+                                          border: "1px solid #bbb",
+                                          padding: 4,
+                                        }}
+                                      />
+                                    )}
+                                  </td>
+                                  <td
+                                    style={{
+                                      verticalAlign: "middle",
+                                      padding: "11px 8px", // CHANGED
+                                    }}
+                                  >
+                                    {exp.currency}
+                                  </td>
+                                  <td
+                                    style={{
+                                      fontWeight: "bold",
+                                      textAlign: "center", // CHANGED (remove flex)
+                                      padding: "11px 8px", // CHANGED
+                                      verticalAlign: "middle",
+                                    }}
+                                  >
+                                    {(exp.duration && exp.duration > 0
                                       ? exp.amount * exp.duration
-                                      : exp.amount) || 0
-                                  ).toLocaleString(undefined, {
-                                    minimumFractionDigits: 2,
-                                    maximumFractionDigits: 2,
-                                  })}
-                                  {isEditing && (
-                                    <IconButton
-                                      size="small"
-                                      onClick={() =>
-                                        handleRemoveExpense(idx, eIdx)
-                                      }
+                                      : exp.amount || 0
+                                    ).toLocaleString(undefined, {
+                                      minimumFractionDigits: 2,
+                                      maximumFractionDigits: 2,
+                                    })}
+                                    {isEditing && (
+                                      <IconButton
+                                        size="small"
+                                        onClick={() =>
+                                          handleRemoveExpense(idx, eIdx)
+                                        }
+                                        sx={{ ml: 1 }} // optional small spacing
+                                      >
+                                        <DeleteIcon fontSize="small" />
+                                      </IconButton>
+                                    )}
+                                  </td>
+                                </tr>
+
+                                {/* Description row for saved expenses */}
+                                {exp.description && (
+                                  <tr>
+                                    <td
+                                      style={{
+                                        padding: 0,
+                                        borderBottom: isLastChildRow
+                                          ? "1px solid #e0e6ed"
+                                          : "none",
+                                      }}
+                                    />
+                                    <td
+                                      style={{
+                                        padding: 0,
+                                        borderBottom: isLastChildRow
+                                          ? "1px solid #e0e6ed"
+                                          : "none",
+                                      }}
                                     >
-                                      <DeleteIcon fontSize="small" />
-                                    </IconButton>
-                                  )}
-                                </td>
-                              </tr>
+                                      <Collapse
+                                        in={isDescriptionExpanded || isEditing}
+                                      >
+                                        <div
+                                          className="description-box"
+                                          style={{
+                                            background: parentBg,
+                                            padding: isEditing
+                                              ? "8px 12px"
+                                              : "8px 12px",
+                                            margin: 0,
+                                            borderLeft: `3px solid ${theme.accent}`,
+                                          }}
+                                        >
+                                          {isEditing ? (
+                                            <TextField
+                                              fullWidth
+                                              multiline
+                                              rows={2}
+                                              value={exp.description}
+                                              onChange={(e) =>
+                                                handleSavedExpenseChange(
+                                                  idx,
+                                                  eIdx,
+                                                  "description",
+                                                  e.target.value
+                                                )
+                                              }
+                                              placeholder="Add description for this expense..."
+                                              variant="outlined"
+                                              size="small"
+                                            />
+                                          ) : (
+                                            <div
+                                              style={{
+                                                fontSize: "14px",
+                                                color: "#555",
+                                                lineHeight: "1.4",
+                                              }}
+                                            >
+                                              {/* <strong>Description:</strong>{" "} */}
+                                              {exp.description}
+                                            </div>
+                                          )}
+                                        </div>
+                                      </Collapse>
+                                    </td>
+                                    <td
+                                      style={{
+                                        padding: 0,
+                                        borderBottom: isLastChildRow
+                                          ? "1px solid #e0e6ed"
+                                          : "none",
+                                      }}
+                                    />
+                                    <td
+                                      style={{
+                                        padding: 0,
+                                        borderBottom: isLastChildRow
+                                          ? "1px solid #e0e6ed"
+                                          : "none",
+                                      }}
+                                    />
+                                    <td
+                                      style={{
+                                        padding: 0,
+                                        borderBottom: isLastChildRow
+                                          ? "1px solid #e0e6ed"
+                                          : "none",
+                                      }}
+                                    />
+                                    <td
+                                      style={{
+                                        padding: 0,
+                                        borderBottom: isLastChildRow
+                                          ? "1px solid #e0e6ed"
+                                          : "none",
+                                      }}
+                                    />
+                                    <td
+                                      style={{
+                                        padding: 0,
+                                        borderBottom: isLastChildRow
+                                          ? "1px solid #e0e6ed"
+                                          : "none",
+                                      }}
+                                    />
+                                  </tr>
+                                )}
+                              </React.Fragment>
                             );
                           })}
 
@@ -890,7 +1066,7 @@ export default function InvoiceTemplate({
                             }}
                           >
                             <td style={{ background: theme.accent }} />
-                            <td>
+                            <td style={{ padding: "11px 8px" }}>
                               <Select
                                 size="small"
                                 value={
@@ -907,9 +1083,7 @@ export default function InvoiceTemplate({
                                   )
                                 }
                                 displayEmpty
-                                sx={{
-                                  height:'20px'
-                                }}
+                                sx={{ height: "20px" }}
                               >
                                 <MenuItem value="" disabled>
                                   Expense
@@ -921,7 +1095,7 @@ export default function InvoiceTemplate({
                                 ))}
                               </Select>
                             </td>
-                            <td>
+                            <td style={{ padding: "11px 8px" }}>
                               <input
                                 type="text"
                                 value={localInvoiceItems[idx].ratemode}
@@ -936,7 +1110,7 @@ export default function InvoiceTemplate({
                                 }}
                               />
                             </td>
-                            <td>
+                            <td style={{ padding: "11px 8px" }}>
                               <input
                                 type="number"
                                 min="0"
@@ -964,7 +1138,7 @@ export default function InvoiceTemplate({
                                 }}
                               />
                             </td>
-                            <td>
+                            <td style={{ padding: "11px 8px" }}>
                               <input
                                 type="number"
                                 min="0"
@@ -992,7 +1166,7 @@ export default function InvoiceTemplate({
                                 }}
                               />
                             </td>
-                            <td>
+                            <td style={{ padding: "11px 8px" }}>
                               <input
                                 type="text"
                                 value={
@@ -1011,7 +1185,12 @@ export default function InvoiceTemplate({
                                 }}
                               />
                             </td>
-                            <td style={{ textAlign: "center" }}>
+                            <td
+                              style={{
+                                textAlign: "center",
+                                padding: "11px 8px",
+                              }}
+                            >
                               <IconButton
                                 onClick={() => handleAddExpenseClick(idx)}
                                 title="Add Additional Expense"
@@ -1032,6 +1211,53 @@ export default function InvoiceTemplate({
                             </td>
                           </tr>
                         )}
+
+                        {/* Description input for new expense in edit mode */}
+                        {isEditing &&
+                          additionalExpenses[idx] &&
+                          additionalExpenses[idx].length > 0 && (
+                            <tr>
+                              <td style={{ padding: 0, borderBottom: "1px solid #e0e6ed" }} />
+                              <td style={{ padding: 0, borderBottom: "1px solid #e0e6ed" }}>
+                                <div
+                                  className="description-box"
+                                  style={{
+                                    background: parentBg,
+                                    padding: "8px 12px",
+                                    margin: 0,
+                                    borderLeft: `3px solid ${theme.accent}`,
+                                  }}
+                                >
+                                  <TextField
+                                    fullWidth
+                                    multiline
+                                    rows={2}
+                                    value={
+                                      additionalExpenses[idx][
+                                        additionalExpenses[idx].length - 1
+                                      ].description
+                                    }
+                                    onChange={(e) =>
+                                      handleExpenseChange(
+                                        idx,
+                                        additionalExpenses[idx].length - 1,
+                                        "description",
+                                        e.target.value
+                                      )
+                                    }
+                                    placeholder="Add description for this expense..."
+                                    variant="outlined"
+                                    size="small"
+                                  />
+                                </div>
+                              </td>
+                              <td style={{ padding: 0, borderBottom: "1px solid #e0e6ed" }} />
+                              <td style={{ padding: 0, borderBottom: "1px solid #e0e6ed" }} />
+                              <td style={{ padding: 0, borderBottom: "1px solid #e0e6ed" }} />
+                              <td style={{ padding: 0, borderBottom: "1px solid #e0e6ed" }} />
+                              <td style={{ padding: 0, borderBottom: "1px solid #e0e6ed" }} />
+                            </tr>
+                          )}
                       </React.Fragment>
                     );
                   })}

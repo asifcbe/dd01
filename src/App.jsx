@@ -1,6 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, Suspense, lazy } from "react";
 import AuthCard from "./components/AuthCard.jsx"; // Make sure your AuthCard uses centering Box wrapper from earlier
-import Dashboard from "./components/Dashboard.jsx";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+const Layout = lazy(() => import("./components/DashboardLayout.jsx"));
 import { CssBaseline, ThemeProvider, createTheme } from "@mui/material";
 import axios from "axios";
 import "./App.scss";
@@ -32,14 +33,37 @@ const logOut=async ()=>{
     <ThemeProvider theme={theme}>
       <CssBaseline />
       <div className="app">
-      {!loggedIn ? (
-        <AuthCard
-          onLogin={() => setLoggedIn(true)}
-          onSignup={() => setLoggedIn(true)}
-        />
-      ) : (
-        <Dashboard user={user} onLogout={logOut} />
-      )}
+        <BrowserRouter>
+          <Routes>
+            <Route
+              path="/"
+              element={
+                !loggedIn ? (
+                  <AuthCard
+                    onLogin={() => setLoggedIn(true)}
+                    onSignup={() => setLoggedIn(true)}
+                  />
+                ) : (
+                  <Navigate replace to="/clients" />
+                )
+              }
+            />
+            <Route
+              path="/*"
+              element={
+                loggedIn ? (
+                  <Suspense fallback={<div>Loading dashboard...</div>}>
+                    <Layout user={user} onLogout={logOut} />
+                  </Suspense>
+                ) : (
+                  <Navigate replace to="/" />
+                )
+              }
+            />
+            {/* Fallback route */}
+            <Route path="*" element={<Navigate replace to="/" />} />
+          </Routes>
+        </BrowserRouter>
       </div>
     </ThemeProvider>
   );

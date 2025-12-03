@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, lazy, Suspense } from "react";
 import {
   Box,
   Tabs,
@@ -17,7 +17,7 @@ import {
   CircularProgress,
 } from "@mui/material";
 
-import InvoiceTemplate from "./InvoiceTemplate"; // your CSS-based invoice component
+const InvoiceTemplate = lazy(() => import("./InvoiceTemplate")); // lazy-load heavy template
 
 // Helper to flatten nested invoice items with thru chain
 function flattenInvoiceItems(invoiceItems) {
@@ -184,7 +184,9 @@ export default function Invoices() {
         {loadingInvoice ? (
           <CircularProgress />
         ) : invoiceData ? (
-          <InvoiceTemplate template={selectedTemplate} {...extractInvoiceViewData(invoiceData)} />
+          <Suspense fallback={<div>Loading invoice template...</div>}>
+            <InvoiceTemplate template={selectedTemplate} {...extractInvoiceViewData(invoiceData)} />
+          </Suspense>
         ) : (
           <Typography>
             Please select a template and click 'View Invoice' to see invoice.
