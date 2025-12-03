@@ -953,6 +953,7 @@ export default function InvoiceTemplate({
                                         borderBottom: isLastChildRow
                                           ? "1px solid #e0e6ed"
                                           : "none",
+                                          background: theme.accent
                                       }}
                                     />
                                     <td
@@ -969,12 +970,11 @@ export default function InvoiceTemplate({
                                         <div
                                           className="description-box"
                                           style={{
-                                            background: parentBg,
                                             padding: isEditing
                                               ? "8px 12px"
                                               : "8px 12px",
                                             margin: 0,
-                                            borderLeft: `3px solid ${theme.accent}`,
+                                            
                                           }}
                                         >
                                           {isEditing ? (
