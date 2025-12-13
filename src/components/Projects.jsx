@@ -151,6 +151,24 @@ export default function Projects() {
       <Box sx={{ mt: 5, textAlign: "left" ,p: 1}}>
         <Button variant="contained" size="large" onClick={handleOpen}>Add Project</Button>
       </Box>
+      <Dialog open={open} onClose={handleClose}>
+        <DialogTitle>Add Project</DialogTitle>
+        <DialogContent>
+          <TextField margin="normal" fullWidth label="Name" name="name" value={newProject.name} onChange={handleChange} />
+          <TextField margin="normal" fullWidth label="Description" name="description" value={newProject.description} onChange={handleChange} />
+          <TextField margin="normal" fullWidth label="Given By" name="given_by" value={newProject.given_by} onChange={handleChange} />
+          <TextField margin="normal" fullWidth label="Taken By" name="taken_by" value={newProject.taken_by} onChange={handleChange} />
+          <TextField margin="normal" fullWidth label="Start Date" name="start_date" value={newProject.start_date} onChange={handleChange} />
+          <TextField margin="normal" fullWidth label="End Date" name="end_date" value={newProject.end_date} onChange={handleChange} />
+          <TextField margin="normal" fullWidth label="Rate Mode" name="rate_mode" value={newProject.rate_mode} onChange={handleChange} />
+          <TextField margin="normal" fullWidth label="Rate Amount" name="rate_amount" value={newProject.rate_amount} onChange={handleChange} />
+          <TextField margin="normal" fullWidth label="Currency" name="currency" value={newProject.currency} onChange={handleChange} />
+        </DialogContent>
+        <DialogActions sx={{ p: 2 }}>
+          <Button onClick={handleClose}>Cancel</Button>
+          <Button onClick={handleAddProject} variant="contained">Add</Button>
+        </DialogActions>
+      </Dialog>
       <Dialog open={editOpen} onClose={handleEditClose}>
         <DialogTitle>Edit Project</DialogTitle>
         <DialogContent>

@@ -1,36 +1,65 @@
 import React, { useState, useRef, useEffect } from "react";
-import { Typography, TextField, IconButton, Collapse, Box } from "@mui/material";
+import {
+  Typography,
+  TextField,
+  IconButton,
+  Collapse,
+  Box,
+  Button,
+  Chip,
+  Card,
+  CardContent,
+  Accordion,
+  AccordionSummary,
+  AccordionDetails,
+  Divider,
+} from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import DeleteIcon from "@mui/icons-material/Delete";
 import DescriptionIcon from "@mui/icons-material/Description";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import ExpandLessIcon from "@mui/icons-material/ExpandLess";
+import EditIcon from "@mui/icons-material/Edit";
+import SaveIcon from "@mui/icons-material/Save";
+import PictureAsPdfIcon from "@mui/icons-material/PictureAsPdf";
+import PrintIcon from "@mui/icons-material/Print";
 import { LocalizationProvider, DatePicker } from "@mui/x-date-pickers";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
-import { Select, MenuItem } from "@mui/material";
+import { Select, MenuItem, FormControl, InputLabel } from "@mui/material";
 
 const options = ["Option 1", "Option 2", "Option 3"];
 const COLORTHEMES = [
   {
-    name: "Blue",
-    accent: "#1976d2",
-    header: "#333",
+    name: "Professional Blue",
+    accent: "#2563eb",
+    header: "#1e293b",
     bg: "#f8fafc",
-    notice: "#e3f2fd",
+    notice: "#dbeafe",
+    secondary: "#64748b",
   },
   {
-    name: "Purple",
-    accent: "#9c27b0",
-    header: "#222",
-    bg: "#f6f2fa",
-    notice: "#f3eafc",
+    name: "Elegant Purple",
+    accent: "#7c3aed",
+    header: "#1e1b4b",
+    bg: "#faf5ff",
+    notice: "#ede9fe",
+    secondary: "#7c3aed",
   },
   {
-    name: "Green",
-    accent: "#388e3c",
-    header: "#222",
-    bg: "#f4fff5",
-    notice: "#e0f7ef",
+    name: "Modern Green",
+    accent: "#059669",
+    header: "#064e3b",
+    bg: "#f0fdf4",
+    notice: "#d1fae5",
+    secondary: "#10b981",
+  },
+  {
+    name: "Warm Orange",
+    accent: "#ea580c",
+    header: "#9a3412",
+    bg: "#fff7ed",
+    notice: "#fed7aa",
+    secondary: "#f97316",
   },
 ];
 
@@ -164,10 +193,13 @@ export default function InvoiceTemplate({
     ])
   );
 
-  const [expandedDescriptions, setExpandedDescriptions] = useState({});
+  const [expandedItems, setExpandedItems] = useState({});
+
   const [taxPercent, setTaxPercent] = useState(10);
-  const [taxAmount, setTaxAmount] = useState(invoice.tax);
-  const [grandTotal, setGrandTotal] = useState(invoice.total);
+  const [taxAmount, setTaxAmount] = useState(0);
+  const [grandTotal, setGrandTotal] = useState(0);
+
+  const [expandedDescriptions, setExpandedDescriptions] = useState({});
 
   useEffect(() => {
     let subtotalCalc = 0;
@@ -195,6 +227,14 @@ export default function InvoiceTemplate({
     setTaxAmount((subtotalCalc * taxPercent) / 100);
     setGrandTotal(subtotalCalc + (subtotalCalc * taxPercent) / 100);
   }, [taxPercent, localInvoiceItems, savedExpenses, additionalExpenses]);
+
+  const toggleDescription = (idx, eIdx) => {
+    const key = `${idx}-${eIdx}`;
+    setExpandedDescriptions((prev) => ({
+      ...prev,
+      [key]: !prev[key],
+    }));
+  };
 
   const handleAddExpenseClick = (idx) => {
     if (!isEditing) return;
@@ -286,11 +326,10 @@ export default function InvoiceTemplate({
     setIsEditing(false);
   };
 
-  const toggleDescription = (mainIdx, expIdx) => {
-    const key = `${mainIdx}-${expIdx}`;
-    setExpandedDescriptions((prev) => ({
+  const toggleItemExpansion = (idx) => {
+    setExpandedItems((prev) => ({
       ...prev,
-      [key]: !prev[key],
+      [idx]: !prev[idx],
     }));
   };
 
@@ -385,139 +424,152 @@ export default function InvoiceTemplate({
           }}
         >
           {/* Theme Picker */}
-          <div
+          <Box
             className="no-print"
-            style={{
+            sx={{
               display: "flex",
               alignItems: "center",
-              margin: "24px 0 0 12px",
+              mb: 3,
+              px: 2,
             }}
           >
-            <span style={{ marginRight: 16, fontWeight: 500, fontSize: 15 }}>
-              Color theme:
-            </span>
-            {COLORTHEMES.map((t, idx) => (
-              <button
-                key={t.name}
-                style={{
-                  marginRight: 8,
-                  padding: "4px 14px",
-                  borderRadius: 18,
-                  border:
-                    idx === themeIdx
-                      ? `2px solid ${t.accent}`
-                      : "1px solid #ccc",
-                  fontWeight: 600,
-                  fontSize: 15,
-                  background: idx === themeIdx ? t.notice : "#fff",
-                  cursor: "pointer",
-                  color: t.accent,
-                }}
-                onClick={() => setThemeIdx(idx)}
-              >
-                {t.name}
-              </button>
-            ))}
-          </div>
+            <Typography variant="body1" sx={{ mr: 2, fontWeight: 500 }}>
+              Choose Theme:
+            </Typography>
+            <Box sx={{ display: "flex", gap: 1 }}>
+              {COLORTHEMES.map((t, idx) => (
+                <Chip
+                  key={t.name}
+                  label={t.name}
+                  onClick={() => setThemeIdx(idx)}
+                  sx={{
+                    backgroundColor: idx === themeIdx ? t.accent : "transparent",
+                    color: idx === themeIdx ? "white" : t.accent,
+                    border: `1px solid ${t.accent}`,
+                    "&:hover": {
+                      backgroundColor: idx === themeIdx ? t.accent : t.notice,
+                    },
+                    fontWeight: 500,
+                  }}
+                />
+              ))}
+            </Box>
+          </Box>
 
           {/* Toolbar */}
-          <div
+          <Box
             className="no-print"
-            style={{ textAlign: "right", margin: "10px 14px 24px 0" }}
-          >
-            <button
-              style={{
-                background: "#c026d3",
-                color: "#fff",
-                borderRadius: 6,
-                border: "none",
-                padding: "7px 18px",
-                fontWeight: "bold",
-                fontSize: 15,
-                cursor: "pointer",
-                marginLeft: 8,
-              }}
-              onClick={isEditing ? handleSave : handleEditToggle}
-            >
-              {isEditing ? "Save" : "Edit"}
-            </button>
-            <button
-              style={{
-                background: "#ea336a",
-                color: "#fff",
-                borderRadius: 6,
-                border: "none",
-                padding: "7px 18px",
-                fontWeight: "bold",
-                fontSize: 15,
-                cursor: "pointer",
-                marginLeft: 8,
-              }}
-              onClick={handleExportPDF}
-            >
-              Export as PDF
-            </button>
-            <button
-              style={{
-                background: "#222",
-                color: "#fff",
-                borderRadius: 6,
-                border: "none",
-                padding: "7px 18px",
-                fontWeight: "bold",
-                fontSize: 15,
-                cursor: "pointer",
-                marginLeft: 8,
-              }}
-              onClick={handlePrint}
-            >
-              Print
-            </button>
-          </div>
-
-          {/* Main container */}
-          <div
-            ref={componentRef}
-            className="invoice-container"
-            style={{
-              maxWidth: 950,
-              margin: "0 auto",
-              background: theme.bg,
-              borderRadius: 14,
-              boxShadow: "0 2px 18px rgba(0,0,0,0.07)",
-              padding: "32px 28px 18px 28px",
-              color: theme.header,
+            sx={{
+              display: "flex",
+              justifyContent: "flex-end",
+              gap: 2,
+              mb: 3,
+              px: 2,
             }}
           >
+            <Button
+              variant="contained"
+              startIcon={isEditing ? <SaveIcon /> : <EditIcon />}
+              onClick={isEditing ? handleSave : handleEditToggle}
+              sx={{
+                backgroundColor: theme.accent,
+                "&:hover": { backgroundColor: theme.secondary },
+                textTransform: "none",
+                fontWeight: 600,
+              }}
+            >
+              {isEditing ? "Save Changes" : "Edit Invoice"}
+            </Button>
+            <Button
+              variant="contained"
+              startIcon={<PictureAsPdfIcon />}
+              onClick={handleExportPDF}
+              sx={{
+                backgroundColor: "#dc2626",
+                "&:hover": { backgroundColor: "#b91c1c" },
+                textTransform: "none",
+                fontWeight: 600,
+              }}
+            >
+              Export PDF
+            </Button>
+            <Button
+              variant="contained"
+              startIcon={<PrintIcon />}
+              onClick={handlePrint}
+              sx={{
+                backgroundColor: "#374151",
+                "&:hover": { backgroundColor: "#1f2937" },
+                textTransform: "none",
+                fontWeight: 600,
+              }}
+            >
+              Print
+            </Button>
+          </Box>
+
+          {/* Main container */}
+          <Card
+            ref={componentRef}
+            className="invoice-container"
+            elevation={3}
+            sx={{
+              maxWidth: 1000,
+              mx: "auto",
+              background: theme.bg,
+              borderRadius: 3,
+              overflow: "hidden",
+              boxShadow: "0 10px 40px rgba(0,0,0,0.1)",
+            }}
+          >
+            <CardContent sx={{ p: 4 }}>
             {/* Header */}
-            <div
-              style={{
+            <Box
+              sx={{
                 display: "flex",
                 justifyContent: "space-between",
                 alignItems: "flex-start",
-                marginBottom: 18,
-                borderBottom: "2px solid #e0e6ed",
-                paddingBottom: 8,
+                mb: 3,
+                pb: 2,
+                borderBottom: `2px solid ${theme.secondary}20`,
               }}
             >
-              <div>
-                <div
-                  style={{ color: theme.accent, fontWeight: 700, fontSize: 27 }}
+              <Box>
+                <Typography
+                  variant="h4"
+                  sx={{
+                    color: theme.accent,
+                    fontWeight: 700,
+                    mb: 1,
+                  }}
                 >
                   {invoice.to.name}
-                </div>
-                <div>{invoice.to.mobile}</div>
-                <div>{invoice.to.email}</div>
-                <div>{invoice.to.address}</div>
-              </div>
-              <div style={{ textAlign: "right" }}>
-                <div
-                  style={{ color: theme.accent, fontWeight: 700, fontSize: 32 }}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  {invoice.to.mobile}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  {invoice.to.email}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  {invoice.to.address}
+                </Typography>
+              </Box>
+              <Box sx={{ textAlign: "right" }}>
+                <Typography
+                  variant="h3"
+                  sx={{
+                    color: theme.accent,
+                    fontWeight: 700,
+                    mb: 2,
+                  }}
                 >
                   {invoice.invoiceId}
-                </div>
-                <div>
-                  <b>Invoice Date:</b>{" "}
+                </Typography>
+                <Box sx={{ mb: 1 }}>
+                  <Typography variant="body2" sx={{ fontWeight: 600, color: theme.secondary }}>
+                    Invoice Date:
+                  </Typography>
                   {isEditing ? (
                     <DatePicker
                       value={editInvoiceDate ? new Date(editInvoiceDate) : null}
@@ -527,16 +579,18 @@ export default function InvoiceTemplate({
                         )
                       }
                       slotProps={{
-                        textField: { size: "small", sx: { width: 150 } },
+                        textField: { size: "small", sx: { width: 150, mt: 0.5 } },
                       }}
                       inputFormat="dd, MMM yyyy"
                     />
                   ) : (
-                    localInvoiceDate
+                    <Typography variant="body1">{localInvoiceDate}</Typography>
                   )}
-                </div>
-                <div>
-                  <b>Due Date:</b>{" "}
+                </Box>
+                <Box>
+                  <Typography variant="body2" sx={{ fontWeight: 600, color: theme.secondary }}>
+                    Due Date:
+                  </Typography>
                   {isEditing ? (
                     <DatePicker
                       value={editDueDate ? new Date(editDueDate) : null}
@@ -546,44 +600,52 @@ export default function InvoiceTemplate({
                         )
                       }
                       slotProps={{
-                        textField: { size: "small", sx: { width: 150 } },
+                        textField: { size: "small", sx: { width: 150, mt: 0.5 } },
                       }}
                       inputFormat="dd, MMM yyyy"
                     />
                   ) : (
-                    localDueDate
+                    <Typography variant="body1">{localDueDate}</Typography>
                   )}
-                </div>
-              </div>
-            </div>
+                </Box>
+              </Box>
+            </Box>
 
             {/* Invoice To */}
-            <div style={{ marginBottom: 14 }}>
-              <div
-                style={{
-                  color: "#555",
-                  fontSize: 15,
-                  fontWeight: 500,
-                  marginBottom: 6,
+            <Box sx={{ mb: 3 }}>
+              <Typography
+                variant="overline"
+                sx={{
+                  color: theme.secondary,
+                  fontWeight: 600,
+                  letterSpacing: 1,
+                  mb: 1,
                 }}
               >
-                INVOICE TO:
-              </div>
-              <div style={{ fontSize: 21, fontWeight: 700 }}>
+                BILL TO
+              </Typography>
+              <Typography variant="h5" sx={{ fontWeight: 700, mb: 1 }}>
                 {invoice.from.name}
-              </div>
-              <div>{invoice.from.mobile}</div>
-              <div>{invoice.from.email}</div>
-              <div>{invoice.from.address}</div>
-            </div>
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                {invoice.from.mobile}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                {invoice.from.email}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                {invoice.from.address}
+              </Typography>
+            </Box>
 
             {/* Invoice Table */}
-            <div
-              style={{
-                borderRadius: 11,
+            <Box
+              sx={{
+                borderRadius: 2,
                 overflow: "hidden",
-                border: "1px solid #eee",
-                boxShadow: "0 1px 2px rgba(0,0,0,0.03)",
+                border: `1px solid ${theme.secondary}20`,
+                boxShadow: "0 4px 6px rgba(0,0,0,0.05)",
+                mb: 3,
               }}
             >
               <table
@@ -591,7 +653,7 @@ export default function InvoiceTemplate({
                 style={{
                   width: "100%",
                   borderCollapse: "collapse",
-                  fontSize: 15,
+                  fontSize: 14,
                   background: "#fff",
                 }}
               >
@@ -600,30 +662,30 @@ export default function InvoiceTemplate({
                     style={{
                       background: theme.notice,
                       color: theme.header,
-                      fontSize: 16,
+                      fontSize: 14,
                     }}
                   >
-                    <th style={{ fontWeight: 700, padding: "10px 6px" }}>#</th>
-                    <th style={{ fontWeight: 700, padding: "10px 6px" }}>
+                    <th style={{ fontWeight: 700, padding: "16px 12px", textAlign: "left" }}>#</th>
+                    <th style={{ fontWeight: 700, padding: "16px 12px", textAlign: "left" }}>
                       Description
                     </th>
-                    <th style={{ fontWeight: 700, padding: "10px 6px" }}>
+                    <th style={{ fontWeight: 700, padding: "16px 12px", textAlign: "left" }}>
                       Rate Mode
                     </th>
-                    <th style={{ fontWeight: 700, padding: "10px 6px" }}>
+                    <th style={{ fontWeight: 700, padding: "16px 12px", textAlign: "left" }}>
                       Duration
                     </th>
-                    <th style={{ fontWeight: 700, padding: "10px 6px" }}>
+                    <th style={{ fontWeight: 700, padding: "16px 12px", textAlign: "left" }}>
                       Rate Amount
                     </th>
-                    <th style={{ fontWeight: 700, padding: "10px 6px" }}>
+                    <th style={{ fontWeight: 700, padding: "16px 12px", textAlign: "left" }}>
                       Currency
                     </th>
                     <th
                       style={{
                         fontWeight: 700,
-                        padding: "10px 6px",
-                        position: "relative",
+                        padding: "16px 12px",
+                        textAlign: "right",
                       }}
                     >
                       Total
@@ -671,7 +733,18 @@ export default function InvoiceTemplate({
                               padding: "11px 8px",
                             }}
                           >
-                            {item.name}
+                            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                              {item.name}
+                              {hasChildren && (
+                                <IconButton size="small" sx={{ p: 0 }} onClick={() => toggleItemExpansion(idx)}>
+                                  {expandedItems[idx] ? (
+                                    <ExpandLessIcon sx={{ color: theme.secondary }} />
+                                  ) : (
+                                    <ExpandMoreIcon sx={{ color: theme.secondary }} />
+                                  )}
+                                </IconButton>
+                              )}
+                            </Box>
                           </td>
                           <td
                             style={{
@@ -690,7 +763,7 @@ export default function InvoiceTemplate({
                             {isEditing ? (
                               <input
                                 type="number"
-                                min="0"
+                                min="1"
                                 value={item.duration}
                                 onChange={(e) =>
                                   handleDurationChange(
@@ -748,7 +821,7 @@ export default function InvoiceTemplate({
                         </tr>
 
                         {/* Saved child expenses rows */}
-                        {savedExpenses[idx] &&
+                        {savedExpenses[idx] && expandedItems[idx] &&
                           savedExpenses[idx].map((exp, eIdx) => {
                             const isLastSaved =
                               eIdx === savedExpenses[idx].length - 1;
@@ -786,7 +859,8 @@ export default function InvoiceTemplate({
                                         : "normal",
                                       color: !isEditing ? "#555" : "#000",
                                       verticalAlign: "middle",
-                                      padding: "11px 8px", // CHANGED
+                                      padding: "11px 8px",
+                                      textAlign: "left",
                                     }}
                                   >
                                     {!isEditing ? (
@@ -821,7 +895,7 @@ export default function InvoiceTemplate({
                                           )
                                         }
                                         displayEmpty
-                                        sx={{ height: "20px" }}
+                                        sx={{ height: "20px", textAlign: "left" }}
                                       >
                                         <MenuItem value="" disabled>
                                           Expense
@@ -857,7 +931,7 @@ export default function InvoiceTemplate({
                                     ) : (
                                       <input
                                         type="number"
-                                        min="0"
+                                        min="1"
                                         value={exp.duration ?? 0}
                                         onChange={(e) =>
                                           handleSavedExpenseChange(
@@ -888,7 +962,7 @@ export default function InvoiceTemplate({
                                     ) : (
                                       <input
                                         type="number"
-                                        min="0"
+                                        min="1"
                                         value={exp.amount}
                                         onChange={(e) =>
                                           handleSavedExpenseChange(
@@ -957,6 +1031,7 @@ export default function InvoiceTemplate({
                                       }}
                                     />
                                     <td
+                                      colSpan={6}
                                       style={{
                                         padding: 0,
                                         borderBottom: isLastChildRow
@@ -994,11 +1069,30 @@ export default function InvoiceTemplate({
                                               placeholder="Add description for this expense..."
                                               variant="outlined"
                                               size="small"
+                                              sx={{
+                                                '& .MuiOutlinedInput-root': {
+                                                  backgroundColor: 'transparent',
+                                                  '& fieldset': {
+                                                    border: 'none',
+                                                  },
+                                                  '&:hover fieldset': {
+                                                    border: 'none',
+                                                  },
+                                                  '&.Mui-focused fieldset': {
+                                                    border: 'none',
+                                                  },
+                                                },
+                                                '& .MuiInputBase-input::placeholder': {
+                                                  color: 'black',
+                                                },
+                                              }}
                                             />
                                           ) : (
                                             <div
                                               style={{
+                                                textAlign: "left",
                                                 fontSize: "14px",
+                                                marginLeft: 10,
                                                 color: "#555",
                                                 lineHeight: "1.4",
                                               }}
@@ -1010,46 +1104,6 @@ export default function InvoiceTemplate({
                                         </div>
                                       </Collapse>
                                     </td>
-                                    <td
-                                      style={{
-                                        padding: 0,
-                                        borderBottom: isLastChildRow
-                                          ? "1px solid #e0e6ed"
-                                          : "none",
-                                      }}
-                                    />
-                                    <td
-                                      style={{
-                                        padding: 0,
-                                        borderBottom: isLastChildRow
-                                          ? "1px solid #e0e6ed"
-                                          : "none",
-                                      }}
-                                    />
-                                    <td
-                                      style={{
-                                        padding: 0,
-                                        borderBottom: isLastChildRow
-                                          ? "1px solid #e0e6ed"
-                                          : "none",
-                                      }}
-                                    />
-                                    <td
-                                      style={{
-                                        padding: 0,
-                                        borderBottom: isLastChildRow
-                                          ? "1px solid #e0e6ed"
-                                          : "none",
-                                      }}
-                                    />
-                                    <td
-                                      style={{
-                                        padding: 0,
-                                        borderBottom: isLastChildRow
-                                          ? "1px solid #e0e6ed"
-                                          : "none",
-                                      }}
-                                    />
                                   </tr>
                                 )}
                               </React.Fragment>
@@ -1057,7 +1111,7 @@ export default function InvoiceTemplate({
                           })}
 
                         {/* Empty editable child expense row */}
-                        {isEditing && (
+                        {isEditing && expandedItems[idx] && (
                           <tr
                             key={`empty-exp-${idx}`}
                             style={{
@@ -1066,7 +1120,7 @@ export default function InvoiceTemplate({
                             }}
                           >
                             <td style={{ background: theme.accent }} />
-                            <td style={{ padding: "11px 8px" }}>
+                            <td style={{ padding: "11px 8px", textAlign: "left" }}>
                               <Select
                                 size="small"
                                 value={
@@ -1083,7 +1137,7 @@ export default function InvoiceTemplate({
                                   )
                                 }
                                 displayEmpty
-                                sx={{ height: "20px" }}
+                                sx={{ height: "20px", textAlign: "left" }}
                               >
                                 <MenuItem value="" disabled>
                                   Expense
@@ -1113,7 +1167,7 @@ export default function InvoiceTemplate({
                             <td style={{ padding: "11px 8px" }}>
                               <input
                                 type="number"
-                                min="0"
+                                min="1"
                                 placeholder="Duration"
                                 value={
                                   additionalExpenses[idx][
@@ -1141,7 +1195,7 @@ export default function InvoiceTemplate({
                             <td style={{ padding: "11px 8px" }}>
                               <input
                                 type="number"
-                                min="0"
+                                min="1"
                                 placeholder="Amount"
                                 value={
                                   additionalExpenses[idx][
@@ -1214,18 +1268,19 @@ export default function InvoiceTemplate({
 
                         {/* Description input for new expense in edit mode */}
                         {isEditing &&
+                          expandedItems[idx] &&
                           additionalExpenses[idx] &&
                           additionalExpenses[idx].length > 0 && (
                             <tr>
-                              <td style={{ padding: 0, borderBottom: "1px solid #e0e6ed" }} />
-                              <td style={{ padding: 0, borderBottom: "1px solid #e0e6ed" }}>
+                              <td style={{ padding: 0, borderBottom: "1px solid #e0e6ed", background: theme.accent }} />
+                              <td colSpan={6} style={{ padding: 0, borderBottom: "1px solid #e0e6ed" }}>
                                 <div
                                   className="description-box"
                                   style={{
                                     background: parentBg,
                                     padding: "8px 12px",
                                     margin: 0,
-                                    borderLeft: `3px solid ${theme.accent}`,
+                                    // borderLeft: `3px solid ${theme.accent}`,
                                   }}
                                 >
                                   <TextField
@@ -1248,14 +1303,26 @@ export default function InvoiceTemplate({
                                     placeholder="Add description for this expense..."
                                     variant="outlined"
                                     size="small"
+                                    sx={{
+                                      '& .MuiOutlinedInput-root': {
+                                        backgroundColor: 'transparent',
+                                        '& fieldset': {
+                                          border: 'none',
+                                        },
+                                        '&:hover fieldset': {
+                                          border: 'none',
+                                        },
+                                        '&.Mui-focused fieldset': {
+                                          border: 'none',
+                                        },
+                                      },
+                                      '& .MuiInputBase-input::placeholder': {
+                                        color: 'black',
+                                      },
+                                    }}
                                   />
                                 </div>
                               </td>
-                              <td style={{ padding: 0, borderBottom: "1px solid #e0e6ed" }} />
-                              <td style={{ padding: 0, borderBottom: "1px solid #e0e6ed" }} />
-                              <td style={{ padding: 0, borderBottom: "1px solid #e0e6ed" }} />
-                              <td style={{ padding: 0, borderBottom: "1px solid #e0e6ed" }} />
-                              <td style={{ padding: 0, borderBottom: "1px solid #e0e6ed" }} />
                             </tr>
                           )}
                       </React.Fragment>
@@ -1330,45 +1397,49 @@ export default function InvoiceTemplate({
                   </tr>
                 </tfoot>
               </table>
-            </div>
+            </Box>
 
-            <div
-              style={{
-                fontWeight: "bold",
-                fontSize: 22,
-                margin: "30px 0 14px 0",
-                color: theme.accent,
-              }}
-            >
-              Thank you!
-            </div>
-            <div
-              style={{
-                background: theme.notice,
-                borderLeft: `5px solid ${theme.accent}`,
-                padding: "12px 18px",
-                fontSize: 15,
-                borderRadius: 7,
-                marginBottom: 22,
-                marginTop: 10,
-              }}
-            >
-              <b>NOTICE</b> {invoice.notice}
-            </div>
-            <div
-              style={{
-                marginTop: 35,
-                fontSize: 14,
-                color: "#7c7c7c",
+            <Box
+              sx={{
                 textAlign: "center",
-                borderTop: "1px solid #e0e6ed",
-                paddingTop: 9,
+                my: 3,
               }}
             >
-              Invoice was created on a computer and is valid without the
-              signature and seal.
-            </div>
-          </div>
+              <Typography
+                variant="h5"
+                sx={{
+                  color: theme.accent,
+                  fontWeight: 700,
+                  mb: 2,
+                }}
+              >
+                Thank you!
+              </Typography>
+              <Box
+                sx={{
+                  background: theme.notice,
+                  borderLeft: `4px solid ${theme.accent}`,
+                  p: 2,
+                  borderRadius: 1,
+                  maxWidth: 700,
+                  mx: "auto",
+                }}
+              >
+                <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                  <strong>NOTICE:</strong> {invoice.notice}
+                </Typography>
+              </Box>
+            {/* <Divider sx={{ my: 2 }} /> */}
+            {/* <Typography
+              variant="body2"
+              color="text.secondary"
+              sx={{ textAlign: "center", py: 1 }}
+            >
+              Invoice was created on a computer and is valid without the signature and seal.
+            </Typography> */}
+            </Box>
+          </CardContent>
+        </Card>
         </div>
       </>
     </LocalizationProvider>
