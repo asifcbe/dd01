@@ -1,3 +1,4 @@
+// InvoiceTemplate.jsx
 import React, { useState, useRef, useEffect } from "react";
 import {
   Typography,
@@ -9,11 +10,13 @@ import {
   Chip,
   Card,
   CardContent,
-  Accordion,
-  AccordionSummary,
-  AccordionDetails,
   Divider,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
 } from "@mui/material";
+import { styled } from "@mui/material/styles";
 import AddIcon from "@mui/icons-material/Add";
 import DeleteIcon from "@mui/icons-material/Delete";
 import DescriptionIcon from "@mui/icons-material/Description";
@@ -25,9 +28,7 @@ import PictureAsPdfIcon from "@mui/icons-material/PictureAsPdf";
 import PrintIcon from "@mui/icons-material/Print";
 import { LocalizationProvider, DatePicker } from "@mui/x-date-pickers";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
-import { Select, MenuItem, FormControl, InputLabel } from "@mui/material";
 
-const options = ["Option 1", "Option 2", "Option 3"];
 const COLORTHEMES = [
   {
     name: "Professional Blue",
@@ -103,6 +104,8 @@ function formatISOToDisplay(dateISO) {
   return `${parseInt(day, 10)}, ${months[parseInt(month, 10) - 1]} ${year}`;
 }
 
+const ITEM_COLUMNS = "56px 2.4fr 1.2fr 1fr 1.1fr 0.9fr 1.2fr 56px";
+
 export default function InvoiceTemplate({
   invoice = {
     invoiceId: "INV-1",
@@ -155,13 +158,13 @@ export default function InvoiceTemplate({
     notice:
       "A finance charge of 1.5% will be made on unpaid balances after 30 days.",
   },
-  onExportPDF,
-  onPrint,
   template = { name: "Invoice" },
 }) {
   const componentRef = useRef(null);
+
   const [themeIdx, setThemeIdx] = useState(0);
   const theme = COLORTHEMES[themeIdx];
+
   const [isEditing, setIsEditing] = useState(false);
 
   const [editInvoiceDate, setEditInvoiceDate] = useState(
@@ -170,7 +173,9 @@ export default function InvoiceTemplate({
   const [editDueDate, setEditDueDate] = useState(
     formatDateToISO(invoice.duedate)
   );
-  const [localInvoiceDate, setLocalInvoiceDate] = useState(invoice.invoicedate);
+  const [localInvoiceDate, setLocalInvoiceDate] = useState(
+    invoice.invoicedate
+  );
   const [localDueDate, setLocalDueDate] = useState(invoice.duedate);
 
   const [localInvoiceItems, setLocalInvoiceItems] = useState(
@@ -194,22 +199,29 @@ export default function InvoiceTemplate({
   );
 
   const [expandedItems, setExpandedItems] = useState({});
+  const [expandedDescriptions, setExpandedDescriptions] = useState({});
 
-  const [taxPercent, setTaxPercent] = useState(10);
+  const [taxPercent, setTaxPercent] = useState(
+    (invoice.tax / invoice.subtotal) * 100 || 10
+  );
   const [taxAmount, setTaxAmount] = useState(0);
   const [grandTotal, setGrandTotal] = useState(0);
 
-  const [expandedDescriptions, setExpandedDescriptions] = useState({});
-
   useEffect(() => {
     let subtotalCalc = 0;
+
     localInvoiceItems.forEach((item, i) => {
-      const expenseTotal = savedExpenses[i].reduce(
-        (sum, exp) => sum + (Number(exp.amount) || 0),
-        0
-      );
+      const expenseTotal = savedExpenses[i].reduce((sum, exp) => {
+        const amount = Number(exp.amount) || 0;
+        return (
+          sum +
+          (exp.duration && exp.duration > 0 ? amount * exp.duration : amount)
+        );
+      }, 0);
+
       const lastExpense =
         additionalExpenses[i][additionalExpenses[i].length - 1];
+
       let lastExpenseAmount = 0;
       if (
         lastExpense &&
@@ -217,15 +229,18 @@ export default function InvoiceTemplate({
       ) {
         lastExpenseAmount = Number(lastExpense.amount) || 0;
       }
-      subtotalCalc +=
-        (item.duration && item.duration > 0
+
+      const baseTotal =
+        item.duration && item.duration > 0
           ? item.rateamount * item.duration
-          : item.rateamount) +
-        expenseTotal +
-        lastExpenseAmount;
+          : item.rateamount;
+
+      subtotalCalc += baseTotal + expenseTotal + lastExpenseAmount;
     });
-    setTaxAmount((subtotalCalc * taxPercent) / 100);
-    setGrandTotal(subtotalCalc + (subtotalCalc * taxPercent) / 100);
+
+    const tax = (subtotalCalc * taxPercent) / 100;
+    setTaxAmount(tax);
+    setGrandTotal(subtotalCalc + tax);
   }, [taxPercent, localInvoiceItems, savedExpenses, additionalExpenses]);
 
   const toggleDescription = (idx, eIdx) => {
@@ -238,14 +253,18 @@ export default function InvoiceTemplate({
 
   const handleAddExpenseClick = (idx) => {
     if (!isEditing) return;
+
     const expenses = additionalExpenses[idx];
     const lastExpense = expenses[expenses.length - 1];
+
     if (lastExpense.label.trim() === "" && lastExpense.amount === "") {
       return;
     }
+
     const newSavedExpenses = [...savedExpenses];
     newSavedExpenses[idx] = [...newSavedExpenses[idx], { ...lastExpense }];
     setSavedExpenses(newSavedExpenses);
+
     const newAdditionalExpenses = [...additionalExpenses];
     newAdditionalExpenses[idx] = [
       ...expenses,
@@ -282,12 +301,14 @@ export default function InvoiceTemplate({
 
   const handleRemoveExpense = (mainIdx, expIdx) => {
     if (!isEditing) return;
+
     if (expIdx < savedExpenses[mainIdx].length) {
       const newSavedExpenses = [...savedExpenses];
       newSavedExpenses[mainIdx] = newSavedExpenses[mainIdx].filter(
         (_, i) => i !== expIdx
       );
       setSavedExpenses(newSavedExpenses);
+
       const key = `${mainIdx}-${expIdx}`;
       const newExpanded = { ...expandedDescriptions };
       delete newExpanded[key];
@@ -304,10 +325,8 @@ export default function InvoiceTemplate({
 
   const handleDurationChange = (idx, value) => {
     if (!isEditing) return;
-    setLocalInvoiceItems(
-      localInvoiceItems.map((item, i) =>
-        i === idx ? { ...item, duration: value } : item
-      )
+    setLocalInvoiceItems((prev) =>
+      prev.map((item, i) => (i === idx ? { ...item, duration: value } : item))
     );
   };
 
@@ -315,9 +334,8 @@ export default function InvoiceTemplate({
     if (!isEditing) {
       setEditInvoiceDate(formatDateToISO(localInvoiceDate));
       setEditDueDate(formatDateToISO(localDueDate));
-      setTaxPercent((invoice.tax / invoice.subtotal) * 100 || 10);
     }
-    setIsEditing(!isEditing);
+    setIsEditing((prev) => !prev);
   };
 
   const handleSave = () => {
@@ -333,1115 +351,790 @@ export default function InvoiceTemplate({
     }));
   };
 
-  const handlePrint = () => {
-    const printContent = componentRef.current.cloneNode(true);
-    const printWindow = window.open("", "", "width=800,height=600");
-    printWindow.document.write("<html><head><title>Invoice</title>");
-    printWindow.document.write("<style>");
-    printWindow.document.write(`
-      * { margin: 0; padding: 0; box-sizing: border-box;}
-      body { margin: 20px; font-family: 'Segoe UI', Roboto, Arial, sans-serif; background: white; color: ${theme.header};}
-      .invoice-container {
-        max-width: 950px; margin: 0 auto; background: ${theme.bg};
-        border-radius: 14px; box-shadow: 0 2px 18px rgba(0,0,0,0.07);
-        padding: 32px 28px 18px 28px; color: ${theme.header};
-      }
-      table {
-        width: 100%; border-collapse: collapse;
-        font-size: 15px; background: #fff;
-      }
-      th, td {
-        padding: 11px 8px;
-        border-bottom: 1px solid #e0e6ed;
-      }
-      th {
-        background: ${theme.notice}; color: ${theme.header};
-        font-weight: 700; text-align: left;
-      }
-      .description-box {
-        background: #f9f9f9;
-        border-left: 3px solid ${theme.accent};
-        padding: 8px 12px;
-        margin: 4px 0;
-        font-size: 14px;
-        color: #555;
-      }
-      @media print {
-        body {margin: 0;}
-        .invoice-container {box-shadow: none;}
-      }
-    `);
-    printWindow.document.write("</style></head><body>");
-    printWindow.document.write(printContent.innerHTML);
-    printWindow.document.write("</body></html>");
-    printWindow.document.close();
-    printWindow.focus();
-    setTimeout(() => {
-      printWindow.print();
-      printWindow.close();
-    }, 250);
+  const handleTaxPercentChange = (e) => {
+    const val = e.target.value;
+    setTaxPercent(val === "" ? 0 : Number(val));
   };
 
-  const handleExportPDF = async () => {
-    if (typeof window.html2pdf === "undefined") {
-      alert(
-        'Please include html2pdf.js library. Add this to your HTML: <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>'
-      );
-      handlePrint();
-      return;
-    }
-    const element = componentRef.current;
-    const opt = {
-      margin: 10,
-      filename: `invoice-${invoice.invoiceId}.pdf`,
-      image: { type: "jpeg", quality: 0.98 },
-      html2canvas: { scale: 2, useCORS: true, logging: false },
-      jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
-    };
-    try {
-      await window.html2pdf().set(opt).from(element).save();
-    } catch {
-      handlePrint();
-    }
+  const handlePrint = () => {
+    const printContents = componentRef.current?.innerHTML;
+    if (!printContents) return;
+
+    const printWindow = window.open("", "", "width=900,height=650");
+    if (!printWindow) return;
+
+    printWindow.document.write(`
+      <html>
+        <head>
+          <title>Invoice ${invoice.invoiceId}</title>
+          <style>
+            body {
+              margin: 0;
+              padding: 24px;
+              font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+              background-color: #f5f7fb;
+            }
+            .print-card {
+              max-width: 1160px;
+              margin: 0 auto;
+            }
+            @media print {
+              body {
+                background-color: #ffffff;
+                padding: 0;
+              }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="print-card">${printContents}</div>
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
+    printWindow.focus();
+    printWindow.print();
+  };
+
+  const handleExportPDF = () => {
+    // Let browser print dialog handle "Save as PDF"
+    handlePrint();
   };
 
   return (
-    <LocalizationProvider dateAdapter={AdapterDateFns}>
-      <>
-        <Typography
-          variant="h4"
-          sx={{ fontWeight: "bold", mb: 3 }}
-          className="no-print"
-        >
-          {template.name}
-        </Typography>
-        <div
-          style={{
-            background: theme.bg,
-            minHeight: "100vh",
-            fontFamily: "Segoe UI, Roboto, Arial, sans-serif",
-            color: theme.header,
+    <Box
+      sx={{
+        minHeight: "100vh",
+        background:
+          "radial-gradient(circle at top, #e5edff 0, #f8fafc 40%, #f4f4f5 100%)",
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "flex-start",
+        py: 5,
+        px: 2,
+      }}
+    >
+      <Card
+        ref={componentRef}
+        sx={{
+          width: "100%",
+          maxWidth: 1160,
+          borderRadius: 3,
+          boxShadow: "0 22px 60px rgba(15,23,42,0.16)",
+          border: "1px solid rgba(148,163,184,0.25)",
+          overflow: "hidden",
+          backgroundColor: "#ffffff",
+        }}
+      >
+        {/* Header */}
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            px: 3,
+            py: 1.75,
+            borderBottom: "1px solid rgba(148,163,184,0.3)",
+            background: `linear-gradient(90deg, ${theme.accent}12, #ffffff)`,
           }}
         >
-          {/* Theme Picker */}
-          <Box
-            className="no-print"
-            sx={{
-              display: "flex",
-              alignItems: "center",
-              mb: 3,
-              px: 2,
-            }}
-          >
-            <Typography variant="body1" sx={{ mr: 2, fontWeight: 500 }}>
-              Choose Theme:
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+            <Typography
+              variant="h6"
+              sx={{ fontWeight: 700, color: theme.header }}
+            >
+              {template?.name || "Invoice"}
             </Typography>
-            <Box sx={{ display: "flex", gap: 1 }}>
-              {COLORTHEMES.map((t, idx) => (
-                <Chip
-                  key={t.name}
-                  label={t.name}
-                  onClick={() => setThemeIdx(idx)}
-                  sx={{
-                    backgroundColor: idx === themeIdx ? t.accent : "transparent",
-                    color: idx === themeIdx ? "white" : t.accent,
-                    border: `1px solid ${t.accent}`,
-                    "&:hover": {
-                      backgroundColor: idx === themeIdx ? t.accent : t.notice,
-                    },
-                    fontWeight: 500,
-                  }}
-                />
-              ))}
+            <Chip
+              size="small"
+              label={`#${invoice.invoiceId}`}
+              sx={{
+                height: 22,
+                fontSize: 11,
+                fontWeight: 500,
+                color: theme.accent,
+                backgroundColor: `${theme.accent}1A`,
+                borderRadius: 999,
+              }}
+            />
+          </Box>
+
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1.25 }}>
+            <FormControl size="small" sx={{ minWidth: 170 }}>
+              <InputLabel>Theme</InputLabel>
+              <Select
+                label="Theme"
+                value={themeIdx}
+                onChange={(e) => setThemeIdx(e.target.value)}
+              >
+                {COLORTHEMES.map((t, index) => (
+                  <MenuItem key={t.name} value={index}>
+                    {t.name}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+
+            <IconButton
+              size="small"
+              sx={{
+                borderRadius: 2,
+                bgcolor: isEditing ? theme.accent : "transparent",
+                color: isEditing ? "#fff" : "#64748b",
+                "&:hover": { bgcolor: isEditing ? theme.accent : "#e5e7eb" },
+              }}
+              onClick={isEditing ? handleSave : handleEditToggle}
+            >
+              {isEditing ? (
+                <SaveIcon fontSize="small" />
+              ) : (
+                <EditIcon fontSize="small" />
+              )}
+            </IconButton>
+
+            <IconButton
+              size="small"
+              color="primary"
+              onClick={handleExportPDF}
+            >
+              <PictureAsPdfIcon fontSize="small" />
+            </IconButton>
+
+            <IconButton
+              size="small"
+              color="primary"
+              onClick={handlePrint}
+            >
+              <PrintIcon fontSize="small" />
+            </IconButton>
+          </Box>
+        </Box>
+
+        {/* From / To / Dates */}
+        <CardContent
+          sx={{
+            display: "grid",
+            gridTemplateColumns: { xs: "1fr", md: "1.2fr 1.1fr" },
+            gap: 3,
+            px: 3,
+            py: 2.5,
+            borderBottom: "1px solid rgba(148,163,184,0.2)",
+            backgroundColor: theme.bg,
+          }}
+        >
+          <Box sx={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
+            <Box>
+              <Typography
+                variant="overline"
+                sx={{ color: "#64748b", letterSpacing: 1 }}
+              >
+                From
+              </Typography>
+              <Typography
+                variant="subtitle1"
+                sx={{ color: theme.header, fontWeight: 600 }}
+              >
+                {invoice.from.name}
+              </Typography>
+              <Typography variant="body2" sx={{ color: "#475569" }}>
+                {invoice.from.address}
+              </Typography>
+              <Typography variant="body2" sx={{ color: "#475569" }}>
+                {invoice.from.email}
+              </Typography>
+              <Typography variant="body2" sx={{ color: "#475569" }}>
+                {invoice.from.mobile}
+              </Typography>
+            </Box>
+
+            <Box>
+              <Typography
+                variant="overline"
+                sx={{ color: "#64748b", letterSpacing: 1 }}
+              >
+                Billed To
+              </Typography>
+              <Typography
+                variant="subtitle1"
+                sx={{ color: theme.header, fontWeight: 600 }}
+              >
+                {invoice.to.name}
+              </Typography>
+              <Typography variant="body2" sx={{ color: "#475569" }}>
+                {invoice.to.address}
+              </Typography>
+              <Typography variant="body2" sx={{ color: "#475569" }}>
+                {invoice.to.email}
+              </Typography>
+              <Typography variant="body2" sx={{ color: "#475569" }}>
+                {invoice.to.mobile}
+              </Typography>
             </Box>
           </Box>
 
-          {/* Toolbar */}
+          <Box sx={{ display: "flex", gap: 3, flexWrap: "wrap" }}>
+            <Box>
+              <Typography
+                variant="caption"
+                sx={{ color: "#64748b", textTransform: "uppercase" }}
+              >
+                Invoice Date
+              </Typography>
+              {isEditing ? (
+                <LocalizationProvider dateAdapter={AdapterDateFns}>
+                  <DatePicker
+                    value={editInvoiceDate || null}
+                    onChange={(newVal) =>
+                      setEditInvoiceDate(
+                        newVal ? newVal.toISOString().slice(0, 10) : ""
+                      )
+                    }
+                    slotProps={{ textField: { size: "small" } }}
+                  />
+                </LocalizationProvider>
+              ) : (
+                <Typography variant="body2" sx={{ color: "#0f172a" }}>
+                  {localInvoiceDate}
+                </Typography>
+              )}
+            </Box>
+
+            <Box>
+              <Typography
+                variant="caption"
+                sx={{ color: "#64748b", textTransform: "uppercase" }}
+              >
+                Due Date
+              </Typography>
+              {isEditing ? (
+                <LocalizationProvider dateAdapter={AdapterDateFns}>
+                  <DatePicker
+                    value={editDueDate || null}
+                    onChange={(newVal) =>
+                      setEditDueDate(
+                        newVal ? newVal.toISOString().slice(0, 10) : ""
+                      )
+                    }
+                    slotProps={{ textField: { size: "small" } }}
+                  />
+                </LocalizationProvider>
+              ) : (
+                <Typography variant="body2" sx={{ color: "#0f172a" }}>
+                  {localDueDate}
+                </Typography>
+              )}
+            </Box>
+          </Box>
+        </CardContent>
+
+        {/* Table header */}
+        <Box
+          sx={{
+            px: 3,
+            py: 1.25,
+            borderBottom: "1px solid rgba(148,163,184,0.4)",
+            backgroundColor: "#f1f5f9",
+            display: "grid",
+            gridTemplateColumns: ITEM_COLUMNS,
+            fontSize: 11,
+            fontWeight: 600,
+            textTransform: "uppercase",
+            letterSpacing: 0.6,
+            color: "#64748b",
+          }}
+        >
+          <Box>#</Box>
+          <Box>Description</Box>
+          <Box>Rate Mode</Box>
+          <Box sx={{ textAlign: "right" }}>Duration</Box>
+          <Box sx={{ textAlign: "right" }}>Rate</Box>
+          <Box sx={{ textAlign: "center" }}>Currency</Box>
+          <Box sx={{ textAlign: "right" }}>Total</Box>
+          <Box />
+        </Box>
+
+        {/* Items */}
+        <Box>
+          {localInvoiceItems.map((item, idx) => {
+            const baseTotal =
+              item.duration && item.duration > 0
+                ? item.rateamount * item.duration
+                : item.rateamount;
+
+            const expenseTotal = savedExpenses[idx].reduce((sum, exp) => {
+              const amount = Number(exp.amount) || 0;
+              return (
+                sum +
+                (exp.duration && exp.duration > 0
+                  ? amount * exp.duration
+                  : amount)
+              );
+            }, 0);
+
+            const lastExpense =
+              additionalExpenses[idx][additionalExpenses[idx].length - 1];
+            const lastExpenseAmount =
+              lastExpense &&
+              (lastExpense.label.trim() !== "" ||
+                lastExpense.amount !== "")
+                ? Number(lastExpense.amount) || 0
+                : 0;
+
+            const rowTotal = baseTotal + expenseTotal + lastExpenseAmount;
+
+            return (
+              <React.Fragment key={item.id}>
+                <Box
+                  sx={{
+                    display: "grid",
+                    gridTemplateColumns: ITEM_COLUMNS,
+                    alignItems: "center",
+                    px: 3,
+                    py: 1.25,
+                    fontSize: 13,
+                    color: "#0f172a",
+                    borderBottom: "1px solid rgba(148,163,184,0.2)",
+                    backgroundColor: idx % 2 === 0 ? "#f9fafb" : "#ffffff",
+                    "&:hover": {
+                      backgroundColor: "#eff6ff",
+                    },
+                  }}
+                >
+                  <Box sx={{ color: "#64748b" }}>
+                    {String(idx + 1).padStart(2, "0")}
+                  </Box>
+                  <Box>
+                    <Typography sx={{ fontWeight: 500 }}>
+                      {item.name}
+                    </Typography>
+                  </Box>
+                  <Box>{item.ratemode}</Box>
+                  <Box sx={{ textAlign: "right" }}>
+                    {isEditing ? (
+                      <TextField
+                        type="number"
+                        size="small"
+                        value={item.duration || ""}
+                        onChange={(e) =>
+                          handleDurationChange(
+                            idx,
+                            Number(e.target.value) || 0
+                          )
+                        }
+                        sx={{ width: 80 }}
+                      />
+                    ) : (
+                      item.duration || "-"
+                    )}
+                  </Box>
+                  <Box sx={{ textAlign: "right" }}>
+                    {item.rateamount.toLocaleString(undefined, {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    })}
+                  </Box>
+                  <Box sx={{ textAlign: "center" }}>{item.currency}</Box>
+                  <Box
+                    sx={{
+                      textAlign: "right",
+                      fontWeight: 600,
+                      color: theme.accent,
+                    }}
+                  >
+                    {rowTotal.toLocaleString(undefined, {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    })}
+                  </Box>
+                  <Box sx={{ textAlign: "right" }}>
+                    <IconButton
+                      size="small"
+                      onClick={() => toggleItemExpansion(idx)}
+                    >
+                      {expandedItems[idx] ? (
+                        <ExpandLessIcon fontSize="small" />
+                      ) : (
+                        <ExpandMoreIcon fontSize="small" />
+                      )}
+                    </IconButton>
+                  </Box>
+                </Box>
+
+                {/* Expenses */}
+                <Collapse in={!!expandedItems[idx]} timeout="auto">
+                  <Box
+                    sx={{
+                      px: 3,
+                      py: 1.5,
+                      backgroundColor: "#f8fafc",
+                      borderBottom: "1px solid rgba(148,163,184,0.2)",
+                    }}
+                  >
+                    <Typography
+                      variant="subtitle2"
+                      sx={{ mb: 1, color: "#475569" }}
+                    >
+                      Additional expenses
+                    </Typography>
+
+                    {savedExpenses[idx].map((exp, eIdx) => {
+                      const expKey = `${idx}-${eIdx}`;
+                      const amount = Number(exp.amount) || 0;
+                      const expTotal =
+                        exp.duration && exp.duration > 0
+                          ? amount * exp.duration
+                          : amount;
+
+                      return (
+                        <Box
+                          key={expKey}
+                          sx={{
+                            display: "grid",
+                            gridTemplateColumns:
+                              "2fr 0.8fr 0.8fr 0.8fr auto",
+                            gap: 1,
+                            alignItems: "center",
+                            mb: 1,
+                          }}
+                        >
+                          <Box
+                            sx={{
+                              display: "flex",
+                              alignItems: "center",
+                            }}
+                          >
+                            <Chip
+                              size="small"
+                              label={exp.label || "Expense"}
+                              sx={{ mr: 1 }}
+                            />
+                            {exp.description && (
+                              <IconButton
+                                size="small"
+                                onClick={() =>
+                                  toggleDescription(idx, eIdx)
+                                }
+                              >
+                                {expandedDescriptions[expKey] ? (
+                                  <ExpandLessIcon fontSize="small" />
+                                ) : (
+                                  <DescriptionIcon fontSize="small" />
+                                )}
+                              </IconButton>
+                            )}
+                          </Box>
+
+                          <Box>
+                            {isEditing ? (
+                              <TextField
+                                type="number"
+                                size="small"
+                                value={exp.duration ?? 0}
+                                onChange={(e) =>
+                                  handleSavedExpenseChange(
+                                    idx,
+                                    eIdx,
+                                    "duration",
+                                    Number(e.target.value) || 0
+                                  )
+                                }
+                              />
+                            ) : (
+                              exp.duration ?? 0
+                            )}
+                          </Box>
+
+                          <Box>
+                            {isEditing ? (
+                              <TextField
+                                type="number"
+                                size="small"
+                                value={exp.amount}
+                                onChange={(e) =>
+                                  handleSavedExpenseChange(
+                                    idx,
+                                    eIdx,
+                                    "amount",
+                                    Number(e.target.value) || 0
+                                  )
+                                }
+                              />
+                            ) : (
+                              exp.amount
+                            )}
+                          </Box>
+
+                          <Box>{exp.currency}</Box>
+
+                          <Box
+                            sx={{
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "flex-end",
+                              gap: 1,
+                            }}
+                          >
+                            <Typography
+                              variant="body2"
+                              sx={{ fontWeight: 500 }}
+                            >
+                              {expTotal.toLocaleString(undefined, {
+                                minimumFractionDigits: 2,
+                                maximumFractionDigits: 2,
+                              })}
+                            </Typography>
+                            {isEditing && (
+                              <IconButton
+                                size="small"
+                                color="error"
+                                onClick={() =>
+                                  handleRemoveExpense(idx, eIdx)
+                                }
+                              >
+                                <DeleteIcon fontSize="small" />
+                              </IconButton>
+                            )}
+                          </Box>
+
+                          <Collapse
+                            in={!!expandedDescriptions[expKey]}
+                            timeout="auto"
+                            sx={{ gridColumn: "1 / -1", mt: 0.5 }}
+                          >
+                            <Typography
+                              variant="body2"
+                              sx={{ color: "#64748b" }}
+                            >
+                              {exp.description}
+                            </Typography>
+                          </Collapse>
+                        </Box>
+                      );
+                    })}
+
+                    {isEditing && (
+                      <Box
+                        sx={{
+                          display: "grid",
+                          gridTemplateColumns:
+                            "2fr 0.8fr 0.8fr 0.8fr auto",
+                          gap: 1,
+                          alignItems: "center",
+                          mt: 1,
+                        }}
+                      >
+                        <TextField
+                          size="small"
+                          placeholder="Label"
+                          value={
+                            additionalExpenses[idx][
+                              additionalExpenses[idx].length - 1
+                            ].label
+                          }
+                          onChange={(e) =>
+                            handleExpenseChange(
+                              idx,
+                              additionalExpenses[idx].length - 1,
+                              "label",
+                              e.target.value
+                            )
+                          }
+                        />
+                        <TextField
+                          size="small"
+                          type="number"
+                          placeholder="Duration"
+                          value={
+                            additionalExpenses[idx][
+                              additionalExpenses[idx].length - 1
+                            ].duration || ""
+                          }
+                          onChange={(e) =>
+                            handleExpenseChange(
+                              idx,
+                              additionalExpenses[idx].length - 1,
+                              "duration",
+                              e.target.value === ""
+                                ? ""
+                                : Number(e.target.value) || 0
+                            )
+                          }
+                        />
+                        <TextField
+                          size="small"
+                          type="number"
+                          placeholder="Amount"
+                          value={
+                            additionalExpenses[idx][
+                              additionalExpenses[idx].length - 1
+                            ].amount || ""
+                          }
+                          onChange={(e) =>
+                            handleExpenseChange(
+                              idx,
+                              additionalExpenses[idx].length - 1,
+                              "amount",
+                              e.target.value === ""
+                                ? ""
+                                : Number(e.target.value) || 0
+                            )
+                          }
+                        />
+                        <TextField
+                          size="small"
+                          placeholder="Currency"
+                          value={
+                            additionalExpenses[idx][
+                              additionalExpenses[idx].length - 1
+                            ].currency
+                          }
+                          onChange={(e) =>
+                            handleExpenseChange(
+                              idx,
+                              additionalExpenses[idx].length - 1,
+                              "currency",
+                              e.target.value
+                            )
+                          }
+                        />
+                        <Button
+                          variant="outlined"
+                          size="small"
+                          startIcon={<AddIcon />}
+                          onClick={() => handleAddExpenseClick(idx)}
+                        >
+                          Add
+                        </Button>
+                      </Box>
+                    )}
+                  </Box>
+                </Collapse>
+              </React.Fragment>
+            );
+          })}
+        </Box>
+
+        {/* Totals & notice */}
+        <Box
+          sx={{
+            px: 3,
+            py: 2.5,
+            display: "grid",
+            gridTemplateColumns: { xs: "1fr", md: "1.6fr 0.9fr" },
+            gap: 3,
+            alignItems: "flex-start",
+            backgroundColor: "#ffffff",
+          }}
+        >
           <Box
-            className="no-print"
             sx={{
-              display: "flex",
-              justifyContent: "flex-end",
-              gap: 2,
-              mb: 3,
-              px: 2,
+              p: 2,
+              borderRadius: 2,
+              backgroundColor: theme.notice,
+              border: `1px dashed ${theme.accent}66`,
             }}
           >
-            <Button
-              variant="contained"
-              startIcon={isEditing ? <SaveIcon /> : <EditIcon />}
-              onClick={isEditing ? handleSave : handleEditToggle}
-              sx={{
-                backgroundColor: theme.accent,
-                "&:hover": { backgroundColor: theme.secondary },
-                textTransform: "none",
-                fontWeight: 600,
-              }}
+            <Typography
+              variant="subtitle2"
+              sx={{ mb: 0.5, color: theme.header }}
             >
-              {isEditing ? "Save Changes" : "Edit Invoice"}
-            </Button>
-            <Button
-              variant="contained"
-              startIcon={<PictureAsPdfIcon />}
-              onClick={handleExportPDF}
-              sx={{
-                backgroundColor: "#dc2626",
-                "&:hover": { backgroundColor: "#b91c1c" },
-                textTransform: "none",
-                fontWeight: 600,
-              }}
-            >
-              Export PDF
-            </Button>
-            <Button
-              variant="contained"
-              startIcon={<PrintIcon />}
-              onClick={handlePrint}
-              sx={{
-                backgroundColor: "#374151",
-                "&:hover": { backgroundColor: "#1f2937" },
-                textTransform: "none",
-                fontWeight: 600,
-              }}
-            >
-              Print
-            </Button>
+              Notice
+            </Typography>
+            <Typography variant="body2" sx={{ color: "#475569" }}>
+              {invoice.notice}
+            </Typography>
           </Box>
 
-          {/* Main container */}
-          <Card
-            ref={componentRef}
-            className="invoice-container"
-            elevation={3}
-            sx={{
-              maxWidth: 1000,
-              mx: "auto",
-              background: theme.bg,
-              borderRadius: 3,
-              overflow: "hidden",
-              boxShadow: "0 10px 40px rgba(0,0,0,0.1)",
-            }}
-          >
-            <CardContent sx={{ p: 4 }}>
-            {/* Header */}
+          <Box sx={{ ml: { md: "auto" }, maxWidth: 320 }}>
             <Box
               sx={{
                 display: "flex",
                 justifyContent: "space-between",
-                alignItems: "flex-start",
-                mb: 3,
-                pb: 2,
-                borderBottom: `2px solid ${theme.secondary}20`,
+                mb: 1,
+                fontSize: 14,
               }}
             >
-              <Box>
-                <Typography
-                  variant="h4"
-                  sx={{
-                    color: theme.accent,
-                    fontWeight: 700,
-                    mb: 1,
-                  }}
-                >
-                  {invoice.to.name}
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  {invoice.to.mobile}
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  {invoice.to.email}
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  {invoice.to.address}
-                </Typography>
-              </Box>
-              <Box sx={{ textAlign: "right" }}>
-                <Typography
-                  variant="h3"
-                  sx={{
-                    color: theme.accent,
-                    fontWeight: 700,
-                    mb: 2,
-                  }}
-                >
-                  {invoice.invoiceId}
-                </Typography>
-                <Box sx={{ mb: 1 }}>
-                  <Typography variant="body2" sx={{ fontWeight: 600, color: theme.secondary }}>
-                    Invoice Date:
-                  </Typography>
-                  {isEditing ? (
-                    <DatePicker
-                      value={editInvoiceDate ? new Date(editInvoiceDate) : null}
-                      onChange={(newValue) =>
-                        setEditInvoiceDate(
-                          newValue ? newValue.toISOString().slice(0, 10) : ""
-                        )
-                      }
-                      slotProps={{
-                        textField: { size: "small", sx: { width: 150, mt: 0.5 } },
-                      }}
-                      inputFormat="dd, MMM yyyy"
-                    />
-                  ) : (
-                    <Typography variant="body1">{localInvoiceDate}</Typography>
-                  )}
-                </Box>
-                <Box>
-                  <Typography variant="body2" sx={{ fontWeight: 600, color: theme.secondary }}>
-                    Due Date:
-                  </Typography>
-                  {isEditing ? (
-                    <DatePicker
-                      value={editDueDate ? new Date(editDueDate) : null}
-                      onChange={(newValue) =>
-                        setEditDueDate(
-                          newValue ? newValue.toISOString().slice(0, 10) : ""
-                        )
-                      }
-                      slotProps={{
-                        textField: { size: "small", sx: { width: 150, mt: 0.5 } },
-                      }}
-                      inputFormat="dd, MMM yyyy"
-                    />
-                  ) : (
-                    <Typography variant="body1">{localDueDate}</Typography>
-                  )}
-                </Box>
-              </Box>
-            </Box>
-
-            {/* Invoice To */}
-            <Box sx={{ mb: 3 }}>
-              <Typography
-                variant="overline"
-                sx={{
-                  color: theme.secondary,
-                  fontWeight: 600,
-                  letterSpacing: 1,
-                  mb: 1,
-                }}
-              >
-                BILL TO
+              <Typography sx={{ color: "#64748b" }}>Subtotal</Typography>
+              <Typography sx={{ textAlign: "right" }}>
+                {(grandTotal - taxAmount).toLocaleString(undefined, {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                })}
               </Typography>
-              <Typography variant="h5" sx={{ fontWeight: 700, mb: 1 }}>
-                {invoice.from.name}
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                {invoice.from.mobile}
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                {invoice.from.email}
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                {invoice.from.address}
-              </Typography>
-            </Box>
-
-            {/* Invoice Table */}
-            <Box
-              sx={{
-                borderRadius: 2,
-                overflow: "hidden",
-                border: `1px solid ${theme.secondary}20`,
-                boxShadow: "0 4px 6px rgba(0,0,0,0.05)",
-                mb: 3,
-              }}
-            >
-              <table
-                id="invoicetable"
-                style={{
-                  width: "100%",
-                  borderCollapse: "collapse",
-                  fontSize: 14,
-                  background: "#fff",
-                }}
-              >
-                <thead>
-                  <tr
-                    style={{
-                      background: theme.notice,
-                      color: theme.header,
-                      fontSize: 14,
-                    }}
-                  >
-                    <th style={{ fontWeight: 700, padding: "16px 12px", textAlign: "left" }}>#</th>
-                    <th style={{ fontWeight: 700, padding: "16px 12px", textAlign: "left" }}>
-                      Description
-                    </th>
-                    <th style={{ fontWeight: 700, padding: "16px 12px", textAlign: "left" }}>
-                      Rate Mode
-                    </th>
-                    <th style={{ fontWeight: 700, padding: "16px 12px", textAlign: "left" }}>
-                      Duration
-                    </th>
-                    <th style={{ fontWeight: 700, padding: "16px 12px", textAlign: "left" }}>
-                      Rate Amount
-                    </th>
-                    <th style={{ fontWeight: 700, padding: "16px 12px", textAlign: "left" }}>
-                      Currency
-                    </th>
-                    <th
-                      style={{
-                        fontWeight: 700,
-                        padding: "16px 12px",
-                        textAlign: "right",
-                      }}
-                    >
-                      Total
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {localInvoiceItems.map((item, idx) => {
-                    const parentBg = idx % 2 === 0 ? "#fff" : theme.notice;
-                    const savedCount = savedExpenses[idx]?.length || 0;
-                    const hasChildren =
-                      savedCount > 0 ||
-                      (isEditing && additionalExpenses[idx].length > 0);
-
-                    return (
-                      <React.Fragment key={item.id}>
-                        {/* Parent row */}
-                        <tr
-                          style={{
-                            background: parentBg,
-                            minHeight: 70,
-                            borderBottom: hasChildren
-                              ? "none"
-                              : "1px solid #e0e6ed",
-                          }}
-                        >
-                          <td
-                            style={{
-                              background: theme.accent,
-                              color: "#fff",
-                              fontWeight: "bold",
-                              fontSize: 18,
-                              textAlign: "center",
-                              minWidth: 44,
-                              verticalAlign: "middle",
-                              lineHeight: "70px",
-                              borderRadius: 0,
-                            }}
-                          >
-                            {String(idx + 1).padStart(2, "0")}
-                          </td>
-                          <td
-                            style={{
-                              verticalAlign: "middle",
-                              padding: "11px 8px",
-                            }}
-                          >
-                            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                              {item.name}
-                              {hasChildren && (
-                                <IconButton size="small" sx={{ p: 0 }} onClick={() => toggleItemExpansion(idx)}>
-                                  {expandedItems[idx] ? (
-                                    <ExpandLessIcon sx={{ color: theme.secondary }} />
-                                  ) : (
-                                    <ExpandMoreIcon sx={{ color: theme.secondary }} />
-                                  )}
-                                </IconButton>
-                              )}
-                            </Box>
-                          </td>
-                          <td
-                            style={{
-                              verticalAlign: "middle",
-                              padding: "11px 8px",
-                            }}
-                          >
-                            {item.ratemode}
-                          </td>
-                          <td
-                            style={{
-                              verticalAlign: "middle",
-                              padding: "11px 8px",
-                            }}
-                          >
-                            {isEditing ? (
-                              <input
-                                type="number"
-                                min="1"
-                                value={item.duration}
-                                onChange={(e) =>
-                                  handleDurationChange(
-                                    idx,
-                                    Number(e.target.value)
-                                  )
-                                }
-                                style={{
-                                  width: 60,
-                                  borderRadius: 5,
-                                  border: "1px solid #ccc",
-                                  paddingLeft: 8,
-                                }}
-                              />
-                            ) : (
-                              item.duration
-                            )}
-                          </td>
-                          <td
-                            style={{
-                              verticalAlign: "middle",
-                              padding: "11px 8px",
-                            }}
-                          >
-                            {item.rateamount}
-                          </td>
-                          <td
-                            style={{
-                              verticalAlign: "middle",
-                              padding: "11px 8px",
-                            }}
-                          >
-                            {item.currency}
-                          </td>
-                          <td
-                            style={{
-                              color: theme.accent,
-                              fontWeight: "bold",
-                              textAlign: "center",
-                              minWidth: 48,
-                              borderRadius: "0 5px 5px 0",
-                              position: "relative",
-                              verticalAlign: "middle",
-                              padding: "11px 8px",
-                            }}
-                          >
-                            {(item.duration && item.duration > 0
-                              ? item.rateamount * item.duration
-                              : item.rateamount
-                            ).toLocaleString(undefined, {
-                              minimumFractionDigits: 2,
-                              maximumFractionDigits: 2,
-                            })}
-                          </td>
-                        </tr>
-
-                        {/* Saved child expenses rows */}
-                        {savedExpenses[idx] && expandedItems[idx] &&
-                          savedExpenses[idx].map((exp, eIdx) => {
-                            const isLastSaved =
-                              eIdx === savedExpenses[idx].length - 1;
-                            const isLastChildRow =
-                              isLastSaved &&
-                              (!isEditing ||
-                                additionalExpenses[idx].length === 0);
-                            const descriptionKey = `${idx}-${eIdx}`;
-                            const isDescriptionExpanded =
-                              expandedDescriptions[descriptionKey];
-
-                            return (
-                              <React.Fragment
-                                key={`saved-exp-${idx}-${eIdx}`}
-                              >
-                                <tr
-                                  style={{
-                                    background: parentBg,
-                                    borderBottom:
-                                      isLastChildRow && !isDescriptionExpanded
-                                        ? "1px solid #e0e6ed"
-                                        : "none",
-                                  }}
-                                >
-                                  <td
-                                    style={{
-                                      background: theme.accent,
-                                      borderBottom: "none",
-                                    }}
-                                  />
-                                  <td
-                                    style={{
-                                      fontStyle: !isEditing
-                                        ? "italic"
-                                        : "normal",
-                                      color: !isEditing ? "#555" : "#000",
-                                      verticalAlign: "middle",
-                                      padding: "11px 8px",
-                                      textAlign: "left",
-                                    }}
-                                  >
-                                    {!isEditing ? (
-                                      <>
-                                        {exp.label}
-                                        {exp.description && (
-                                          <IconButton
-                                            size="small"
-                                            onClick={() =>
-                                              toggleDescription(idx, eIdx)
-                                            }
-                                            sx={{ padding: 0, ml: 1 }}
-                                          >
-                                            {isDescriptionExpanded ? (
-                                              <ExpandLessIcon fontSize="small" />
-                                            ) : (
-                                              <ExpandMoreIcon fontSize="small" />
-                                            )}
-                                          </IconButton>
-                                        )}
-                                      </>
-                                    ) : (
-                                      <Select
-                                        size="small"
-                                        value={exp.label}
-                                        onChange={(e) =>
-                                          handleSavedExpenseChange(
-                                            idx,
-                                            eIdx,
-                                            "label",
-                                            e.target.value
-                                          )
-                                        }
-                                        displayEmpty
-                                        sx={{ height: "20px", textAlign: "left" }}
-                                      >
-                                        <MenuItem value="" disabled>
-                                          Expense
-                                        </MenuItem>
-                                        {options.map((option) => (
-                                          <MenuItem
-                                            key={option}
-                                            value={option}
-                                          >
-                                            {option}
-                                          </MenuItem>
-                                        ))}
-                                      </Select>
-                                    )}
-                                  </td>
-                                  <td
-                                    style={{
-                                      verticalAlign: "middle",
-                                      padding: "11px 8px", // CHANGED
-                                    }}
-                                  >
-                                    {localInvoiceItems[idx].ratemode}
-                                  </td>
-                                  <td
-                                    style={{
-                                      padding: "11px 8px", // CHANGED
-                                      textAlign: "center",
-                                      verticalAlign: "middle",
-                                    }}
-                                  >
-                                    {!isEditing ? (
-                                      exp.duration ?? 0
-                                    ) : (
-                                      <input
-                                        type="number"
-                                        min="1"
-                                        value={exp.duration ?? 0}
-                                        onChange={(e) =>
-                                          handleSavedExpenseChange(
-                                            idx,
-                                            eIdx,
-                                            "duration",
-                                            Number(e.target.value)
-                                          )
-                                        }
-                                        style={{
-                                          width: 60,
-                                          borderRadius: 3,
-                                          border: "1px solid #bbb",
-                                          padding: 4,
-                                        }}
-                                      />
-                                    )}
-                                  </td>
-                                  <td
-                                    style={{
-                                      padding: "11px 8px", // CHANGED
-                                      textAlign: "right",
-                                      verticalAlign: "middle",
-                                    }}
-                                  >
-                                    {!isEditing ? (
-                                      exp.amount
-                                    ) : (
-                                      <input
-                                        type="number"
-                                        min="1"
-                                        value={exp.amount}
-                                        onChange={(e) =>
-                                          handleSavedExpenseChange(
-                                            idx,
-                                            eIdx,
-                                            "amount",
-                                            Number(e.target.value)
-                                          )
-                                        }
-                                        style={{
-                                          width: 90,
-                                          borderRadius: 3,
-                                          border: "1px solid #bbb",
-                                          padding: 4,
-                                        }}
-                                      />
-                                    )}
-                                  </td>
-                                  <td
-                                    style={{
-                                      verticalAlign: "middle",
-                                      padding: "11px 8px", // CHANGED
-                                    }}
-                                  >
-                                    {exp.currency}
-                                  </td>
-                                  <td
-                                    style={{
-                                      fontWeight: "bold",
-                                      textAlign: "center", // CHANGED (remove flex)
-                                      padding: "11px 8px", // CHANGED
-                                      verticalAlign: "middle",
-                                    }}
-                                  >
-                                    {(exp.duration && exp.duration > 0
-                                      ? exp.amount * exp.duration
-                                      : exp.amount || 0
-                                    ).toLocaleString(undefined, {
-                                      minimumFractionDigits: 2,
-                                      maximumFractionDigits: 2,
-                                    })}
-                                    {isEditing && (
-                                      <IconButton
-                                        size="small"
-                                        onClick={() =>
-                                          handleRemoveExpense(idx, eIdx)
-                                        }
-                                        sx={{ ml: 1 }} // optional small spacing
-                                      >
-                                        <DeleteIcon fontSize="small" />
-                                      </IconButton>
-                                    )}
-                                  </td>
-                                </tr>
-
-                                {/* Description row for saved expenses */}
-                                {exp.description && (
-                                  <tr>
-                                    <td
-                                      style={{
-                                        padding: 0,
-                                        borderBottom: isLastChildRow
-                                          ? "1px solid #e0e6ed"
-                                          : "none",
-                                          background: theme.accent
-                                      }}
-                                    />
-                                    <td
-                                      colSpan={6}
-                                      style={{
-                                        padding: 0,
-                                        borderBottom: isLastChildRow
-                                          ? "1px solid #e0e6ed"
-                                          : "none",
-                                      }}
-                                    >
-                                      <Collapse
-                                        in={isDescriptionExpanded || isEditing}
-                                      >
-                                        <div
-                                          className="description-box"
-                                          style={{
-                                            padding: isEditing
-                                              ? "8px 12px"
-                                              : "8px 12px",
-                                            margin: 0,
-                                            
-                                          }}
-                                        >
-                                          {isEditing ? (
-                                            <TextField
-                                              fullWidth
-                                              multiline
-                                              rows={2}
-                                              value={exp.description}
-                                              onChange={(e) =>
-                                                handleSavedExpenseChange(
-                                                  idx,
-                                                  eIdx,
-                                                  "description",
-                                                  e.target.value
-                                                )
-                                              }
-                                              placeholder="Add description for this expense..."
-                                              variant="outlined"
-                                              size="small"
-                                              sx={{
-                                                '& .MuiOutlinedInput-root': {
-                                                  backgroundColor: 'transparent',
-                                                  '& fieldset': {
-                                                    border: 'none',
-                                                  },
-                                                  '&:hover fieldset': {
-                                                    border: 'none',
-                                                  },
-                                                  '&.Mui-focused fieldset': {
-                                                    border: 'none',
-                                                  },
-                                                },
-                                                '& .MuiInputBase-input::placeholder': {
-                                                  color: 'black',
-                                                },
-                                              }}
-                                            />
-                                          ) : (
-                                            <div
-                                              style={{
-                                                textAlign: "left",
-                                                fontSize: "14px",
-                                                marginLeft: 10,
-                                                color: "#555",
-                                                lineHeight: "1.4",
-                                              }}
-                                            >
-                                              {/* <strong>Description:</strong>{" "} */}
-                                              {exp.description}
-                                            </div>
-                                          )}
-                                        </div>
-                                      </Collapse>
-                                    </td>
-                                  </tr>
-                                )}
-                              </React.Fragment>
-                            );
-                          })}
-
-                        {/* Empty editable child expense row */}
-                        {isEditing && expandedItems[idx] && (
-                          <tr
-                            key={`empty-exp-${idx}`}
-                            style={{
-                              background: parentBg,
-                              borderBottom: "1px solid #e0e6ed",
-                            }}
-                          >
-                            <td style={{ background: theme.accent }} />
-                            <td style={{ padding: "11px 8px", textAlign: "left" }}>
-                              <Select
-                                size="small"
-                                value={
-                                  additionalExpenses[idx][
-                                    additionalExpenses[idx].length - 1
-                                  ].label
-                                }
-                                onChange={(e) =>
-                                  handleExpenseChange(
-                                    idx,
-                                    additionalExpenses[idx].length - 1,
-                                    "label",
-                                    e.target.value
-                                  )
-                                }
-                                displayEmpty
-                                sx={{ height: "20px", textAlign: "left" }}
-                              >
-                                <MenuItem value="" disabled>
-                                  Expense
-                                </MenuItem>
-                                {options.map((option) => (
-                                  <MenuItem key={option} value={option}>
-                                    {option}
-                                  </MenuItem>
-                                ))}
-                              </Select>
-                            </td>
-                            <td style={{ padding: "11px 8px" }}>
-                              <input
-                                type="text"
-                                value={localInvoiceItems[idx].ratemode}
-                                disabled
-                                style={{
-                                  width: 100,
-                                  borderRadius: 3,
-                                  border: "1px solid #eee",
-                                  backgroundColor: "#f9f9f9",
-                                  padding: 4,
-                                  color: "#777",
-                                }}
-                              />
-                            </td>
-                            <td style={{ padding: "11px 8px" }}>
-                              <input
-                                type="number"
-                                min="1"
-                                placeholder="Duration"
-                                value={
-                                  additionalExpenses[idx][
-                                    additionalExpenses[idx].length - 1
-                                  ].duration || ""
-                                }
-                                onChange={(e) =>
-                                  handleExpenseChange(
-                                    idx,
-                                    additionalExpenses[idx].length - 1,
-                                    "duration",
-                                    e.target.value === ""
-                                      ? ""
-                                      : Number(e.target.value)
-                                  )
-                                }
-                                style={{
-                                  width: 60,
-                                  borderRadius: 3,
-                                  border: "1px solid #bbb",
-                                  padding: 4,
-                                }}
-                              />
-                            </td>
-                            <td style={{ padding: "11px 8px" }}>
-                              <input
-                                type="number"
-                                min="1"
-                                placeholder="Amount"
-                                value={
-                                  additionalExpenses[idx][
-                                    additionalExpenses[idx].length - 1
-                                  ].amount
-                                }
-                                onChange={(e) =>
-                                  handleExpenseChange(
-                                    idx,
-                                    additionalExpenses[idx].length - 1,
-                                    "amount",
-                                    e.target.value === ""
-                                      ? ""
-                                      : Number(e.target.value)
-                                  )
-                                }
-                                style={{
-                                  width: 90,
-                                  borderRadius: 3,
-                                  border: "1px solid #bbb",
-                                  padding: 4,
-                                }}
-                              />
-                            </td>
-                            <td style={{ padding: "11px 8px" }}>
-                              <input
-                                type="text"
-                                value={
-                                  additionalExpenses[idx][
-                                    additionalExpenses[idx].length - 1
-                                  ].currency
-                                }
-                                disabled
-                                style={{
-                                  width: 50,
-                                  borderRadius: 3,
-                                  border: "1px solid #eee",
-                                  backgroundColor: "#f9f9f9",
-                                  padding: 4,
-                                  color: "#777",
-                                }}
-                              />
-                            </td>
-                            <td
-                              style={{
-                                textAlign: "center",
-                                padding: "11px 8px",
-                              }}
-                            >
-                              <IconButton
-                                onClick={() => handleAddExpenseClick(idx)}
-                                title="Add Additional Expense"
-                                size="small"
-                                sx={{
-                                  width: 32,
-                                  height: 32,
-                                  borderRadius: 0,
-                                  fontSize: 20,
-                                  fontWeight: "bold",
-                                  color: theme.accent,
-                                  cursor: "pointer",
-                                  userSelect: "none",
-                                }}
-                              >
-                                <AddIcon fontSize="inherit" />
-                              </IconButton>
-                            </td>
-                          </tr>
-                        )}
-
-                        {/* Description input for new expense in edit mode */}
-                        {isEditing &&
-                          expandedItems[idx] &&
-                          additionalExpenses[idx] &&
-                          additionalExpenses[idx].length > 0 && (
-                            <tr>
-                              <td style={{ padding: 0, borderBottom: "1px solid #e0e6ed", background: theme.accent }} />
-                              <td colSpan={6} style={{ padding: 0, borderBottom: "1px solid #e0e6ed" }}>
-                                <div
-                                  className="description-box"
-                                  style={{
-                                    background: parentBg,
-                                    padding: "8px 12px",
-                                    margin: 0,
-                                    // borderLeft: `3px solid ${theme.accent}`,
-                                  }}
-                                >
-                                  <TextField
-                                    fullWidth
-                                    multiline
-                                    rows={2}
-                                    value={
-                                      additionalExpenses[idx][
-                                        additionalExpenses[idx].length - 1
-                                      ].description
-                                    }
-                                    onChange={(e) =>
-                                      handleExpenseChange(
-                                        idx,
-                                        additionalExpenses[idx].length - 1,
-                                        "description",
-                                        e.target.value
-                                      )
-                                    }
-                                    placeholder="Add description for this expense..."
-                                    variant="outlined"
-                                    size="small"
-                                    sx={{
-                                      '& .MuiOutlinedInput-root': {
-                                        backgroundColor: 'transparent',
-                                        '& fieldset': {
-                                          border: 'none',
-                                        },
-                                        '&:hover fieldset': {
-                                          border: 'none',
-                                        },
-                                        '&.Mui-focused fieldset': {
-                                          border: 'none',
-                                        },
-                                      },
-                                      '& .MuiInputBase-input::placeholder': {
-                                        color: 'black',
-                                      },
-                                    }}
-                                  />
-                                </div>
-                              </td>
-                            </tr>
-                          )}
-                      </React.Fragment>
-                    );
-                  })}
-                </tbody>
-                <tfoot>
-                  <tr>
-                    <td colSpan={4}></td>
-                    <td
-                      colSpan={1}
-                      style={{
-                        fontWeight: "bold",
-                        padding: 12,
-                        textAlign: "right",
-                      }}
-                    >
-                      TAX %
-                    </td>
-                    <td>
-                      {isEditing ? (
-                        <TextField
-                          size="small"
-                          type="number"
-                          value={taxPercent}
-                          onChange={(e) => {
-                            const val = Number(e.target.value);
-                            if (!isNaN(val) && val >= 0) setTaxPercent(val);
-                          }}
-                          inputProps={{ min: 0 }}
-                          sx={{ width: 90, ml: 0.5 }}
-                        />
-                      ) : (
-                        <span style={{ fontWeight: "bold", padding: 12 }}>
-                          {taxPercent.toFixed(2)}%
-                        </span>
-                      )}
-                    </td>
-                    <td>
-                      {taxAmount.toLocaleString(undefined, {
-                        minimumFractionDigits: 2,
-                        maximumFractionDigits: 2,
-                      })}
-                    </td>
-                  </tr>
-                  <tr>
-                    <td colSpan={4}></td>
-                    <td
-                      colSpan={2}
-                      style={{
-                        color: theme.accent,
-                        fontWeight: "bold",
-                        padding: 12,
-                        textAlign: "right",
-                        fontSize: 19,
-                      }}
-                    >
-                      GRAND TOTAL
-                    </td>
-                    <td
-                      style={{
-                        color: theme.accent,
-                        fontWeight: "bold",
-                        padding: 12,
-                      }}
-                    >
-                      {grandTotal.toLocaleString(undefined, {
-                        minimumFractionDigits: 2,
-                        maximumFractionDigits: 2,
-                      })}
-                    </td>
-                  </tr>
-                </tfoot>
-              </table>
             </Box>
 
             <Box
               sx={{
-                textAlign: "center",
-                my: 3,
+                display: "flex",
+                justifyContent: "space-between",
+                mb: 1,
+                alignItems: "center",
+                fontSize: 14,
+              }}
+            >
+              <Typography sx={{ color: "#64748b" }}>Tax %</Typography>
+              {isEditing ? (
+                <TextField
+                  size="small"
+                  type="number"
+                  value={taxPercent}
+                  onChange={handleTaxPercentChange}
+                  sx={{ width: 80 }}
+                />
+              ) : (
+                <Typography>{taxPercent}%</Typography>
+              )}
+            </Box>
+
+            <Box
+              sx={{
+                display: "flex",
+                justifyContent: "space-between",
+                mb: 1.5,
+                fontSize: 14,
+              }}
+            >
+              <Typography sx={{ color: "#64748b" }}>Tax Amount</Typography>
+              <Typography sx={{ textAlign: "right" }}>
+                {taxAmount.toLocaleString(undefined, {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                })}
+              </Typography>
+            </Box>
+
+            <Divider sx={{ my: 1.5 }} />
+
+            <Box
+              sx={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                backgroundColor: `${theme.accent}10`,
+                borderRadius: 999,
+                px: 1.75,
+                py: 1,
               }}
             >
               <Typography
-                variant="h5"
-                sx={{
-                  color: theme.accent,
-                  fontWeight: 700,
-                  mb: 2,
-                }}
+                variant="subtitle2"
+                sx={{ fontWeight: 600, color: theme.header }}
               >
-                Thank you!
+                Grand Total
               </Typography>
-              <Box
-                sx={{
-                  background: theme.notice,
-                  borderLeft: `4px solid ${theme.accent}`,
-                  p: 2,
-                  borderRadius: 1,
-                  maxWidth: 700,
-                  mx: "auto",
-                }}
+              <Typography
+                variant="h6"
+                sx={{ fontWeight: 700, color: theme.accent }}
               >
-                <Typography variant="body1" sx={{ fontWeight: 500 }}>
-                  <strong>NOTICE:</strong> {invoice.notice}
-                </Typography>
-              </Box>
-            {/* <Divider sx={{ my: 2 }} /> */}
-            {/* <Typography
-              variant="body2"
-              color="text.secondary"
-              sx={{ textAlign: "center", py: 1 }}
-            >
-              Invoice was created on a computer and is valid without the signature and seal.
-            </Typography> */}
+                {grandTotal.toLocaleString(undefined, {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                })}
+              </Typography>
             </Box>
-          </CardContent>
-        </Card>
-        </div>
-      </>
-    </LocalizationProvider>
+          </Box>
+        </Box>
+      </Card>
+    </Box>
   );
 }
