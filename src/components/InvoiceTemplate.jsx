@@ -1,4 +1,4 @@
-// InvoiceTemplate.jsx
+// InvoiceTemplate.jsx - Global Edit Mode + Inline Expense Editing + Description Below Label
 import React, { useState, useRef, useEffect } from "react";
 import {
   Typography,
@@ -155,38 +155,29 @@ export default function InvoiceTemplate({
     subtotal: 100000,
     tax: 10000,
     total: 110000,
-    notice:
-      "A finance charge of 1.5% will be made on unpaid balances after 30 days.",
+    notice: "A finance charge of 1.5% will be made on unpaid balances after 30 days.",
   },
   template = { name: "Invoice" },
 }) {
   const componentRef = useRef(null);
-
   const [themeIdx, setThemeIdx] = useState(0);
   const theme = COLORTHEMES[themeIdx];
-
   const [isEditing, setIsEditing] = useState(false);
-
   const [editInvoiceDate, setEditInvoiceDate] = useState(
     formatDateToISO(invoice.invoicedate)
   );
   const [editDueDate, setEditDueDate] = useState(
     formatDateToISO(invoice.duedate)
   );
-  const [localInvoiceDate, setLocalInvoiceDate] = useState(
-    invoice.invoicedate
-  );
+  const [localInvoiceDate, setLocalInvoiceDate] = useState(invoice.invoicedate);
   const [localDueDate, setLocalDueDate] = useState(invoice.duedate);
-
   const [localInvoiceItems, setLocalInvoiceItems] = useState(
     invoice.invoiceitems
   );
-
   const [savedExpenses, setSavedExpenses] = useState(
     localInvoiceItems.map(() => [])
   );
-
-  const [additionalExpenses, setAdditionalExpenses] = useState(() =>
+  const [additionalExpenses, setAdditionalExpenses] = useState(
     localInvoiceItems.map(() => [
       {
         label: "",
@@ -197,10 +188,8 @@ export default function InvoiceTemplate({
       },
     ])
   );
-
   const [expandedItems, setExpandedItems] = useState({});
   const [expandedDescriptions, setExpandedDescriptions] = useState({});
-
   const [taxPercent, setTaxPercent] = useState(
     (invoice.tax / invoice.subtotal) * 100 || 10
   );
@@ -209,7 +198,6 @@ export default function InvoiceTemplate({
 
   useEffect(() => {
     let subtotalCalc = 0;
-
     localInvoiceItems.forEach((item, i) => {
       const expenseTotal = savedExpenses[i].reduce((sum, exp) => {
         const amount = Number(exp.amount) || 0;
@@ -218,10 +206,8 @@ export default function InvoiceTemplate({
           (exp.duration && exp.duration > 0 ? amount * exp.duration : amount)
         );
       }, 0);
-
       const lastExpense =
         additionalExpenses[i][additionalExpenses[i].length - 1];
-
       let lastExpenseAmount = 0;
       if (
         lastExpense &&
@@ -229,15 +215,12 @@ export default function InvoiceTemplate({
       ) {
         lastExpenseAmount = Number(lastExpense.amount) || 0;
       }
-
       const baseTotal =
         item.duration && item.duration > 0
           ? item.rateamount * item.duration
           : item.rateamount;
-
       subtotalCalc += baseTotal + expenseTotal + lastExpenseAmount;
     });
-
     const tax = (subtotalCalc * taxPercent) / 100;
     setTaxAmount(tax);
     setGrandTotal(subtotalCalc + tax);
@@ -253,14 +236,11 @@ export default function InvoiceTemplate({
 
   const handleAddExpenseClick = (idx) => {
     if (!isEditing) return;
-
     const expenses = additionalExpenses[idx];
     const lastExpense = expenses[expenses.length - 1];
-
     if (lastExpense.label.trim() === "" && lastExpense.amount === "") {
       return;
     }
-
     const newSavedExpenses = [...savedExpenses];
     newSavedExpenses[idx] = [...newSavedExpenses[idx], { ...lastExpense }];
     setSavedExpenses(newSavedExpenses);
@@ -301,14 +281,12 @@ export default function InvoiceTemplate({
 
   const handleRemoveExpense = (mainIdx, expIdx) => {
     if (!isEditing) return;
-
     if (expIdx < savedExpenses[mainIdx].length) {
       const newSavedExpenses = [...savedExpenses];
       newSavedExpenses[mainIdx] = newSavedExpenses[mainIdx].filter(
         (_, i) => i !== expIdx
       );
       setSavedExpenses(newSavedExpenses);
-
       const key = `${mainIdx}-${expIdx}`;
       const newExpanded = { ...expandedDescriptions };
       delete newExpanded[key];
@@ -326,7 +304,9 @@ export default function InvoiceTemplate({
   const handleDurationChange = (idx, value) => {
     if (!isEditing) return;
     setLocalInvoiceItems((prev) =>
-      prev.map((item, i) => (i === idx ? { ...item, duration: value } : item))
+      prev.map((item, i) =>
+        i === idx ? { ...item, duration: value } : item
+      )
     );
   };
 
@@ -359,31 +339,17 @@ export default function InvoiceTemplate({
   const handlePrint = () => {
     const printContents = componentRef.current?.innerHTML;
     if (!printContents) return;
-
     const printWindow = window.open("", "", "width=900,height=650");
     if (!printWindow) return;
-
     printWindow.document.write(`
+      <!DOCTYPE html>
       <html>
         <head>
           <title>Invoice ${invoice.invoiceId}</title>
           <style>
-            body {
-              margin: 0;
-              padding: 24px;
-              font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-              background-color: #f5f7fb;
-            }
-            .print-card {
-              max-width: 1160px;
-              margin: 0 auto;
-            }
-            @media print {
-              body {
-                background-color: #ffffff;
-                padding: 0;
-              }
-            }
+            body { margin: 0; padding: 24px; font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background-color: #f5f7fb; }
+            .print-card { max-width: 1160px; margin: 0 auto; }
+            @media print { body { background-color: white; padding: 0; } }
           </style>
         </head>
         <body>
@@ -396,17 +362,13 @@ export default function InvoiceTemplate({
     printWindow.print();
   };
 
-  const handleExportPDF = () => {
-    // Let browser print dialog handle "Save as PDF"
-    handlePrint();
-  };
+  const handleExportPDF = handlePrint;
 
   return (
     <Box
       sx={{
         minHeight: "100vh",
-        background:
-          "radial-gradient(circle at top, #e5edff 0, #f8fafc 40%, #f4f4f5 100%)",
+        background: "radial-gradient(circle at top, #e5edff 0%, #f8fafc 40%, #f4f4f5 100%)",
         display: "flex",
         justifyContent: "center",
         alignItems: "flex-start",
@@ -423,7 +385,7 @@ export default function InvoiceTemplate({
           boxShadow: "0 22px 60px rgba(15,23,42,0.16)",
           border: "1px solid rgba(148,163,184,0.25)",
           overflow: "hidden",
-          backgroundColor: "#ffffff",
+          backgroundColor: "white",
         }}
       >
         {/* Header */}
@@ -435,19 +397,16 @@ export default function InvoiceTemplate({
             px: 3,
             py: 1.75,
             borderBottom: "1px solid rgba(148,163,184,0.3)",
-            background: `linear-gradient(90deg, ${theme.accent}12, #ffffff)`,
+            background: `linear-gradient(90deg, ${theme.accent}12, white)`,
           }}
         >
           <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-            <Typography
-              variant="h6"
-              sx={{ fontWeight: 700, color: theme.header }}
-            >
+            <Typography variant="h6" sx={{ fontWeight: 700, color: theme.header }}>
               {template?.name || "Invoice"}
             </Typography>
             <Chip
               size="small"
-              label={`#${invoice.invoiceId}`}
+              label={invoice.invoiceId}
               sx={{
                 height: 22,
                 fontSize: 11,
@@ -458,14 +417,14 @@ export default function InvoiceTemplate({
               }}
             />
           </Box>
-
           <Box sx={{ display: "flex", alignItems: "center", gap: 1.25 }}>
-            <FormControl size="small" sx={{ minWidth: 170 }}>
+            <FormControl size="small" sx={{ minWidth: 140 }}>
               <InputLabel>Theme</InputLabel>
               <Select
                 label="Theme"
                 value={themeIdx}
                 onChange={(e) => setThemeIdx(e.target.value)}
+                size="small"
               >
                 {COLORTHEMES.map((t, index) => (
                   <MenuItem key={t.name} value={index}>
@@ -474,43 +433,30 @@ export default function InvoiceTemplate({
                 ))}
               </Select>
             </FormControl>
-
             <IconButton
               size="small"
               sx={{
                 borderRadius: 2,
                 bgcolor: isEditing ? theme.accent : "transparent",
-                color: isEditing ? "#fff" : "#64748b",
-                "&:hover": { bgcolor: isEditing ? theme.accent : "#e5e7eb" },
+                color: isEditing ? "white" : "#64748b",
+                "&:hover": {
+                  bgcolor: isEditing ? `${theme.accent}E6` : "#e5e7eb",
+                },
               }}
               onClick={isEditing ? handleSave : handleEditToggle}
             >
-              {isEditing ? (
-                <SaveIcon fontSize="small" />
-              ) : (
-                <EditIcon fontSize="small" />
-              )}
+              {isEditing ? <SaveIcon fontSize="small" /> : <EditIcon fontSize="small" />}
             </IconButton>
-
-            <IconButton
-              size="small"
-              color="primary"
-              onClick={handleExportPDF}
-            >
+            <IconButton size="small" color="primary" onClick={handleExportPDF}>
               <PictureAsPdfIcon fontSize="small" />
             </IconButton>
-
-            <IconButton
-              size="small"
-              color="primary"
-              onClick={handlePrint}
-            >
+            <IconButton size="small" color="primary" onClick={handlePrint}>
               <PrintIcon fontSize="small" />
             </IconButton>
           </Box>
         </Box>
 
-        {/* From / To / Dates */}
+        {/* From/To/Dates - ULTRA SMALL DATE PICKERS */}
         <CardContent
           sx={{
             display: "grid",
@@ -524,16 +470,10 @@ export default function InvoiceTemplate({
         >
           <Box sx={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
             <Box>
-              <Typography
-                variant="overline"
-                sx={{ color: "#64748b", letterSpacing: 1 }}
-              >
+              <Typography variant="overline" sx={{ color: "#64748b", letterSpacing: 1 }}>
                 From
               </Typography>
-              <Typography
-                variant="subtitle1"
-                sx={{ color: theme.header, fontWeight: 600 }}
-              >
+              <Typography variant="subtitle1" sx={{ color: theme.header, fontWeight: 600 }}>
                 {invoice.from.name}
               </Typography>
               <Typography variant="body2" sx={{ color: "#475569" }}>
@@ -546,18 +486,13 @@ export default function InvoiceTemplate({
                 {invoice.from.mobile}
               </Typography>
             </Box>
-
+          </Box>
+          <Box sx={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
             <Box>
-              <Typography
-                variant="overline"
-                sx={{ color: "#64748b", letterSpacing: 1 }}
-              >
+              <Typography variant="overline" sx={{ color: "#64748b", letterSpacing: 1 }}>
                 Billed To
               </Typography>
-              <Typography
-                variant="subtitle1"
-                sx={{ color: theme.header, fontWeight: 600 }}
-              >
+              <Typography variant="subtitle1" sx={{ color: theme.header, fontWeight: 600 }}>
                 {invoice.to.name}
               </Typography>
               <Typography variant="body2" sx={{ color: "#475569" }}>
@@ -571,25 +506,27 @@ export default function InvoiceTemplate({
               </Typography>
             </Box>
           </Box>
-
           <Box sx={{ display: "flex", gap: 3, flexWrap: "wrap" }}>
-            <Box>
-              <Typography
-                variant="caption"
-                sx={{ color: "#64748b", textTransform: "uppercase" }}
-              >
+            <Box sx={{ minWidth: 120 }}>
+              <Typography variant="caption" sx={{ color: "#64748b", textTransform: "uppercase" }}>
                 Invoice Date
               </Typography>
               {isEditing ? (
                 <LocalizationProvider dateAdapter={AdapterDateFns}>
                   <DatePicker
-                    value={editInvoiceDate || null}
+                    value={editInvoiceDate ? new Date(editInvoiceDate) : null}
                     onChange={(newVal) =>
-                      setEditInvoiceDate(
-                        newVal ? newVal.toISOString().slice(0, 10) : ""
-                      )
+                      setEditInvoiceDate(newVal ? newVal.toISOString().slice(0, 10) : null)
                     }
-                    slotProps={{ textField: { size: "small" } }}
+                    slotProps={{
+                      textField: {
+                        size: "small",
+                        sx: {
+                          width: 150,
+                          ".MuiInputBase-root": { fontSize: 12, height: 32, minHeight: 32 },
+                        },
+                      },
+                    }}
                   />
                 </LocalizationProvider>
               ) : (
@@ -598,24 +535,26 @@ export default function InvoiceTemplate({
                 </Typography>
               )}
             </Box>
-
-            <Box>
-              <Typography
-                variant="caption"
-                sx={{ color: "#64748b", textTransform: "uppercase" }}
-              >
+            <Box sx={{ minWidth: 120 }}>
+              <Typography variant="caption" sx={{ color: "#64748b", textTransform: "uppercase" }}>
                 Due Date
               </Typography>
               {isEditing ? (
                 <LocalizationProvider dateAdapter={AdapterDateFns}>
                   <DatePicker
-                    value={editDueDate || null}
+                    value={editDueDate ? new Date(editDueDate) : null}
                     onChange={(newVal) =>
-                      setEditDueDate(
-                        newVal ? newVal.toISOString().slice(0, 10) : ""
-                      )
+                      setEditDueDate(newVal ? newVal.toISOString().slice(0, 10) : null)
                     }
-                    slotProps={{ textField: { size: "small" } }}
+                    slotProps={{
+                      textField: {
+                        size: "small",
+                        sx: {
+                          width: 150,
+                          ".MuiInputBase-root": { fontSize: 12, height: 32, minHeight: 32 },
+                        },
+                      },
+                    }}
                   />
                 </LocalizationProvider>
               ) : (
@@ -627,193 +566,260 @@ export default function InvoiceTemplate({
           </Box>
         </CardContent>
 
-        {/* Table header */}
-        <Box
-          sx={{
-            px: 3,
-            py: 1.25,
-            borderBottom: "1px solid rgba(148,163,184,0.4)",
-            backgroundColor: "#f1f5f9",
-            display: "grid",
-            gridTemplateColumns: ITEM_COLUMNS,
-            fontSize: 11,
-            fontWeight: 600,
-            textTransform: "uppercase",
-            letterSpacing: 0.6,
-            color: "#64748b",
-          }}
-        >
-          <Box>#</Box>
-          <Box>Description</Box>
-          <Box>Rate Mode</Box>
-          <Box sx={{ textAlign: "right" }}>Duration</Box>
-          <Box sx={{ textAlign: "right" }}>Rate</Box>
-          <Box sx={{ textAlign: "center" }}>Currency</Box>
-          <Box sx={{ textAlign: "right" }}>Total</Box>
-          <Box />
-        </Box>
+        {/* PERFECTLY ALIGNED TABLE - EXPENSE ROWS MATCH PARENT */}
+        <CardContent>
+          {/* Table Header */}
+          <Box
+            sx={{
+              px: 3,
+              py: 1.5,
+              borderBottom: "2px solid rgba(148,163,184,0.3)",
+              backgroundColor: "rgba(243,244,246,0.8)",
+              display: "grid",
+              gridTemplateColumns: ITEM_COLUMNS,
+              fontSize: 12,
+              fontWeight: 700,
+              textTransform: "uppercase",
+              letterSpacing: "0.05em",
+              color: theme.header,
+              alignItems: "center",
+            }}
+          >
+            <Box sx={{ width: "56px" }} />
+            <Box />
+            <Box>Description</Box>
+            <Box sx={{ textAlign: "center" }}>Rate Mode</Box>
+            <Box sx={{ textAlign: "right" }}>Duration</Box>
+            <Box sx={{ textAlign: "right" }}>Rate</Box>
+            <Box sx={{ textAlign: "center" }}>Currency</Box>
+            <Box sx={{ textAlign: "right" }}>Total</Box>
+            <Box />
+          </Box>
 
-        {/* Items */}
-        <Box>
-          {localInvoiceItems.map((item, idx) => {
-            const baseTotal =
-              item.duration && item.duration > 0
-                ? item.rateamount * item.duration
-                : item.rateamount;
+          {/* Items + Expenses */}
+          <Box>
+            {localInvoiceItems.map((item, idx) => {
+              const baseTotal =
+                item.duration && item.duration > 0
+                  ? item.rateamount * item.duration
+                  : item.rateamount;
+              const expenseTotal = savedExpenses[idx].reduce((sum, exp) => {
+                const amount = Number(exp.amount) || 0;
+                return (
+                  sum +
+                  (exp.duration && exp.duration > 0 ? amount * exp.duration : amount)
+                );
+              }, 0);
+              const lastExpense =
+                additionalExpenses[idx][additionalExpenses[idx].length - 1];
+              const lastExpenseAmount =
+                lastExpense &&
+                (lastExpense.label.trim() !== "" || lastExpense.amount !== "")
+                  ? Number(lastExpense.amount) || 0
+                  : 0;
+              const rowTotal = baseTotal + expenseTotal + lastExpenseAmount;
 
-            const expenseTotal = savedExpenses[idx].reduce((sum, exp) => {
-              const amount = Number(exp.amount) || 0;
               return (
-                sum +
-                (exp.duration && exp.duration > 0
-                  ? amount * exp.duration
-                  : amount)
-              );
-            }, 0);
-
-            const lastExpense =
-              additionalExpenses[idx][additionalExpenses[idx].length - 1];
-            const lastExpenseAmount =
-              lastExpense &&
-              (lastExpense.label.trim() !== "" ||
-                lastExpense.amount !== "")
-                ? Number(lastExpense.amount) || 0
-                : 0;
-
-            const rowTotal = baseTotal + expenseTotal + lastExpenseAmount;
-
-            return (
-              <React.Fragment key={item.id}>
-                <Box
-                  sx={{
-                    display: "grid",
-                    gridTemplateColumns: ITEM_COLUMNS,
-                    alignItems: "center",
-                    px: 3,
-                    py: 1.25,
-                    fontSize: 13,
-                    color: "#0f172a",
-                    borderBottom: "1px solid rgba(148,163,184,0.2)",
-                    backgroundColor: idx % 2 === 0 ? "#f9fafb" : "#ffffff",
-                    "&:hover": {
-                      backgroundColor: "#eff6ff",
-                    },
-                  }}
-                >
-                  <Box sx={{ color: "#64748b" }}>
-                    {String(idx + 1).padStart(2, "0")}
-                  </Box>
-                  <Box>
-                    <Typography sx={{ fontWeight: 500 }}>
-                      {item.name}
-                    </Typography>
-                  </Box>
-                  <Box>{item.ratemode}</Box>
-                  <Box sx={{ textAlign: "right" }}>
-                    {isEditing ? (
-                      <TextField
-                        type="number"
-                        size="small"
-                        value={item.duration || ""}
-                        onChange={(e) =>
-                          handleDurationChange(
-                            idx,
-                            Number(e.target.value) || 0
-                          )
-                        }
-                        sx={{ width: 80 }}
-                      />
-                    ) : (
-                      item.duration || "-"
-                    )}
-                  </Box>
-                  <Box sx={{ textAlign: "right" }}>
-                    {item.rateamount.toLocaleString(undefined, {
-                      minimumFractionDigits: 2,
-                      maximumFractionDigits: 2,
-                    })}
-                  </Box>
-                  <Box sx={{ textAlign: "center" }}>{item.currency}</Box>
+                <React.Fragment key={item.id}>
+                  {/* Main Item Row */}
                   <Box
                     sx={{
-                      textAlign: "right",
-                      fontWeight: 600,
-                      color: theme.accent,
-                    }}
-                  >
-                    {rowTotal.toLocaleString(undefined, {
-                      minimumFractionDigits: 2,
-                      maximumFractionDigits: 2,
-                    })}
-                  </Box>
-                  <Box sx={{ textAlign: "right" }}>
-                    <IconButton
-                      size="small"
-                      onClick={() => toggleItemExpansion(idx)}
-                    >
-                      {expandedItems[idx] ? (
-                        <ExpandLessIcon fontSize="small" />
-                      ) : (
-                        <ExpandMoreIcon fontSize="small" />
-                      )}
-                    </IconButton>
-                  </Box>
-                </Box>
-
-                {/* Expenses */}
-                <Collapse in={!!expandedItems[idx]} timeout="auto">
-                  <Box
-                    sx={{
+                      display: "grid",
+                      gridTemplateColumns: ITEM_COLUMNS,
+                      alignItems: "center",
                       px: 3,
-                      py: 1.5,
-                      backgroundColor: "#f8fafc",
-                      borderBottom: "1px solid rgba(148,163,184,0.2)",
+                      py: 2,
+                      fontSize: 13.5,
+                      color: "text.primary",
+                      borderBottom:
+                        idx < localInvoiceItems.length - 1
+                          ? "1px solid rgba(148,163,184,0.15)"
+                          : "none",
+                      backgroundColor:
+                        idx % 2 === 0
+                          ? "white"
+                          : "rgba(248,250,252,0.6)",
+                      "&:hover": { backgroundColor: "rgba(236,246,255,0.4)" },
                     }}
                   >
-                    <Typography
-                      variant="subtitle2"
-                      sx={{ mb: 1, color: "#475569" }}
-                    >
-                      Additional expenses
-                    </Typography>
-
-                    {savedExpenses[idx].map((exp, eIdx) => {
-                      const expKey = `${idx}-${eIdx}`;
-                      const amount = Number(exp.amount) || 0;
-                      const expTotal =
-                        exp.duration && exp.duration > 0
-                          ? amount * exp.duration
-                          : amount;
-
-                      return (
-                        <Box
-                          key={expKey}
+                    <Box sx={{ color: theme.secondary, fontWeight: 600 }}>
+                      {String(idx + 1).padStart(2, "0")}
+                    </Box>
+                    <Box>
+                      <Typography sx={{ fontWeight: 600, mb: 0.25 }}>
+                        {item.name}
+                      </Typography>
+                    </Box>
+                    <Box sx={{ textAlign: "center", fontWeight: 500 }}>
+                      {item.ratemode}
+                    </Box>
+                    <Box sx={{ textAlign: "right" }}>
+                      {isEditing ? (
+                        <TextField
+                          type="number"
+                          size="small"
+                          value={item.duration}
+                          onChange={(e) =>
+                            handleDurationChange(idx, Number(e.target.value) || 0)
+                          }
                           sx={{
-                            display: "grid",
-                            gridTemplateColumns:
-                              "2fr 0.8fr 0.8fr 0.8fr auto",
-                            gap: 1,
-                            alignItems: "center",
-                            mb: 1,
+                            width: 60,
+                            ".MuiInputBase-root": {
+                              fontSize: 12,
+                              height: 32,
+                              minHeight: 32,
+                            },
                           }}
-                        >
+                        />
+                      ) : (
+                        item.duration || "-"
+                      )}
+                    </Box>
+                    <Box sx={{ textAlign: "right", fontWeight: 600 }}>
+                      {item.rateamount.toLocaleString(undefined, {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      })}
+                    </Box>
+                    <Box sx={{ textAlign: "center", fontWeight: 500 }}>
+                      {item.currency}
+                    </Box>
+                    <Box
+                      sx={{
+                        textAlign: "right",
+                        fontWeight: 700,
+                        color: theme.accent,
+                        fontSize: 14,
+                      }}
+                    >
+                      {rowTotal.toLocaleString(undefined, {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      })}
+                    </Box>
+                    <Box sx={{ textAlign: "right" }}>
+                      <IconButton
+                        size="small"
+                        onClick={() => toggleItemExpansion(idx)}
+                        sx={{ color: theme.secondary }}
+                      >
+                        {expandedItems[idx] ? (
+                          <ExpandLessIcon fontSize="small" />
+                        ) : (
+                          <ExpandMoreIcon fontSize="small" />
+                        )}
+                      </IconButton>
+                    </Box>
+                  </Box>
+
+                  {/* Elegant Expenses Section - GLOBAL EDIT MODE */}
+                  <Collapse in={!!expandedItems[idx]} timeout="auto" unmountOnExit>
+                    <Box
+                      sx={{
+                        px: 3,
+                        pb: 2,
+                        backgroundColor: "rgba(248,250,252,0.4)",
+                        borderBottom: "1px solid rgba(148,163,184,0.2)",
+                      }}
+                    >
+                      <Typography
+                        variant="subtitle2"
+                        sx={{
+                          mb: 1.5,
+                          color: theme.header,
+                          fontWeight: 600,
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 0.75,
+                        }}
+                      >
+                        <DescriptionIcon fontSize="small" sx={{ mr: 0.5 }} />
+                        Additional Expenses
+                      </Typography>
+
+                      {/* Saved Expenses - ALL FIELDS EDITABLE IN GLOBAL MODE */}
+                      {savedExpenses[idx].map((exp, eIdx) => {
+                        const amount = Number(exp.amount) || 0;
+                        const expTotal =
+                          exp.duration && exp.duration > 0
+                            ? amount * exp.duration
+                            : amount;
+                        const expKey = `${idx}-${eIdx}`;
+
+                        return (
                           <Box
+                            key={expKey}
                             sx={{
-                              display: "flex",
-                              alignItems: "center",
+                              display: "grid",
+                              gridTemplateColumns: ITEM_COLUMNS,
+                              alignItems: "start",
+                              px: 3,
+                              py: 1.25,
+                              mb: 0.5,
+                              backgroundColor: isEditing ? "rgba(236,246,255,0.4)" : "white",
+                              borderBottom: "1px solid rgba(148,163,184,0.08)",
                             }}
                           >
-                            <Chip
-                              size="small"
-                              label={exp.label || "Expense"}
-                              sx={{ mr: 1 }}
-                            />
-                            {exp.description && (
+                            <Box />
+                            <Box sx={{ display: "flex", flexDirection: "column", gap: 0.5 }}>
+                              {/* Label Field/Chip */}
+                              {isEditing ? (
+                                <TextField
+                                  size="small"
+                                  placeholder="Label"
+                                  value={exp.label || ""}
+                                  onChange={(e) =>
+                                    handleSavedExpenseChange(idx, eIdx, "label", e.target.value)
+                                  }
+                                  sx={{
+                                    ".MuiInputBase-root": {
+                                      fontSize: 12,
+                                      height: 32,
+                                      minHeight: 32,
+                                    },
+                                    borderRadius: 1,
+                                  }}
+                                />
+                              ) : (
+                                <Chip
+                                  size="small"
+                                  label={exp.label || "Unnamed Expense"}
+                                  sx={{
+                                    height: 20,
+                                    fontSize: 10,
+                                    fontWeight: 500,
+                                    backgroundColor: "rgba(99,102,241,0.1)",
+                                    color: "#6366f1",
+                                  }}
+                                />
+                              )}
+                              
+                              {/* Description Field - BELOW LABEL */}
+                              {isEditing && (
+                                <TextField
+                                  size="small"
+                                  placeholder="Description"
+                                  multiline
+                                  rows={1}
+                                  value={exp.description || ""}
+                                  onChange={(e) =>
+                                    handleSavedExpenseChange(idx, eIdx, "description", e.target.value)
+                                  }
+                                  sx={{
+                                    ".MuiInputBase-root": {
+                                      fontSize: 11,
+                                      height: 28,
+                                      minHeight: 28,
+                                    },
+                                    borderRadius: 1,
+                                  }}
+                                />
+                              )}
+                              
                               <IconButton
                                 size="small"
-                                onClick={() =>
-                                  toggleDescription(idx, eIdx)
-                                }
+                                onClick={() => toggleDescription(idx, eIdx)}
+                                sx={{ p: 0.25, alignSelf: "flex-start" }}
                               >
                                 {expandedDescriptions[expKey] ? (
                                   <ExpandLessIcon fontSize="small" />
@@ -821,319 +827,389 @@ export default function InvoiceTemplate({
                                   <DescriptionIcon fontSize="small" />
                                 )}
                               </IconButton>
-                            )}
-                          </Box>
-
-                          <Box>
-                            {isEditing ? (
-                              <TextField
-                                type="number"
-                                size="small"
-                                value={exp.duration ?? 0}
-                                onChange={(e) =>
-                                  handleSavedExpenseChange(
-                                    idx,
-                                    eIdx,
-                                    "duration",
-                                    Number(e.target.value) || 0
-                                  )
-                                }
-                              />
-                            ) : (
-                              exp.duration ?? 0
-                            )}
-                          </Box>
-
-                          <Box>
-                            {isEditing ? (
-                              <TextField
-                                type="number"
-                                size="small"
-                                value={exp.amount}
-                                onChange={(e) =>
-                                  handleSavedExpenseChange(
-                                    idx,
-                                    eIdx,
-                                    "amount",
-                                    Number(e.target.value) || 0
-                                  )
-                                }
-                              />
-                            ) : (
-                              exp.amount
-                            )}
-                          </Box>
-
-                          <Box>{exp.currency}</Box>
-
-                          <Box
-                            sx={{
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "flex-end",
-                              gap: 1,
-                            }}
-                          >
-                            <Typography
-                              variant="body2"
-                              sx={{ fontWeight: 500 }}
+                            </Box>
+                            <Box sx={{ textAlign: "center" }}>-</Box>
+                            <Box sx={{ textAlign: "right" }}>
+                              {isEditing ? (
+                                <TextField
+                                  type="number"
+                                  size="small"
+                                  value={exp.duration ?? 0}
+                                  onChange={(e) =>
+                                    handleSavedExpenseChange(
+                                      idx,
+                                      eIdx,
+                                      "duration",
+                                      Number(e.target.value) || 0
+                                    )
+                                  }
+                                  sx={{
+                                    width: 60,
+                                    ".MuiInputBase-root": {
+                                      fontSize: 12,
+                                      height: 32,
+                                      minHeight: 32,
+                                    },
+                                  }}
+                                />
+                              ) : (
+                                exp.duration ?? "-"
+                              )}
+                            </Box>
+                            <Box sx={{ textAlign: "right", fontWeight: 600 }}>
+                              {isEditing ? (
+                                <TextField
+                                  type="number"
+                                  size="small"
+                                  value={exp.amount || ""}
+                                  onChange={(e) =>
+                                    handleSavedExpenseChange(
+                                      idx,
+                                      eIdx,
+                                      "amount",
+                                      Number(e.target.value) || 0
+                                    )
+                                  }
+                                  sx={{
+                                    width: 75,
+                                    ".MuiInputBase-root": {
+                                      fontSize: 12,
+                                      height: 32,
+                                      minHeight: 32,
+                                    },
+                                  }}
+                                />
+                              ) : (
+                                amount.toLocaleString(undefined, {
+                                  minimumFractionDigits: 2,
+                                })
+                              )}
+                            </Box>
+                            <Box sx={{ textAlign: "center" }}>
+                              {isEditing ? (
+                                <TextField
+                                  size="small"
+                                  value={exp.currency || ""}
+                                  onChange={(e) =>
+                                    handleSavedExpenseChange(idx, eIdx, "currency", e.target.value)
+                                  }
+                                  sx={{
+                                    width: 50,
+                                    ".MuiInputBase-root": {
+                                      fontSize: 12,
+                                      height: 32,
+                                      minHeight: 32,
+                                    },
+                                  }}
+                                />
+                              ) : (
+                                exp.currency
+                              )}
+                            </Box>
+                            <Box
+                              sx={{
+                                textAlign: "right",
+                                fontWeight: 600,
+                                color: theme.accent,
+                              }}
                             >
                               {expTotal.toLocaleString(undefined, {
                                 minimumFractionDigits: 2,
-                                maximumFractionDigits: 2,
                               })}
-                            </Typography>
-                            {isEditing && (
-                              <IconButton
-                                size="small"
-                                color="error"
-                                onClick={() =>
-                                  handleRemoveExpense(idx, eIdx)
-                                }
-                              >
-                                <DeleteIcon fontSize="small" />
-                              </IconButton>
+                            </Box>
+                            <Box sx={{ textAlign: "right" }}>
+                              {isEditing && (
+                                <IconButton
+                                  size="small"
+                                  color="error"
+                                  onClick={() => handleRemoveExpense(idx, eIdx)}
+                                >
+                                  <DeleteIcon fontSize="small" />
+                                </IconButton>
+                              )}
+                            </Box>
+                            
+                            {/* Description Display (View Mode Only) */}
+                            {!isEditing && expandedDescriptions[expKey] && (
+                              <Collapse in={true} timeout="auto" sx={{ gridColumn: "1 / -1", mt: 0.75 }}>
+                                <Typography
+                                  variant="body2"
+                                  sx={{
+                                    color: theme.secondary,
+                                    fontSize: 12.5,
+                                    pl: 2,
+                                    py: 1,
+                                    backgroundColor: "rgba(248,250,252,0.6)",
+                                    borderRadius: 1,
+                                  }}
+                                >
+                                  {exp.description || "No description"}
+                                </Typography>
+                              </Collapse>
                             )}
                           </Box>
+                        );
+                      })}
 
-                          <Collapse
-                            in={!!expandedDescriptions[expKey]}
-                            timeout="auto"
-                            sx={{ gridColumn: "1 / -1", mt: 0.5 }}
-                          >
-                            <Typography
-                              variant="body2"
-                              sx={{ color: "#64748b" }}
-                            >
-                              {exp.description}
-                            </Typography>
-                          </Collapse>
-                        </Box>
-                      );
-                    })}
-
-                    {isEditing && (
-                      <Box
-                        sx={{
-                          display: "grid",
-                          gridTemplateColumns:
-                            "2fr 0.8fr 0.8fr 0.8fr auto",
-                          gap: 1,
-                          alignItems: "center",
-                          mt: 1,
-                        }}
-                      >
-                        <TextField
-                          size="small"
-                          placeholder="Label"
-                          value={
-                            additionalExpenses[idx][
-                              additionalExpenses[idx].length - 1
-                            ].label
-                          }
-                          onChange={(e) =>
-                            handleExpenseChange(
-                              idx,
-                              additionalExpenses[idx].length - 1,
-                              "label",
-                              e.target.value
-                            )
-                          }
-                        />
-                        <TextField
-                          size="small"
-                          type="number"
-                          placeholder="Duration"
-                          value={
-                            additionalExpenses[idx][
-                              additionalExpenses[idx].length - 1
-                            ].duration || ""
-                          }
-                          onChange={(e) =>
-                            handleExpenseChange(
-                              idx,
-                              additionalExpenses[idx].length - 1,
-                              "duration",
-                              e.target.value === ""
-                                ? ""
-                                : Number(e.target.value) || 0
-                            )
-                          }
-                        />
-                        <TextField
-                          size="small"
-                          type="number"
-                          placeholder="Amount"
-                          value={
-                            additionalExpenses[idx][
-                              additionalExpenses[idx].length - 1
-                            ].amount || ""
-                          }
-                          onChange={(e) =>
-                            handleExpenseChange(
-                              idx,
-                              additionalExpenses[idx].length - 1,
-                              "amount",
-                              e.target.value === ""
-                                ? ""
-                                : Number(e.target.value) || 0
-                            )
-                          }
-                        />
-                        <TextField
-                          size="small"
-                          placeholder="Currency"
-                          value={
-                            additionalExpenses[idx][
-                              additionalExpenses[idx].length - 1
-                            ].currency
-                          }
-                          onChange={(e) =>
-                            handleExpenseChange(
-                              idx,
-                              additionalExpenses[idx].length - 1,
-                              "currency",
-                              e.target.value
-                            )
-                          }
-                        />
-                        <Button
-                          variant="outlined"
-                          size="small"
-                          startIcon={<AddIcon />}
-                          onClick={() => handleAddExpenseClick(idx)}
+                      {/* Add New Expense Form */}
+                      {isEditing && (
+                        <Box
+                          sx={{
+                            display: "grid",
+                            gridTemplateColumns: ITEM_COLUMNS,
+                            alignItems: "center",
+                            px: 3,
+                            py: 1.25,
+                            mt: 1,
+                            backgroundColor: "rgba(236,246,255,0.4)",
+                            border: "2px dashed rgba(37,99,235,0.3)",
+                            borderRadius: 1,
+                          }}
                         >
-                          Add
-                        </Button>
-                      </Box>
-                    )}
-                  </Box>
-                </Collapse>
-              </React.Fragment>
-            );
-          })}
-        </Box>
+                          <Box />
+                          <Box sx={{ display: "flex", flexDirection: "column", gap: 0.5 }}>
+                            <TextField
+                              size="small"
+                              placeholder="Label"
+                              value={
+                                additionalExpenses[idx]?.[additionalExpenses[idx].length - 1]
+                                  ?.label || ""
+                              }
+                              onChange={(e) =>
+                                handleExpenseChange(
+                                  idx,
+                                  additionalExpenses[idx].length - 1,
+                                  "label",
+                                  e.target.value
+                                )
+                              }
+                              sx={{
+                                ".MuiInputBase-root": {
+                                  fontSize: 12,
+                                  height: 32,
+                                  minHeight: 32,
+                                },
+                                borderRadius: 1,
+                              }}
+                            />
+                            <TextField
+                              size="small"
+                              placeholder="Description"
+                              multiline
+                              rows={1}
+                              value={
+                                additionalExpenses[idx]?.[additionalExpenses[idx].length - 1]
+                                  ?.description || ""
+                              }
+                              onChange={(e) =>
+                                handleExpenseChange(
+                                  idx,
+                                  additionalExpenses[idx].length - 1,
+                                  "description",
+                                  e.target.value
+                                )
+                              }
+                              sx={{
+                                ".MuiInputBase-root": {
+                                  fontSize: 11,
+                                  height: 28,
+                                  minHeight: 28,
+                                },
+                                borderRadius: 1,
+                              }}
+                            />
+                          </Box>
+                          <Box sx={{ textAlign: "center" }}>-</Box>
+                          <TextField
+                            size="small"
+                            type="number"
+                            placeholder="Dur"
+                            value={
+                              additionalExpenses[idx]?.[additionalExpenses[idx].length - 1]
+                                ?.duration || ""
+                            }
+                            onChange={(e) =>
+                              handleExpenseChange(
+                                idx,
+                                additionalExpenses[idx].length - 1,
+                                "duration",
+                                Number(e.target.value) || 0
+                              )
+                            }
+                            sx={{
+                              width: 60,
+                              ".MuiInputBase-root": {
+                                fontSize: 12,
+                                height: 32,
+                                minHeight: 32,
+                              },
+                            }}
+                          />
+                          <TextField
+                            size="small"
+                            type="number"
+                            placeholder="Amt"
+                            value={
+                              additionalExpenses[idx]?.[additionalExpenses[idx].length - 1]
+                                ?.amount || ""
+                            }
+                            onChange={(e) =>
+                              handleExpenseChange(
+                                idx,
+                                additionalExpenses[idx].length - 1,
+                                "amount",
+                                Number(e.target.value) || 0
+                              )
+                            }
+                            sx={{
+                              width: 75,
+                              ".MuiInputBase-root": {
+                                fontSize: 12,
+                                height: 32,
+                                minHeight: 32,
+                              },
+                            }}
+                          />
+                          <TextField
+                            size="small"
+                            placeholder="Cur"
+                            value={
+                              additionalExpenses[idx]?.[additionalExpenses[idx].length - 1]
+                                ?.currency || ""
+                            }
+                            onChange={(e) =>
+                              handleExpenseChange(
+                                idx,
+                                additionalExpenses[idx].length - 1,
+                                "currency",
+                                e.target.value
+                              )
+                            }
+                            sx={{
+                              width: 50,
+                              ".MuiInputBase-root": {
+                                fontSize: 12,
+                                height: 32,
+                                minHeight: 32,
+                              },
+                            }}
+                          />
+                          <Box sx={{ textAlign: "right" }}>
+                            <Button
+                              variant="outlined"
+                              size="small"
+                              startIcon={<AddIcon fontSize="small" />}
+                              onClick={() => handleAddExpenseClick(idx)}
+                              sx={{
+                                minWidth: 65,
+                                fontSize: 12,
+                                borderColor: theme.accent,
+                                color: theme.accent,
+                                "&:hover": {
+                                  borderColor: theme.accent,
+                                  backgroundColor: `${theme.accent}12`,
+                                },
+                              }}
+                            >
+                              Add
+                            </Button>
+                          </Box>
+                          <Box />
+                        </Box>
+                      )}
+                    </Box>
+                  </Collapse>
+                </React.Fragment>
+              );
+            })}
+          </Box>
+        </CardContent>
 
-        {/* Totals & notice */}
-        <Box
-          sx={{
-            px: 3,
-            py: 2.5,
-            display: "grid",
-            gridTemplateColumns: { xs: "1fr", md: "1.6fr 0.9fr" },
-            gap: 3,
-            alignItems: "flex-start",
-            backgroundColor: "#ffffff",
-          }}
-        >
+        {/* Totals + Notice */}
+        <CardContent>
           <Box
             sx={{
-              p: 2,
-              borderRadius: 2,
-              backgroundColor: theme.notice,
-              border: `1px dashed ${theme.accent}66`,
+              px: 3,
+              py: 2.5,
+              display: "grid",
+              gridTemplateColumns: { xs: "1fr", md: "1.6fr 0.9fr" },
+              gap: 3,
+              alignItems: "flex-start",
+              backgroundColor: "white",
             }}
           >
-            <Typography
-              variant="subtitle2"
-              sx={{ mb: 0.5, color: theme.header }}
-            >
-              Notice
-            </Typography>
-            <Typography variant="body2" sx={{ color: "#475569" }}>
-              {invoice.notice}
-            </Typography>
-          </Box>
-
-          <Box sx={{ ml: { md: "auto" }, maxWidth: 320 }}>
-            <Box
-              sx={{
-                display: "flex",
-                justifyContent: "space-between",
-                mb: 1,
-                fontSize: 14,
-              }}
-            >
-              <Typography sx={{ color: "#64748b" }}>Subtotal</Typography>
-              <Typography sx={{ textAlign: "right" }}>
-                {(grandTotal - taxAmount).toLocaleString(undefined, {
-                  minimumFractionDigits: 2,
-                  maximumFractionDigits: 2,
-                })}
+            <Box sx={{ p: 2, borderRadius: 2, backgroundColor: theme.notice, border: `1px dashed ${theme.accent}66` }}>
+              <Typography variant="subtitle2" sx={{ mb: 0.5, color: theme.header }}>
+                Notice
+              </Typography>
+              <Typography variant="body2" sx={{ color: "#475569" }}>
+                {invoice.notice}
               </Typography>
             </Box>
-
-            <Box
-              sx={{
-                display: "flex",
-                justifyContent: "space-between",
-                mb: 1,
-                alignItems: "center",
-                fontSize: 14,
-              }}
-            >
-              <Typography sx={{ color: "#64748b" }}>Tax %</Typography>
-              {isEditing ? (
-                <TextField
-                  size="small"
-                  type="number"
-                  value={taxPercent}
-                  onChange={handleTaxPercentChange}
-                  sx={{ width: 80 }}
-                />
-              ) : (
-                <Typography>{taxPercent}%</Typography>
-              )}
-            </Box>
-
-            <Box
-              sx={{
-                display: "flex",
-                justifyContent: "space-between",
-                mb: 1.5,
-                fontSize: 14,
-              }}
-            >
-              <Typography sx={{ color: "#64748b" }}>Tax Amount</Typography>
-              <Typography sx={{ textAlign: "right" }}>
-                {taxAmount.toLocaleString(undefined, {
-                  minimumFractionDigits: 2,
-                  maximumFractionDigits: 2,
-                })}
-              </Typography>
-            </Box>
-
-            <Divider sx={{ my: 1.5 }} />
-
-            <Box
-              sx={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                backgroundColor: `${theme.accent}10`,
-                borderRadius: 999,
-                px: 1.75,
-                py: 1,
-              }}
-            >
-              <Typography
-                variant="subtitle2"
-                sx={{ fontWeight: 600, color: theme.header }}
+            <Box sx={{ ml: "md-auto", maxWidth: 320 }}>
+              <Box sx={{ display: "flex", justifyContent: "space-between", mb: 1, fontSize: 14 }}>
+                <Typography sx={{ color: "#64748b" }}>Subtotal</Typography>
+                <Typography sx={{ textAlign: "right" }}>
+                  {(grandTotal - taxAmount).toLocaleString(undefined, {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                  })}
+                </Typography>
+              </Box>
+              <Box sx={{ display: "flex", justifyContent: "space-between", mb: 1, alignItems: "center", fontSize: 14 }}>
+                <Typography sx={{ color: "#64748b" }}>Tax</Typography>
+                {isEditing ? (
+                  <TextField
+                    size="small"
+                    type="number"
+                    value={taxPercent}
+                    onChange={handleTaxPercentChange}
+                    sx={{
+                      width: 65,
+                      ".MuiInputBase-root": { fontSize: 12, height: 32, minHeight: 32 },
+                    }}
+                  />
+                ) : (
+                  <Typography>{taxPercent}%</Typography>
+                )}
+              </Box>
+              <Box sx={{ display: "flex", justifyContent: "space-between", mb: 1.5, fontSize: 14 }}>
+                <Typography sx={{ color: "#64748b" }}>Tax Amount</Typography>
+                <Typography sx={{ textAlign: "right" }}>
+                  {taxAmount.toLocaleString(undefined, {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                  })}
+                </Typography>
+              </Box>
+              <Divider sx={{ my: 1.5 }} />
+              <Box
+                sx={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  backgroundColor: `${theme.accent}10`,
+                  borderRadius: 999,
+                  px: 1.75,
+                  py: 1,
+                }}
               >
-                Grand Total
-              </Typography>
-              <Typography
-                variant="h6"
-                sx={{ fontWeight: 700, color: theme.accent }}
-              >
-                {grandTotal.toLocaleString(undefined, {
-                  minimumFractionDigits: 2,
-                  maximumFractionDigits: 2,
-                })}
-              </Typography>
+                <Typography variant="subtitle2" sx={{ fontWeight: 600, color: theme.header }}>
+                  Grand Total
+                </Typography>
+                <Typography
+                  variant="h6"
+                  sx={{ fontWeight: 700, color: theme.accent }}
+                >
+                  {grandTotal.toLocaleString(undefined, {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                  })}
+                </Typography>
+              </Box>
             </Box>
           </Box>
-        </Box>
+        </CardContent>
       </Card>
     </Box>
   );
