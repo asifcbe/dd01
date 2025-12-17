@@ -1,5 +1,7 @@
 import React from "react";
-import LocalMallIcon from "@mui/icons-material/LocalMall";
+import {
+  Store as VendorsIcon
+} from "@mui/icons-material";
 import ParticipantManager from "./ParticipantManager";
 
 const fields = [
@@ -29,7 +31,7 @@ export default function Vendors() {
   return (
     <ParticipantManager
       title="Vendors"
-      icon={LocalMallIcon}
+      icon={VendorsIcon}
       apiType="Vendor"
       fields={fields}
       displayFields={displayFields}

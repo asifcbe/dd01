@@ -1,5 +1,6 @@
-import React from "react";
-import BusinessIcon from "@mui/icons-material/Business";
+import {
+  Business as CompaniesIcon
+} from "@mui/icons-material";
 import ParticipantManager from "./ParticipantManager";
 
 const fields = [
@@ -29,7 +30,7 @@ export default function Companies() {
   return (
     <ParticipantManager
       title="Companies"
-      icon={BusinessIcon}
+      icon={CompaniesIcon}
       apiType="Company"
       fields={fields}
       displayFields={displayFields}

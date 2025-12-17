@@ -1,5 +1,6 @@
-import React from "react";
-import EmojiObjectsIcon from "@mui/icons-material/EmojiObjects";
+import {
+  Engineering as ConsultantsIcon
+} from "@mui/icons-material";
 import ParticipantManager from "./ParticipantManager";
 
 const fields = [
@@ -29,7 +30,7 @@ export default function Consultants() {
   return (
     <ParticipantManager
       title="Consultants"
-      icon={EmojiObjectsIcon}
+      icon={ConsultantsIcon}
       apiType="Consultant"
       fields={fields}
       displayFields={displayFields}

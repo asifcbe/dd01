@@ -281,12 +281,12 @@ export default function ParticipantManager({
       </Grid>
       <Box sx={{ mt: 5, textAlign: "left", p: 1 }}>
         <Button variant="contained" size="large" onClick={handleOpen}>
-          Add {title.slice(0, -1)}
+          Add {apiType}
         </Button>
       </Box>
       {/* Add Dialog */}
       <Dialog open={open} onClose={handleClose}>
-        <DialogTitle>Add {title.slice(0, -1)}</DialogTitle>
+        <DialogTitle>Add {apiType}</DialogTitle>
         <DialogContent>
           {fields.map((field) => renderField(field, newItem[field.name], handleChange))}
         </DialogContent>

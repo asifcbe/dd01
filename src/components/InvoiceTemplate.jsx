@@ -35,7 +35,7 @@ const COLOR_THEMES = [
   { name: "Warm Orange", accent: "#ea580c", header: "#9a3412", bg: "#fff7ed", notice: "#fed7aa", secondary: "#f97316" },
 ];
 
-const ITEM_GRID_TEMPLATE = "56px minmax(200px, 2.4fr) 1.2fr 1fr 1.1fr 0.9fr 1.2fr 56px";
+const ITEM_GRID_TEMPLATE = "48px 8px minmax(200px, 2.4fr) 8px 1.2fr 1fr 1.1fr 0.9fr 1.2fr 56px";
 
 function formatDateToISO(dateStr) {
   if (!dateStr) return "";
@@ -70,6 +70,8 @@ const NumberInput = ({ value, onChange, placeholder, align = "right", sx, ...pro
       ".MuiInputBase-root": { fontSize: 13, height: 32, minHeight: 32, pr: 0 },
       "& input": { pr: 1.5, pl: 0.5 }, // Strict padding right 12px to match header
       "& input::-webkit-outer-spin-button, & input::-webkit-inner-spin-button": { "-webkit-appearance": "none", margin: 0 },
+      "& input::placeholder": { color: "#000000", opacity: 0.7 },
+      ".MuiOutlinedInput-notchedOutline": { borderColor: "rgba(0, 0, 0, 0.12)", borderWidth: "1px" },
     }}
     {...props}
   />
@@ -85,6 +87,8 @@ const CenterInput = ({ value, onChange, placeholder, sx, ...props }) => (
     sx={{
       ...sx,
       ".MuiInputBase-root": { fontSize: 13, height: 32, minHeight: 32 },
+      "& input::placeholder": { color: "#000000", opacity: 0.7 },
+      ".MuiOutlinedInput-notchedOutline": { borderColor: "rgba(0, 0, 0, 0.12)", borderWidth: "1px" },
     }}
     {...props}
   />
@@ -101,6 +105,7 @@ const SelectInput = ({ value, onChange, options, sx }) => (
       width: "100%",
       ".MuiSelect-select": { textAlign: "center", pl: 1, pr: 3, fontSize: 13 }, // pr:3 to make room for icon
       ".MuiInputBase-root": { height: 32, minHeight: 32 },
+      ".MuiOutlinedInput-notchedOutline": { borderColor: "rgba(0, 0, 0, 0.12)", borderWidth: "1px" },
     }}
   >
     {options.map((opt) => (
@@ -303,6 +308,7 @@ export default function InvoiceTemplate({
           }}
         >
           <GridCell align="center" sx={{ color: theme.secondary, fontWeight: 600 }}>{String(idx + 1).padStart(2, "0")}</GridCell>
+          <GridCell />
           
           {/* Description - Seamless Input */}
           <GridCell sx={isEditing ? { px: 0 } : {}}>
@@ -318,14 +324,17 @@ export default function InvoiceTemplate({
                 }}
                 sx={{
                   width: "100%",
-                  ".MuiInputBase-root": { fontSize: 13, p: 0, border: "none" },
+                  ".MuiInputBase-root": { fontSize: 13, p: 0, border: "1px solid rgba(0, 0, 0, 0.12)", borderRadius: 1 },
                   "& fieldset": { border: "none" },
-                  "& textarea": { pl: 1.5, lineHeight: 1.5 }
+                  "& textarea": { pl: 1.5, lineHeight: 1.5 },
+                  "& textarea::placeholder": { color: "#000000", opacity: 0.7 }
                 }}
               />
             ) : <Typography fontWeight={500} fontSize={13}>{item.name}</Typography>}
             {!expandedItems[idx] && <Typography variant="caption" color="text.secondary" display="block">{item.description}</Typography>}
           </GridCell>
+
+          <GridCell />
 
           {/* Rate Mode - Seamless */}
           <GridCell align="center" sx={isEditing ? { px: 0 } : {}}>
@@ -410,7 +419,7 @@ export default function InvoiceTemplate({
     return (
       <Collapse in={expandedItems[mainIdx]} timeout="auto" unmountOnExit>
       <Box sx={{ backgroundColor: "rgba(248,250,252,0.4)", borderBottom: "1px solid rgba(148,163,184,0.2)", pb: 2 }}>
-        <Typography variant="overline" sx={{ display: "block", px: 3, pt: 2, pb: 1, color: theme.secondary, fontWeight: 600, fontSize: 11, letterSpacing: 1 }}>
+        <Typography variant="overline" sx={{ display: "block", pl: "90px", pr: 3, pt: 2, pb: 1, color: theme.secondary, fontWeight: 600, fontSize: 11, letterSpacing: 1 }}>
           ADDITIONAL EXPENSES
         </Typography>
 
@@ -428,23 +437,25 @@ export default function InvoiceTemplate({
             }}
           >
              <GridCell />
+             <GridCell />
              <GridCell sx={isEditing ? { px: 0 } : {}}>
                 {isEditing ? (
                    <Box sx={{ display: "flex", flexDirection: "column", gap: 0.5 }}>
                      <TextField size="small" placeholder="Label" value={exp.label || ""}
                         onChange={(e) => handleSavedExpenseChange(mainIdx, eIdx, "label", e.target.value)}
-                        sx={{ ".MuiInputBase-root": { fontSize: 13, height: 32, pl: 0 }, "& fieldset": { border: "none" }, "& input": { pl: 1.5 } }} />
+                        sx={{ ".MuiInputBase-root": { fontSize: 13, height: 32, pl: 0, border: "1px solid rgba(0, 0, 0, 0.12)", borderRadius: 1 }, "& fieldset": { border: "none" }, "& input": { pl: 1.5 }, "& input::placeholder": { color: "#000000", opacity: 0.7 } }} />
                      <TextField size="small" placeholder="Desc" multiline rows={1} value={exp.description || ""}
                         onChange={(e) => handleSavedExpenseChange(mainIdx, eIdx, "description", e.target.value)}
-                        sx={{ ".MuiInputBase-root": { fontSize: 12, pl: 0 }, "& fieldset": { border: "none" }, "& textarea": { pl: 1.5 } }} />
+                        sx={{ ".MuiInputBase-root": { fontSize: 12, pl: 0, border: "1px solid rgba(0, 0, 0, 0.12)", borderRadius: 1 }, "& fieldset": { border: "none" }, "& textarea": { pl: 1.5 }, "& textarea::placeholder": { color: "#000000", opacity: 0.7 } }} />
                    </Box>
                 ) : (
                   <Box>
                     <Typography sx={{ fontSize: 13, fontWeight: 500 }}>{exp.label || "Expense"}</Typography>
                     {exp.description && <Typography variant="caption" color="text.secondary">{exp.description}</Typography>}
-                  </Box>
-                )}
-             </GridCell>
+                   </Box>
+                 )}
+              </GridCell>
+              <GridCell />
              <GridCell align="center" sx={isEditing ? { px: 0 } : {}}>
                 {isEditing ? (
                   <SelectInput value={exp.ratemode || "Flat"} options={["Flat","Daily","Monthly","Hourly"]}
@@ -492,14 +503,16 @@ export default function InvoiceTemplate({
            }}>
              {/* We need to re-apply the grid cell logic perfectly here */}
              <GridCell />
+             <GridCell />
              <GridCell sx={{ px: 0 }}>
                 <Box sx={{ display:"flex", flexDirection:"column", gap:0.5 }}>
                   <TextField size="small" placeholder="New Expense Label" value={additionalExpenses[mainIdx][additionalExpenses[mainIdx].length-1].label}
-                    onChange={(e) => handleAddExpChange(mainIdx, "label", e.target.value)} sx={{ ".MuiInputBase-root":{ fontSize:13, height:32, pl:0, border:"none" }, "& fieldset":{ border:"none" }, "& input":{ pl:1.5, "::placeholder":{ color:"rgba(0,0,0,0.4)" } } }}/>
+                    onChange={(e) => handleAddExpChange(mainIdx, "label", e.target.value)} sx={{ ".MuiInputBase-root":{ fontSize:13, height:32, pl:0, border:"1px solid rgba(0, 0, 0, 0.12)", borderRadius: 1 }, "& fieldset":{ border:"none" }, "& input":{ pl:1.5, "::placeholder":{ color:"#000000", opacity: 0.7 } } }}/>
                   <TextField size="small" placeholder="Description" multiline rows={1} value={additionalExpenses[mainIdx][additionalExpenses[mainIdx].length-1].description}
-                     onChange={(e) => handleAddExpChange(mainIdx, "description", e.target.value)} sx={{ ".MuiInputBase-root":{ fontSize:11, pl:0, border:"none" }, "& fieldset":{ border:"none" }, "& textarea":{ pl:1.5, "::placeholder":{ color:"rgba(0,0,0,0.3)" } } }}/>
-                </Box>
-             </GridCell>
+                     onChange={(e) => handleAddExpChange(mainIdx, "description", e.target.value)} sx={{ ".MuiInputBase-root":{ fontSize:11, pl:0, border:"1px solid rgba(0, 0, 0, 0.12)", borderRadius: 1 }, "& fieldset":{ border:"none" }, "& textarea":{ pl:1.5, "::placeholder":{ color:"#000000", opacity: 0.7 } } }}/>
+                 </Box>
+              </GridCell>
+              <GridCell />
              <GridCell align="center" sx={{ px: 0 }}>
                 <SelectInput value={additionalExpenses[mainIdx][additionalExpenses[mainIdx].length-1].ratemode} options={["Flat","Daily","Monthly","Hourly"]}
                    onChange={(e) => handleAddExpChange(mainIdx, "ratemode", e.target.value)} sx={{ ".MuiOutlinedInput-notchedOutline": { border: "none" } }} /> 
@@ -507,7 +520,7 @@ export default function InvoiceTemplate({
              <GridCell align="center" sx={{ px: 0 }}>
                 <NumberInput value={additionalExpenses[mainIdx][additionalExpenses[mainIdx].length-1].duration} placeholder="Dur"
                    align="center"
-                   onChange={(e) => handleAddExpChange(mainIdx, "duration", Number(e.target.value))}  sx={{ ".MuiOutlinedInput-notchedOutline": { border: "none" } }} />
+                   onChange={(e) => handleAddExpChange(mainIdx, "duration", Number(e.target.value))}  sx={{ width: 60, ".MuiOutlinedInput-notchedOutline": { border: "none" } }} />
              </GridCell>
              <GridCell align="center" sx={{ px: 0 }}>
                 <NumberInput value={additionalExpenses[mainIdx][additionalExpenses[mainIdx].length-1].amount} placeholder="Amt"
@@ -522,10 +535,9 @@ export default function InvoiceTemplate({
              </GridCell>
              <GridCell />
              <GridCell align="right">
-                 <Button variant="text" size="small" onClick={() => handleConfirmAddExpense(mainIdx)} startIcon={<AddIcon fontSize="small"/>}
-                   sx={{ fontSize: 11, minWidth: 60, height: 28, color: theme.accent }}>
-                   Add
-                 </Button>
+                  <IconButton size="small" onClick={() => handleConfirmAddExpense(mainIdx)} sx={{ color: theme.accent }}>
+                    <AddIcon fontSize="small"/>
+                  </IconButton>
              </GridCell>
            </Box>
         )}
@@ -588,7 +600,9 @@ export default function InvoiceTemplate({
         {/* Table Header */}
         <Box sx={{ px: 3, py: 1.5, borderBottom: "2px solid rgba(148,163,184,0.3)", backgroundColor: "rgba(243,244,246,0.8)", display: "grid", gridTemplateColumns: ITEM_GRID_TEMPLATE, fontSize: 12, fontWeight: 700, textTransform: "uppercase", color: theme.header }}>
            <GridCell />
+           <GridCell />
            <GridCell>Description</GridCell>
+           <GridCell />
            <GridCell align="center">Rate Mode</GridCell>
            <GridCell align="center">Duration</GridCell>
            <GridCell align="center">Rate</GridCell>

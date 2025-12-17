@@ -1,5 +1,8 @@
 import React, { useState, useEffect } from "react";
 import {
+  DesignServices as TemplatesIcon
+} from "@mui/icons-material";
+import {
   Box,
   Tabs,
   Tab,
@@ -16,6 +19,7 @@ import {
   MenuItem,
   Divider,
   Button,
+  Avatar
 } from "@mui/material";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import EditIcon from "@mui/icons-material/Edit";
@@ -25,7 +29,8 @@ import "reactflow/dist/style.css";
 
 // Converter: Mermaid-style script to ReactFlow nodes/edges for neat tree
 function mermaidToReactFlow(scriptArr) {
-  const edgeRegex = /(\d+)\((\d+):([^)]+)\)\s*--\s*ProjectId:(\d+)\s*-->\s*(\d+)\((\d+):([^)]+)\)/;
+  const edgeRegex =
+    /(\d+)\((\d+):([^)]+)\)\s*--\s*ProjectId:(\d+)\s*-->\s*(\d+)\((\d+):([^)]+)\)/;
   const nodeMap = {};
   const edgeArr = [];
   scriptArr.forEach((line) => {
@@ -136,13 +141,15 @@ export default function Templates() {
 
   return (
     <Box>
-          <Typography variant="h4" sx={{ fontWeight: "bold", mb: 3 }}>Templates</Typography>
+      <Typography variant="h4" sx={{ fontWeight: "bold", mb: 3 }}>
+        Templates
+      </Typography>
       <Tabs value={tabIdx} onChange={(_, v) => setTabIdx(v)} sx={{ mb: 2 }}>
         <Tab label="List Templates" />
         <Tab label="Tree View" disabled={!selectedTemplateId} />
       </Tabs>
       {tabIdx === 0 && (
-        <Grid container spacing={4} >
+        <Grid container spacing={4}>
           {templateList.map((template) => (
             <Grid
               item
@@ -150,7 +157,7 @@ export default function Templates() {
               sm={6}
               md={4}
               key={template.id}
-              sx={{ display: "flex", justifyContent: "center" ,p: 1}  }
+              sx={{ display: "flex", justifyContent: "center", p: 1 }}
             >
               <Card
                 elevation={4}
@@ -168,6 +175,13 @@ export default function Templates() {
                 }}
               >
                 <CardHeader
+                  avatar={
+                    <Avatar
+                      sx={{ bgcolor: "primary.main", width: 40, height: 40 }}
+                    >
+                      <TemplatesIcon />
+                    </Avatar>
+                  }
                   title={
                     <Typography variant="h6" fontWeight="bold" noWrap>
                       {template.name}
@@ -185,14 +199,28 @@ export default function Templates() {
                         anchorEl={menuAnchors[template.id]}
                         open={Boolean(menuAnchors[template.id])}
                         onClose={() => handleMenuClose(template.id)}
-                        anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
-                        transformOrigin={{ vertical: "top", horizontal: "right" }}
+                        anchorOrigin={{
+                          vertical: "bottom",
+                          horizontal: "right",
+                        }}
+                        transformOrigin={{
+                          vertical: "top",
+                          horizontal: "right",
+                        }}
                       >
-                        <MenuItem onClick={() => handleEditTemplate(template.id)}>
+                        <MenuItem
+                          onClick={() => handleEditTemplate(template.id)}
+                        >
                           <EditIcon fontSize="small" sx={{ mr: 1 }} /> Edit
                         </MenuItem>
-                        <MenuItem onClick={() => handleDeleteTemplate(template.id)}>
-                          <DeleteIcon fontSize="small" sx={{ mr: 1, color: "#f44336" }} /> Delete
+                        <MenuItem
+                          onClick={() => handleDeleteTemplate(template.id)}
+                        >
+                          <DeleteIcon
+                            fontSize="small"
+                            sx={{ mr: 1, color: "#f44336" }}
+                          />{" "}
+                          Delete
                         </MenuItem>
                       </Menu>
                     </>
@@ -223,12 +251,14 @@ export default function Templates() {
                           <ListItemText
                             primary={
                               <span>
-                                <b>{project.given_by}</b> &rarr; <b>{project.taken_by}</b>
+                                <b>{project.given_by}</b> &rarr;{" "}
+                                <b>{project.taken_by}</b>
                               </span>
                             }
                             secondary={
                               <span style={{ fontSize: 11 }}>
-                                {project.rate_amount} {project.currency} ({project.rate_mode})
+                                {project.rate_amount} {project.currency} (
+                                {project.rate_mode})
                               </span>
                             }
                           />
@@ -260,7 +290,7 @@ export default function Templates() {
         <Box sx={{ height: 600, bgcolor: "#f9faff", borderRadius: 2 }}>
           {nodes.length > 0 ? (
             <ReactFlow nodes={nodes} edges={edges} fitView>
-              <Background color="black"/>
+              <Background color="black" />
               <Controls showInteractive={false} showZoom={true} />
             </ReactFlow>
           ) : (

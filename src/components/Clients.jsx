@@ -1,5 +1,6 @@
-import React from "react";
-import PersonIcon from "@mui/icons-material/Person";
+import {
+  Groups as ClientsIcon
+} from "@mui/icons-material";
 import ParticipantManager from "./ParticipantManager";
 
 const clientTypes = ["Individual", "Company", "Organization"];
@@ -33,7 +34,7 @@ export default function Clients() {
   return (
     <ParticipantManager
       title="Clients"
-      icon={PersonIcon}
+      icon={ClientsIcon}
       apiType="Client"
       fields={fields}
       displayFields={displayFields}

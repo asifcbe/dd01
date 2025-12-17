@@ -4,7 +4,9 @@ import {
   Dialog, DialogTitle, DialogContent, DialogActions, TextField, Menu, MenuItem,
   Fade, Avatar, Divider
 } from "@mui/material";
-import AssignmentIcon from "@mui/icons-material/AssignmentTurnedIn";
+import {
+  Assignment as ProjectsIcon
+} from "@mui/icons-material";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -103,7 +105,7 @@ export default function Projects() {
                 <CardHeader
                   avatar={
                     <Avatar sx={{ bgcolor: "primary.main", width: 40, height: 40 }}>
-                      <AssignmentIcon />
+                      <ProjectsIcon />
                     </Avatar>
                   }
                   title={
