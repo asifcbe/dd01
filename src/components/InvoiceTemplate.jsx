@@ -507,7 +507,10 @@ export default function InvoiceTemplate({
                 <Typography variant="caption" sx={{ textTransform: "uppercase", color: "text.secondary", mb: 0.5 }}>INVOICE DATE</Typography>
                 {isEditing ? (
                   <LocalizationProvider dateAdapter={AdapterDateFns}>
+                    <div className="datePickr">
                     <DatePicker value={editInvoiceDate?new Date(editInvoiceDate):null} onChange={(v)=>setEditInvoiceDate(v?v.toISOString().slice(0,10):null)} slotProps={{ textField: { size:"small", sx:{ width:150 } } }} />
+
+                    </div>
                   </LocalizationProvider>
                 ) : <Typography variant="body2" fontWeight={500}>{localInvoiceDate}</Typography>}
               </Box>
@@ -515,7 +518,9 @@ export default function InvoiceTemplate({
                 <Typography variant="caption" sx={{ textTransform: "uppercase", color: "text.secondary", mb: 0.5 }}>DUE DATE</Typography>
                 {isEditing ? (
                   <LocalizationProvider dateAdapter={AdapterDateFns}>
+                    <div className="datePickr">
                     <DatePicker value={editDueDate?new Date(editDueDate):null} onChange={(v)=>setEditDueDate(v?v.toISOString().slice(0,10):null)} slotProps={{ textField: { size:"small", sx:{ width:150 } } }} />
+                  </div>
                   </LocalizationProvider>
                 ) : <Typography variant="body2" fontWeight={500}>{localDueDate}</Typography>}
               </Box>
@@ -557,7 +562,7 @@ export default function InvoiceTemplate({
             </Box>
             <Box sx={{ display: "flex", justifyContent: "space-between", mb: 1, alignItems: "center" }}>
               <Typography color="text.secondary">Tax %</Typography>
-              {isEditing ? <NumberInput value={taxPercent} onChange={(e) => setTaxPercent(Number(e.target.value))} sx={{ width: 60 }} /> : <Typography>{taxPercent}%</Typography>}
+              {isEditing ? <NumberInput value={taxPercent} onChange={(e) => setTaxPercent(Number(e.target.value))} sx={{ width: 60 }} /> : <Typography>{taxPercent}</Typography>}
             </Box>
             <Box sx={{ display: "flex", justifyContent: "space-between", mb: 2 }}>
               <Typography color="text.secondary">Tax Amount</Typography>
