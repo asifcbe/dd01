@@ -203,7 +203,7 @@ export default function InvoiceTemplate({
         const printWindow = window.open(url);
         if (printWindow) {
           printWindow.onload = () => {
-            printWindow.print();
+            // printWindow.print();
             URL.revokeObjectURL(url);
           };
         }
