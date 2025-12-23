@@ -16,6 +16,8 @@ import {
   InputLabel,
   ToggleButtonGroup,
   ToggleButton,
+  CircularProgress,
+  Backdrop
 } from "@mui/material";
 import AddBoxIcon from "@mui/icons-material/AddBox";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -30,6 +32,10 @@ import EmailIcon from "@mui/icons-material/Email";
 import LocationOnIcon from "@mui/icons-material/LocationOn";
 import { LocalizationProvider, DatePicker } from "@mui/x-date-pickers";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
+
+// --- PDF Generation Imports ---
+import html2canvas from "html2canvas";
+import jsPDF from "jspdf";
 
 // --- Constants & Config ---
 const COLOR_THEMES = [
@@ -117,7 +123,6 @@ const SelectInput = ({ value, onChange, options, sx }) => (
   </Select>
 );
 
-// --- Main Component ---
 export default function InvoiceTemplate({
   invoice = {
     invoiceId: "INV-1",
@@ -137,10 +142,10 @@ export default function InvoiceTemplate({
 }) {
   const componentRef = useRef(null);
   const [themeIdx, setThemeIdx] = useState(0);
+  const [isGenerating, setIsGenerating] = useState(false);
   const theme = COLOR_THEMES[themeIdx];
 
-  // --- NEW STATES FOR TOGGLE ---
-  const [viewMode, setViewMode] = useState("full"); // "full" or "individual"
+  const [viewMode, setViewMode] = useState("full");
   const [selectedItemIdx, setSelectedItemIdx] = useState(0);
 
   const [isEditing, setIsEditing] = useState(false);
@@ -167,16 +172,52 @@ export default function InvoiceTemplate({
   const [taxAmount, setTaxAmount] = useState(0);
   const [grandTotal, setGrandTotal] = useState(0);
 
-  const EXPENSE_OPTIONS = ["Food", "Travel", "Lodging"];
+  // --- HTML2CANVAS EXPORT LOGIC ---
+  const handleExport = async (mode = "print") => {
+    if (!componentRef.current) return;
+    setIsGenerating(true);
 
-  // Revised Calculation logic to respect viewMode
+    try {
+      // Create high-res canvas of the component
+      const canvas = await html2canvas(componentRef.current, {
+        scale: 2, // Improves print quality significantly
+        useCORS: true,
+        logging: false,
+        backgroundColor: "#ffffff",
+        windowWidth: 1200, // Fixed width during capture for alignment stability
+      });
+
+      const imgData = canvas.toDataURL("image/png");
+      const pdf = new jsPDF("p", "mm", "a4");
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+
+      pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
+
+      if (mode === "download") {
+        pdf.save(`Invoice_${invoice.invoiceId}.pdf`);
+      } else {
+        // Create Blob and open in new window for printing
+        const blob = pdf.output("blob");
+        const url = URL.createObjectURL(blob);
+        const printWindow = window.open(url);
+        if (printWindow) {
+          printWindow.onload = () => {
+            printWindow.print();
+            URL.revokeObjectURL(url);
+          };
+        }
+      }
+    } catch (error) {
+      console.error("Export failed:", error);
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
   useEffect(() => {
     let subtotalCalc = 0;
-
-    // Determine which items to include in calculation
-    const itemsToSum = viewMode === "full" 
-      ? localInvoiceItems.map((_, i) => i) 
-      : [selectedItemIdx];
+    const itemsToSum = viewMode === "full" ? localInvoiceItems.map((_, i) => i) : [selectedItemIdx];
 
     itemsToSum.forEach((i) => {
       const item = localInvoiceItems[i];
@@ -202,7 +243,6 @@ export default function InvoiceTemplate({
     setGrandTotal(subtotalCalc + tax);
   }, [taxPercent, localInvoiceItems, savedExpenses, additionalExpenses, viewMode, selectedItemIdx]);
 
-  // Handlers
   const handleEditToggle = () => {
     if (!isEditing) {
       setEditInvoiceDate(formatDateToISO(localInvoiceDate));
@@ -212,23 +252,6 @@ export default function InvoiceTemplate({
       setLocalDueDate(formatISOToDisplay(editDueDate));
     }
     setIsEditing(!isEditing);
-  };
-
-  const handlePrint = () => {
-    const content = componentRef.current;
-    if (!content) return;
-    const win = window.open("", "", "width=900,height=600");
-    const doc = win.document;
-    doc.write("<html><head><title>Invoice</title>");
-    const styles = document.querySelectorAll("style, link[rel='stylesheet']");
-    styles.forEach((style) => { doc.write(style.outerHTML); });
-    doc.write(`<style>body { margin: 0; padding: 20px; background-color: white; font-family: sans-serif; } * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; } @page { margin: 10mm; } @media print { .no-print { display: none !important; } }</style>`);
-    doc.write("</head><body>");
-    doc.write(content.innerHTML);
-    doc.write("</body></html>");
-    doc.close();
-    win.focus();
-    setTimeout(() => { win.print(); win.close(); }, 500);
   };
 
   const toggleExpand = (idx) => setExpandedItems(p => ({ ...p, [idx]: !p[idx] }));
@@ -285,7 +308,6 @@ export default function InvoiceTemplate({
           py: 2,
           borderBottom: !expandedItems[idx] && idx < localInvoiceItems.length - 1 ? "1px solid rgba(148,163,184,0.15)" : "none",
           backgroundColor: idx % 2 === 0 ? "white" : "rgba(248,250,252,0.6)",
-          "&:hover": { backgroundColor: "rgba(236,246,255,0.4)" },
           transition: "background-color 0.2s",
         }}
       >
@@ -348,7 +370,12 @@ export default function InvoiceTemplate({
           {rowTotal.toLocaleString(undefined, { minimumFractionDigits: 2 })}
         </GridCell>
         <GridCell align="right">
-          <IconButton size="small" onClick={() => toggleExpand(idx)} sx={{ color: theme.secondary }}>
+          <IconButton 
+            data-html2canvas-ignore="true" 
+            size="small" 
+            onClick={() => toggleExpand(idx)} 
+            sx={{ color: theme.secondary }}
+          >
             {expandedItems[idx] ? <ExpandLessIcon fontSize="small"/> : <ExpandMoreIcon fontSize="small"/>}
           </IconButton>
         </GridCell>
@@ -385,7 +412,7 @@ export default function InvoiceTemplate({
                   <GridCell align="center">{isEditing ? <NumberInput value={exp.amount} onChange={(e) => handleSavedExpenseChange(mainIdx, eIdx, "amount", Number(e.target.value))} sx={{ width: 80, ".MuiOutlinedInput-notchedOutline": { border: "none" } }} /> : Number(exp.amount || 0).toLocaleString(undefined, {minimumFractionDigits:2})}</GridCell>
                   <GridCell align="center">{isEditing ? <CenterInput value={exp.currency} onChange={(e) => handleSavedExpenseChange(mainIdx, eIdx, "currency", e.target.value)} sx={{ width: 50, ".MuiOutlinedInput-notchedOutline": { border: "none" } }} /> : exp.currency}</GridCell>
                   <GridCell align="right" sx={{ fontWeight: 700, color: theme.accent, fontSize: 14 }}>{((exp.duration ? exp.amount * exp.duration : exp.amount) || 0).toLocaleString(undefined,{minimumFractionDigits:2})}</GridCell>
-                  <GridCell align="right">{isEditing && (<IconButton size="medium" onClick={() => handleRemoveExpense(mainIdx, eIdx)} sx={{ color: "#ef4444" }}><DeleteIcon fontSize="medium" /></IconButton>)}</GridCell>
+                  <GridCell align="right">{isEditing && (<IconButton data-html2canvas-ignore="true" size="medium" onClick={() => handleRemoveExpense(mainIdx, eIdx)} sx={{ color: "#ef4444" }}><DeleteIcon fontSize="medium" /></IconButton>)}</GridCell>
                 </Box>
                 <Box sx={{ display: "grid", gridTemplateColumns: ITEM_GRID_TEMPLATE, alignItems: "flex-start", px: 5, pb: 1.5, mt: -0.5, backgroundColor: rowBgColor }}>
                   <GridCell align="center"><Typography sx={{ opacity: 0.3, fontSize: 10 }}></Typography></GridCell>
@@ -400,7 +427,7 @@ export default function InvoiceTemplate({
             );
           })}
           {isEditing && (
-            <Box sx={{ mt: 1, borderTop: "1px dashed rgba(148,163,184,0.3)", pt: 1 }}>
+            <Box data-html2canvas-ignore="true" sx={{ mt: 1, borderTop: "1px dashed rgba(148,163,184,0.3)", pt: 1 }}>
                <Box sx={{ display: "grid", gridTemplateColumns: ITEM_GRID_TEMPLATE, alignItems: "center", px: 5, pb: 0.5 }}>
                   <GridCell align="center"></GridCell><GridCell />
                   <GridCell sx={{ px: 0 }}>
@@ -412,13 +439,6 @@ export default function InvoiceTemplate({
                   <GridCell align="center"><CenterInput value={additionalExpenses[mainIdx][0].currency} onChange={(e) => handleAddExpChange(mainIdx, "currency", e.target.value)} sx={{ width: 50 }} /></GridCell><GridCell />
                   <GridCell align="right"><IconButton onClick={() => handleConfirmAddExpense(mainIdx)} color="primary"><AddBoxIcon /></IconButton></GridCell>
                </Box>
-               <Box sx={{ display: "grid", gridTemplateColumns: ITEM_GRID_TEMPLATE, alignItems: "center", px: 5, pb: 1}}>
-                  <GridCell align="center"></GridCell><GridCell />
-                  <GridCell sx={{ px: 0 }}>
-                      <TextField multiline rows={1} placeholder="New Description" fullWidth value={additionalExpenses[mainIdx][0].description} onChange={(e) => handleAddExpChange(mainIdx, "description", e.target.value)} sx={{ width: "100%", ".MuiInputBase-root": { fontSize: 12, p: "8px", border: "1px solid rgba(0, 0, 0, 0.12)", borderRadius: 1 }, "& fieldset": { border: "none" } }} />
-                  </GridCell>
-                  <GridCell /><GridCell align="center"></GridCell><GridCell align="center"></GridCell><GridCell align="center"></GridCell><GridCell align="center"></GridCell><GridCell align="right"></GridCell><GridCell />
-               </Box>
             </Box>
           )}
         </Box>
@@ -429,7 +449,13 @@ export default function InvoiceTemplate({
   return (
     <Box sx={{ minHeight: "100vh", background: "radial-gradient(circle at top, #e5edff 0%, #f8fafc 40%, #f4f4f5 100%)", display: "flex", flexWrap: "wrap", justifyContent: "center", alignItems: "flex-start", py: 5, px: 2 }}>
       
-      {/* --- TOP CONTROLS (Floating above card) --- */}
+      {/* Loading Overlay */}
+      <Backdrop sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1, flexDirection: 'column', gap: 2 }} open={isGenerating}>
+        <CircularProgress color="inherit" />
+        <Typography variant="h6">Generating Print-Ready Document...</Typography>
+      </Backdrop>
+
+      {/* --- TOP CONTROLS --- */}
       <Box sx={{ width: "100%", maxWidth: 1160, mb: 3, display: "flex", justifyContent: "space-between", alignItems: "center", bgcolor: "white", p: 1.5, borderRadius: 2, boxShadow: "0 4px 12px rgba(0,0,0,0.05)" }}>
         <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
            <Typography variant="body2" fontWeight={600} color="text.secondary">VIEW MODE:</Typography>
@@ -468,18 +494,18 @@ export default function InvoiceTemplate({
             <IconButton size="small" onClick={handleEditToggle} sx={{ bgcolor: isEditing ? theme.accent : "transparent", color: isEditing?"white":"inherit", "&:hover":{ bgcolor: isEditing?theme.accent+"E6":"#f1f5f9"} }}>
               {isEditing ? <SaveIcon fontSize="small"/> : <EditIcon fontSize="small"/>}
             </IconButton>
-            <IconButton size="small" onClick={handlePrint} title="Export PDF / Print"><PictureAsPdfIcon fontSize="small"/></IconButton>
-            <IconButton size="small" onClick={handlePrint} title="Print"><PrintIcon fontSize="small"/></IconButton>
+            <IconButton size="small" onClick={() => handleExport("download")} title="Download PDF"><PictureAsPdfIcon fontSize="small"/></IconButton>
+            <IconButton size="small" onClick={() => handleExport("print")} title="Print"><PrintIcon fontSize="small"/></IconButton>
         </Box>
       </Box>
 
+      {/* --- INVOICE CARD (This is captured by html2canvas) --- */}
       <Card ref={componentRef} sx={{ width: "100%", maxWidth: 1160, borderRadius: 3, boxShadow: "0 22px 60px rgba(15,23,42,0.16)", border: "1px solid rgba(148,163,184,0.25)", overflow: "hidden", backgroundColor: "white" }}>
         
         {/* Header Section */}
         <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", px: 5, py: 1.75, borderBottom: "1px solid rgba(148,163,184,0.3)", background: `linear-gradient(90deg, ${theme.accent}12, white)` }}>
           <Typography variant="h6" sx={{ fontWeight: 700, color: theme.header }}>
             {template?.name || "Invoice"} 
-            {/* {viewMode === "individual" && <Chip label="Individual View" size="small" sx={{ ml: 2, bgcolor: theme.accent, color: "white", fontWeight: 700 }} />} */}
           </Typography>
         </Box>
 
@@ -507,9 +533,8 @@ export default function InvoiceTemplate({
                 <Typography variant="caption" sx={{ textTransform: "uppercase", color: "text.secondary", mb: 0.5 }}>INVOICE DATE</Typography>
                 {isEditing ? (
                   <LocalizationProvider dateAdapter={AdapterDateFns}>
-                    <div className="datePickr">
-                    <DatePicker value={editInvoiceDate?new Date(editInvoiceDate):null} onChange={(v)=>setEditInvoiceDate(v?v.toISOString().slice(0,10):null)} slotProps={{ textField: { size:"small", sx:{ width:150 } } }} />
-
+                    <div className="datePickr" data-html2canvas-ignore="true">
+                      <DatePicker value={editInvoiceDate?new Date(editInvoiceDate):null} onChange={(v)=>setEditInvoiceDate(v?v.toISOString().slice(0,10):null)} slotProps={{ textField: { size:"small", sx:{ width:150 } } }} />
                     </div>
                   </LocalizationProvider>
                 ) : <Typography variant="body2" fontWeight={500}>{localInvoiceDate}</Typography>}
@@ -518,9 +543,9 @@ export default function InvoiceTemplate({
                 <Typography variant="caption" sx={{ textTransform: "uppercase", color: "text.secondary", mb: 0.5 }}>DUE DATE</Typography>
                 {isEditing ? (
                   <LocalizationProvider dateAdapter={AdapterDateFns}>
-                    <div className="datePickr">
-                    <DatePicker value={editDueDate?new Date(editDueDate):null} onChange={(v)=>setEditDueDate(v?v.toISOString().slice(0,10):null)} slotProps={{ textField: { size:"small", sx:{ width:150 } } }} />
-                  </div>
+                    <div className="datePickr" data-html2canvas-ignore="true">
+                      <DatePicker value={editDueDate?new Date(editDueDate):null} onChange={(v)=>setEditDueDate(v?v.toISOString().slice(0,10):null)} slotProps={{ textField: { size:"small", sx:{ width:150 } } }} />
+                    </div>
                   </LocalizationProvider>
                 ) : <Typography variant="body2" fontWeight={500}>{localDueDate}</Typography>}
               </Box>
@@ -533,12 +558,9 @@ export default function InvoiceTemplate({
           <GridCell /><GridCell /><GridCell>Description</GridCell><GridCell /><GridCell align="center">Rate Mode</GridCell><GridCell align="center">Duration</GridCell><GridCell align="center">Rate</GridCell><GridCell align="center">Currency</GridCell><GridCell align="right">Total</GridCell><GridCell />
         </Box>
 
-        {/* Dynamic Item Rendering based on ViewMode */}
         <Box>
           {localInvoiceItems.map((item, idx) => {
-            // Logic: Hide if viewMode is individual AND this isn't the selected index
             if (viewMode === "individual" && idx !== selectedItemIdx) return null;
-            
             return (
               <React.Fragment key={item.id}>
                 {renderInvoiceItem(item, idx)}
@@ -548,7 +570,7 @@ export default function InvoiceTemplate({
           })}
         </Box>
 
-        {/* Footer / Totals */}
+        {/* Footer */}
         <Box sx={{ px: 5, py: 3, display: "flex", justifyContent: "space-between", alignItems: "flex-start", backgroundColor: "white" }}>
           <Box sx={{ maxWidth: 400, p: 2, borderRadius: 2, border: "1px dashed #3b82f6", bgcolor: "#eff6ff", display: "flex", flexDirection: "column", gap: 0.5 }}>
             <Typography variant="body2" sx={{ fontWeight: 600, color: "#1e40af" }}>Notice</Typography>
