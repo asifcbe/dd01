@@ -31,6 +31,7 @@ import {
 } from "@mui/icons-material";
 import CustomIcon from "./CustomIcon";
 import { NavLink, Routes, Route, useLocation, Navigate } from "react-router-dom";
+import LoadMask from "./LoadMask";
 
 const Clients = lazy(() => import("./Clients"));
 const Companies = lazy(() => import("./Companies"));
@@ -121,7 +122,7 @@ export default function DashboardLayout({ user, onLogout }) {
       <Box component="main" sx={{ flexGrow: 1, width: { sm: `calc(100% - ${drawerWidth}px)` }, mt: 10, height: "calc(100vh - 64px - 56px)", transition: "width 0.3s", display: "flex", flexDirection: "column" }}>
         <Container maxWidth={false} sx={{ bgcolor: "white", borderRadius: 1, flexGrow: 1, p: 0, display: "flex", flexDirection: "column" }}>
           <Box sx={{ flexGrow: 1, overflowY: "auto", width: "100%", p: 0 }}>
-            <Suspense fallback={<div style={{ padding: 24 }}>Loading…</div>}>
+            <Suspense fallback={<LoadMask text='Loading'/>}>
               <Routes>
                 <Route index element={<Navigate replace to={dashboardItems[0].path} />} />
                 <Route path="clients" element={<Clients />} />

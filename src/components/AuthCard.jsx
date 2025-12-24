@@ -13,6 +13,7 @@ import {
 } from "@mui/material";
 import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
 import axios from "axios";
+import LoadMask from "./LoadMask";
 
 export default function AuthCard({ onLogin, onSignup }) {
   const [tab, setTab] = useState("signin");
@@ -130,22 +131,7 @@ export default function AuthCard({ onLogin, onSignup }) {
 
   if (loading) {
     return (
-      <Box
-        sx={{
-          height: "100vh",
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          bgcolor: "background.default",
-          flexDirection:'column'
-        }}
-      >
-        <CircularProgress />
-        <Typography color='primary' component="h1" variant="h6">
-              Logging In
-            </Typography>
-        
-      </Box>
+      <LoadMask text="Loggin In"/>
     );
   }
 

@@ -10,9 +10,11 @@ import {
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
+import LoadMask from "./LoadMask";
 
 export default function Projects() {
   const [projects, setProjects] = useState([]);
+  const [dataLoaded, setDataLoaded] = useState(false);
   const [open, setOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [toEditIdx, setToEditIdx] = useState(null);
@@ -48,9 +50,11 @@ export default function Projects() {
       })
       .then((data) => {
         setProjects(data);
+        setDataLoaded(true);
         setMenuAnchorEls(Array(data.length).fill(null));
       })
       .catch((error) => {
+        setDataLoaded(true);
         console.error("Error fetching projects:", error);
       });
   }, []);
@@ -88,7 +92,7 @@ export default function Projects() {
   const handleMenuClose = (idx) => { setMenuAnchorEls((prev) => prev.map((el, i) => (i === idx ? null : el))); };
 
   return (
-    <Box>
+    !dataLoaded ? <LoadMask text='Loading Projects' /> : <Box>
       <Typography variant="h4" sx={{ fontWeight: "bold", mb: 3 }}>Projects</Typography>
       <Grid container spacing={3} >
         {projects.map((project, idx) => (

@@ -403,7 +403,7 @@ export default function InvoiceTemplate({
                   <GridCell />
                   <GridCell sx={isEditing ? { px: 0 } : {}}>
                     {isEditing ? (
-                      <SelectInput value={exp.label || ""} options={labelOptions} onChange={(e) => handleSavedExpenseChange(mainIdx, eIdx, "label", e.target.value)} sx={{ width: "100%", ".MuiOutlinedInput-notchedOutline": { border: "1px solid rgba(0, 0, 0, 0.12)", borderRadius: 1 }, ".MuiSelect-select": { fontSize: 13, p: "8px" } }} />
+                      <SelectInput value={exp.label || ""} options={labelOptions} onChange={(e) => handleSavedExpenseChange(mainIdx, eIdx, "label", e.target.value)} sx={{ ".MuiOutlinedInput-notchedOutline": { border: "1px solid rgba(0, 0, 0, 0.12)", borderRadius: 1 }, ".MuiSelect-select": { fontSize: 13, p: "8px" } }} />
                     ) : <Typography fontWeight={500} fontSize={13} sx={{ color: "text.primary" }}>{exp.label || "Expense"}</Typography>}
                   </GridCell>
                   <GridCell />
@@ -537,7 +537,7 @@ export default function InvoiceTemplate({
                       <DatePicker value={editInvoiceDate?new Date(editInvoiceDate):null} onChange={(v)=>setEditInvoiceDate(v?v.toISOString().slice(0,10):null)} slotProps={{ textField: { size:"small", sx:{ width:150 } } }} />
                     </div>
                   </LocalizationProvider>
-                ) : <Typography variant="body2" fontWeight={500}>{localInvoiceDate}</Typography>}
+                ) : <Typography variant="body2" fontSize={13} fontWeight={500}>{localInvoiceDate}</Typography>}
               </Box>
               <Box sx={{ display: "flex", flexDirection: "column" }}>
                 <Typography variant="caption" sx={{ textTransform: "uppercase", color: "text.secondary", mb: 0.5 }}>DUE DATE</Typography>
@@ -547,7 +547,7 @@ export default function InvoiceTemplate({
                       <DatePicker value={editDueDate?new Date(editDueDate):null} onChange={(v)=>setEditDueDate(v?v.toISOString().slice(0,10):null)} slotProps={{ textField: { size:"small", sx:{ width:150 } } }} />
                     </div>
                   </LocalizationProvider>
-                ) : <Typography variant="body2" fontWeight={500}>{localDueDate}</Typography>}
+                ) : <Typography variant="body2" fontSize={13} fontWeight={500}>{localDueDate}</Typography>}
               </Box>
             </Box>
           </Box>

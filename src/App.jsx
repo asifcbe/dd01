@@ -5,29 +5,31 @@ const Layout = lazy(() => import("./components/DashboardLayout.jsx"));
 import { CssBaseline, ThemeProvider, createTheme } from "@mui/material";
 import axios from "axios";
 import "./App.scss";
+import LoadMask from "./components/LoadMask.jsx";
 const theme = createTheme();
-
 
 export default function App() {
   const [loggedIn, setLoggedIn] = useState(false);
   const [user, setUser] = useState({
     name: "Jane Doe",
-    avatar: "https://i.pravatar.cc/300"
+    avatar: "https://i.pravatar.cc/300",
   });
-const logOut=async ()=>{
-  
+  const logOut = async () => {
     try {
-      const res = await axios.post("/api/signout", {}, {
-        withCredentials: true,
-      });
+      const res = await axios.post(
+        "/api/signout",
+        {},
+        {
+          withCredentials: true,
+        }
+      );
       if (res.status === 200) {
         setLoggedIn(false);
       }
     } catch (err) {
-      console.log(err)
+      console.log(err);
     }
-  }
-
+  };
 
   return (
     <ThemeProvider theme={theme}>
@@ -52,7 +54,7 @@ const logOut=async ()=>{
               path="/*"
               element={
                 loggedIn ? (
-                  <Suspense fallback={<div>Loading dashboard...</div>}>
+                  <Suspense fallback={<LoadMask text="Loading Dashboard" />}>
                     <Layout user={user} onLogout={logOut} />
                   </Suspense>
                 ) : (

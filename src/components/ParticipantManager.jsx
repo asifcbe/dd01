@@ -25,6 +25,7 @@ import {
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
+import LoadMask from "./LoadMask";
 
 export default function ParticipantManager({
   title,
@@ -38,6 +39,7 @@ export default function ParticipantManager({
   type3 = "NotApplicable",
 }) {
   const [items, setItems] = useState([]);
+  const [dataLoaded, setDataLoaded] = useState(false);
   const [open, setOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [menuAnchorEls, setMenuAnchorEls] = useState([]);
@@ -56,10 +58,12 @@ export default function ParticipantManager({
       })
       .then((data) => {
         setItems(data);
-        setMenuAnchorEls(Array(data.length).fill(null));
+        setDataLoaded(true);
+        setMenuAnchorEls(Array(data.length).fill(null)); 
       })
       .catch((error) => {
         console.error(`Error fetching ${title.toLowerCase()}:`, error);
+        setDataLoaded(true);
       });
   }, [apiType, title]);
 
@@ -178,138 +182,138 @@ export default function ParticipantManager({
   };
 
   return (
-    <Box>
-      <Typography
-        variant="h4"
-        sx={{ fontWeight: "bold", mb: 3, letterSpacing: 1 }}
-      >
-        {title}
-      </Typography>
-      <Grid container spacing={3}>
-        {items.map((item, idx) => (
-          <Grid item xs={12} sm={6} md={4} key={idx} sx={{ p: 1 }}>
-            <Fade in>
-              <Card
-                elevation={4}
-                sx={{
-                  borderRadius: 3,
-                  bgcolor: "#f7fafc",
-                  ":hover": { boxShadow: 8, borderColor: "primary.light" },
-                  border: "1px solid #f0f2fa",
-                  position: "relative",
-                  width: '300px',
-                }}
-              >
-                <CardHeader
-                  avatar={
-                    <Avatar
-                      sx={{
-                        bgcolor: "primary.main",
-                        mr: 1,
-                        width: 40,
-                        height: 40,
+    !dataLoaded ? <LoadMask text={`Loading ${title}`} /> : <Box>
+        <Typography
+          variant="h4"
+          sx={{ fontWeight: "bold", mb: 3, letterSpacing: 1 }}
+        >
+          {title}
+        </Typography>
+        <Grid container spacing={3}>
+          {items.map((item, idx) => (
+            <Grid item xs={12} sm={6} md={4} key={idx} sx={{ p: 1 }}>
+              <Fade in>
+                <Card
+                  elevation={4}
+                  sx={{
+                    borderRadius: 3,
+                    bgcolor: "#f7fafc",
+                    ":hover": { boxShadow: 8, borderColor: "primary.light" },
+                    border: "1px solid #f0f2fa",
+                    position: "relative",
+                    width: '300px',
+                  }}
+                >
+                  <CardHeader
+                    avatar={
+                      <Avatar
+                        sx={{
+                          bgcolor: "primary.main",
+                          mr: 1,
+                          width: 40,
+                          height: 40,
+                        }}
+                      >
+                        <IconComponent />
+                      </Avatar>
+                    }
+                    title={
+                      <Typography
+                        variant="h6"
+                        sx={{ fontWeight: "bold", color: "#161d33" }}
+                      >
+                        {item.name}
+                      </Typography>
+                    }
+                    subheader={subheaderField ? item[subheaderField] : undefined}
+                    action={
+                      <IconButton
+                        onClick={(e) => handleMenuOpen(e, idx)}
+                        sx={{ color: "#868ca0" }}
+                      >
+                        <MoreVertIcon />
+                      </IconButton>
+                    }
+                    sx={{
+                      background: "#f0f2fa",
+                      borderBottom: "1px solid #e0e2ea",
+                      minHeight: 60,
+                    }}
+                  />
+                  <Menu
+                    anchorEl={menuAnchorEls[idx]}
+                    open={Boolean(menuAnchorEls[idx])}
+                    onClose={() => handleMenuClose(idx)}
+                    anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+                    transformOrigin={{ vertical: "top", horizontal: "right" }}
+                  >
+                    <MenuItem
+                      onClick={() => {
+                        handleEditOpen(idx);
+                        handleMenuClose(idx);
                       }}
                     >
-                      <IconComponent />
-                    </Avatar>
-                  }
-                  title={
-                    <Typography
-                      variant="h6"
-                      sx={{ fontWeight: "bold", color: "#161d33" }}
+                      <EditIcon fontSize="small" sx={{ mr: 1 }} /> Edit
+                    </MenuItem>
+                    <MenuItem
+                      onClick={() => {
+                        handleDelete(idx);
+                        handleMenuClose(idx);
+                      }}
                     >
-                      {item.name}
-                    </Typography>
-                  }
-                  subheader={subheaderField ? item[subheaderField] : undefined}
-                  action={
-                    <IconButton
-                      onClick={(e) => handleMenuOpen(e, idx)}
-                      sx={{ color: "#868ca0" }}
-                    >
-                      <MoreVertIcon />
-                    </IconButton>
-                  }
-                  sx={{
-                    background: "#f0f2fa",
-                    borderBottom: "1px solid #e0e2ea",
-                    minHeight: 60,
-                  }}
-                />
-                <Menu
-                  anchorEl={menuAnchorEls[idx]}
-                  open={Boolean(menuAnchorEls[idx])}
-                  onClose={() => handleMenuClose(idx)}
-                  anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
-                  transformOrigin={{ vertical: "top", horizontal: "right" }}
-                >
-                  <MenuItem
-                    onClick={() => {
-                      handleEditOpen(idx);
-                      handleMenuClose(idx);
-                    }}
-                  >
-                    <EditIcon fontSize="small" sx={{ mr: 1 }} /> Edit
-                  </MenuItem>
-                  <MenuItem
-                    onClick={() => {
-                      handleDelete(idx);
-                      handleMenuClose(idx);
-                    }}
-                  >
-                    <DeleteIcon
-                      fontSize="small"
-                      sx={{ mr: 1, color: "#f44336" }}
-                    />{" "}
-                    Delete
-                  </MenuItem>
-                </Menu>
-                <Divider sx={{ mb: 2, mt: 0 }} />
-                <CardContent>
-                  <Box sx={{ display: "grid", gap: 1 }}>
-                    {displayFields.map((df) => (
-                      <Typography key={df.name} sx={{ fontSize: 15, color: "grey.700" }}>
-                        <b>{df.label}:</b> {item[df.name]}
-                      </Typography>
-                    ))}
-                  </Box>
-                </CardContent>
-              </Card>
-            </Fade>
-          </Grid>
-        ))}
-      </Grid>
-      <Box sx={{ mt: 5, textAlign: "left", p: 1 }}>
-        <Button variant="contained" size="large" onClick={handleOpen}>
-          Add {apiType}
-        </Button>
-      </Box>
-      {/* Add Dialog */}
-      <Dialog open={open} onClose={handleClose}>
-        <DialogTitle>Add {apiType}</DialogTitle>
-        <DialogContent>
-          {fields.map((field) => renderField(field, newItem[field.name], handleChange))}
-        </DialogContent>
-        <DialogActions sx={{ p: 2 }}>
-          <Button onClick={handleClose}>Cancel</Button>
-          <Button onClick={handleAdd} variant="contained">
-            Add
+                      <DeleteIcon
+                        fontSize="small"
+                        sx={{ mr: 1, color: "#f44336" }}
+                      />{" "}
+                      Delete
+                    </MenuItem>
+                  </Menu>
+                  <Divider sx={{ mb: 2, mt: 0 }} />
+                  <CardContent>
+                    <Box sx={{ display: "grid", gap: 1 }}>
+                      {displayFields.map((df) => (
+                        <Typography key={df.name} sx={{ fontSize: 15, color: "grey.700" }}>
+                          <b>{df.label}:</b> {item[df.name]}
+                        </Typography>
+                      ))}
+                    </Box>
+                  </CardContent>
+                </Card>
+              </Fade>
+            </Grid>
+          ))}
+        </Grid>
+        <Box sx={{ mt: 5, textAlign: "left", p: 1 }}>
+          <Button variant="contained" size="large" onClick={handleOpen}>
+            Add {apiType}
           </Button>
-        </DialogActions>
-      </Dialog>
-      {/* Edit Dialog */}
-      <Dialog open={editOpen} onClose={handleEditClose}>
-        <DialogTitle>Edit {title.slice(0, -1)}</DialogTitle>
-        <DialogContent>
-          {fields.map((field) => renderField(field, editItem[field.name], handleEditChange, true))}
-        </DialogContent>
-        <DialogActions sx={{ p: 2 }}>
-          <Button onClick={handleEditClose}>Cancel</Button>
-          <Button onClick={handleEdit} variant="contained">
-            Save
-          </Button>
-        </DialogActions>
-      </Dialog>
-    </Box>
-  );
+        </Box>
+        {/* Add Dialog */}
+        <Dialog open={open} onClose={handleClose}>
+          <DialogTitle>Add {apiType}</DialogTitle>
+          <DialogContent>
+            {fields.map((field) => renderField(field, newItem[field.name], handleChange))}
+          </DialogContent>
+          <DialogActions sx={{ p: 2 }}>
+            <Button onClick={handleClose}>Cancel</Button>
+            <Button onClick={handleAdd} variant="contained">
+              Add
+            </Button>
+          </DialogActions>
+        </Dialog>
+        {/* Edit Dialog */}
+        <Dialog open={editOpen} onClose={handleEditClose}>
+          <DialogTitle>Edit {title.slice(0, -1)}</DialogTitle>
+          <DialogContent>
+            {fields.map((field) => renderField(field, editItem[field.name], handleEditChange, true))}
+          </DialogContent>
+          <DialogActions sx={{ p: 2 }}>
+            <Button onClick={handleEditClose}>Cancel</Button>
+            <Button onClick={handleEdit} variant="contained">
+              Save
+            </Button>
+          </DialogActions>
+        </Dialog>
+        </Box>
+    )
 }
