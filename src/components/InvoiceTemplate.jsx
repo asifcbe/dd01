@@ -633,7 +633,7 @@ export default function InvoiceTemplate({
     );
   };
 
-  const renderExpenseRows = (mainIdx) => {
+const renderExpenseRows = (mainIdx) => {
     if (!expandedItems[mainIdx]) return null;
     const labelOptions = ["Food", "Travel", "Lodging"];
     const rateOptions = ["Flat", "Daily", "Monthly", "Hourly"];
@@ -647,6 +647,7 @@ export default function InvoiceTemplate({
             pb: 2,
           }}
         >
+          {/* Section Header */}
           <Box
             sx={{
               display: "grid",
@@ -672,15 +673,10 @@ export default function InvoiceTemplate({
                 ADDITIONAL EXPENSES
               </Typography>
             </GridCell>
-            <GridCell />
-            <GridCell align="center"></GridCell>
-            <GridCell align="center"></GridCell>
-            <GridCell align="center"></GridCell>
-            <GridCell align="center"></GridCell>
-            <GridCell align="right"></GridCell>
-            <GridCell />
+            <GridCell /><GridCell /><GridCell /><GridCell /><GridCell /><GridCell /><GridCell />
           </Box>
 
+          {/* 1. Saved Expenses List */}
           {savedExpenses[mainIdx].map((exp, eIdx) => {
             const rowBgColor =
               mainIdx % 2 === 0
@@ -699,165 +695,35 @@ export default function InvoiceTemplate({
                     backgroundColor: rowBgColor,
                   }}
                 >
-                  <GridCell
-                    align="center"
-                    sx={{ color: theme.secondary, fontWeight: 600 }}
-                  ></GridCell>
+                  <GridCell align="center" />
                   <GridCell />
                   <GridCell sx={isEditing ? { px: 0 } : {}}>
                     {isEditing ? (
                       <SelectInput
                         value={exp.label || ""}
                         options={labelOptions}
-                        onChange={(e) =>
-                          handleSavedExpenseChange(
-                            mainIdx,
-                            eIdx,
-                            "label",
-                            e.target.value
-                          )
-                        }
+                        onChange={(e) => handleSavedExpenseChange(mainIdx, eIdx, "label", e.target.value)}
                         sx={{
-                          ".MuiOutlinedInput-notchedOutline": {
-                            border: "1px solid rgba(0, 0, 0, 0.12)",
-                            borderRadius: 1,
-                          },
-                          ".MuiSelect-select": {
-                            fontSize: 13,
-                            p: "8px",
-                            pl: "5px",
-                          },
+                          ".MuiOutlinedInput-notchedOutline": { border: "1px solid rgba(0, 0, 0, 0.12)", borderRadius: 1 },
+                          ".MuiSelect-select": { fontSize: 13, p: "8px", pl: "5px" },
                         }}
                       />
                     ) : (
-                      <Typography
-                        fontWeight={500}
-                        fontSize={13}
-                        sx={{ color: "text.primary" }}
-                      >
+                      <Typography fontWeight={500} fontSize={13} sx={{ color: "text.primary" }}>
                         {exp.label || "Expense"}
                       </Typography>
                     )}
                   </GridCell>
                   <GridCell />
-                  <GridCell align="center" sx={isEditing ? { px: 0 } : {}}>
-                    {isEditing ? (
-                      <SelectInput
-                        value={exp.ratemode || "Flat"}
-                        options={rateOptions}
-                        onChange={(e) =>
-                          handleSavedExpenseChange(
-                            mainIdx,
-                            eIdx,
-                            "ratemode",
-                            e.target.value
-                          )
-                        }
-                        sx={{
-                          ".MuiOutlinedInput-notchedOutline": {
-                            border: "none",
-                          },
-                        }}
-                      />
-                    ) : (
-                      <Typography sx={{ fontSize: 13 }}>
-                        {exp.ratemode || "-"}
-                      </Typography>
-                    )}
-                  </GridCell>
-                  <GridCell align="center" sx={isEditing ? { px: 0 } : {}}>
-                    {isEditing ? (
-                      <NumberInput
-                        value={exp.duration}
-                        onChange={(e) =>
-                          handleSavedExpenseChange(
-                            mainIdx,
-                            eIdx,
-                            "duration",
-                            Number(e.target.value)
-                          )
-                        }
-                        sx={{
-                          width: 60,
-                          ".MuiOutlinedInput-notchedOutline": {
-                            border: "none",
-                          },
-                        }}
-                      />
-                    ) : (
-                      exp.duration || "-"
-                    )}
-                  </GridCell>
-                  <GridCell align="center" sx={isEditing ? { px: 0 } : {}}>
-                    {isEditing ? (
-                      <NumberInput
-                        value={exp.amount}
-                        onChange={(e) =>
-                          handleSavedExpenseChange(
-                            mainIdx,
-                            eIdx,
-                            "amount",
-                            Number(e.target.value)
-                          )
-                        }
-                        sx={{
-                          width: 80,
-                          ".MuiOutlinedInput-notchedOutline": {
-                            border: "none",
-                          },
-                        }}
-                      />
-                    ) : (
-                      Number(exp.amount || 0).toLocaleString(undefined, {
-                        minimumFractionDigits: 2,
-                      })
-                    )}
-                  </GridCell>
-                  <GridCell align="center" sx={isEditing ? { px: 0 } : {}}>
-                    {isEditing ? (
-                      <CenterInput
-                        value={exp.currency}
-                        onChange={(e) =>
-                          handleSavedExpenseChange(
-                            mainIdx,
-                            eIdx,
-                            "currency",
-                            e.target.value
-                          )
-                        }
-                        sx={{
-                          width: 50,
-                          ".MuiOutlinedInput-notchedOutline": {
-                            border: "none",
-                          },
-                        }}
-                      />
-                    ) : (
-                      exp.currency
-                    )}
-                  </GridCell>
-                  <GridCell
-                    align="right"
-                    sx={{ fontWeight: 700, color: theme.accent, fontSize: 14 }}
-                  >
-                    {(
-                      (exp.duration ? exp.amount * exp.duration : exp.amount) ||
-                      0
-                    ).toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                  </GridCell>
-                  <GridCell align="right">
-                    {isEditing && (
-                      <IconButton
-                        data-html2canvas-ignore="true"
-                        size="medium"
-                        onClick={() => handleRemoveExpense(mainIdx, eIdx)}
-                        sx={{ color: "#ef4444" }}
-                      >
-                        <DeleteIcon fontSize="medium" />
-                      </IconButton>
-                    )}
-                  </GridCell>
+                  <GridCell align="center">{isEditing ? <SelectInput value={exp.ratemode || "Flat"} options={rateOptions} onChange={(e) => handleSavedExpenseChange(mainIdx, eIdx, "ratemode", e.target.value)} sx={{ ".MuiOutlinedInput-notchedOutline": { border: "none" } }} /> : exp.ratemode}</GridCell>
+                  <GridCell align="center">{isEditing ? <NumberInput value={exp.duration} onChange={(e) => handleSavedExpenseChange(mainIdx, eIdx, "duration", Number(e.target.value))} sx={{ width: 60, ".MuiOutlinedInput-notchedOutline": { border: "none" } }} /> : exp.duration}</GridCell>
+                  <GridCell align="center">{isEditing ? <NumberInput value={exp.amount} onChange={(e) => handleSavedExpenseChange(mainIdx, eIdx, "amount", Number(e.target.value))} sx={{ width: 80, ".MuiOutlinedInput-notchedOutline": { border: "none" } }} /> : exp.amount}</GridCell>
+                  <GridCell align="center">{isEditing ? <CenterInput value={exp.currency} onChange={(e) => handleSavedExpenseChange(mainIdx, eIdx, "currency", e.target.value)} sx={{ width: 50, ".MuiOutlinedInput-notchedOutline": { border: "none" } }} /> : exp.currency}</GridCell>
+                  <GridCell align="right" sx={{ fontWeight: 700, color: theme.accent }}>{((exp.duration ? exp.amount * exp.duration : exp.amount) || 0).toLocaleString()}</GridCell>
+                  <GridCell align="right">{isEditing && <IconButton onClick={() => handleRemoveExpense(mainIdx, eIdx)} sx={{ color: "#ef4444" }}><DeleteIcon /></IconButton>}</GridCell>
                 </Box>
+
+                {/* Saved Expense Description Row */}
                 <Box
                   sx={{
                     display: "grid",
@@ -869,169 +735,88 @@ export default function InvoiceTemplate({
                     backgroundColor: rowBgColor,
                   }}
                 >
-                  <GridCell align="center"></GridCell>
-                  <GridCell />
+                  <GridCell /><GridCell />
                   <GridCell sx={isEditing ? { px: 0 } : {}}>
                     {isEditing ? (
                       <TextField
                         multiline
                         rows={1}
-                        placeholder="Expense Description"
                         value={exp.description || ""}
-                        onChange={(e) =>
-                          handleSavedExpenseChange(
-                            mainIdx,
-                            eIdx,
-                            "description",
-                            e.target.value
-                          )
-                        }
+                        onChange={(e) => handleSavedExpenseChange(mainIdx, eIdx, "description", e.target.value)}
                         sx={{
                           width: "100%",
                           ".MuiInputBase-root": {
-                            fontSize: 12,
-                            p: "8px",
-                            border: "1px solid rgba(0, 0, 0, 0.08)",
+                            fontSize: 13,
+                            p: "10px",    // Height same as parent
+                            pl: "5px",    // Left padding set to 5px
+                            border: "1px solid rgba(0, 0, 0, 0.12)",
                             borderRadius: 1,
                             backgroundColor: "rgba(255,255,255,0.5)",
                           },
                           "& fieldset": { border: "none" },
-                          "& textarea": { color: "text.secondary", pl: "5px" },
+                          "& textarea": { lineHeight: 1.5 },
                         }}
                       />
                     ) : (
-                      exp.description && (
-                        <Typography
-                          fontSize={13}
-                          color="text.secondary"
-                          sx={{ lineHeight: 1.4, maxWidth: "90%" }}
-                        >
-                          {exp.description}
-                        </Typography>
-                      )
+                      exp.description && <Typography fontSize={13} color="text.secondary">{exp.description}</Typography>
                     )}
                   </GridCell>
-                  <GridCell />
-                  <GridCell align="center"></GridCell>
-                  <GridCell align="center"></GridCell>
-                  <GridCell align="center"></GridCell>
-                  <GridCell align="center"></GridCell>
-                  <GridCell align="right"></GridCell>
-                  <GridCell />
+                  <GridCell /><GridCell /><GridCell /><GridCell /><GridCell /><GridCell /><GridCell />
                 </Box>
               </React.Fragment>
             );
           })}
 
-          {/* New Expense Entry Row */}
+          {/* 2. New Expense Draft Entry Row */}
           {isEditing && (
-            <Box
-              data-html2canvas-ignore="true"
-              sx={{
-                mt: 1,
-                borderTop: "1px dashed rgba(148,163,184,0.3)",
-                pt: 1,
-              }}
-            >
-              <Box
-                sx={{
-                  display: "grid",
-                  gridTemplateColumns: ITEM_GRID_TEMPLATE,
-                  alignItems: "center",
-                  px: 5,
-                  pb: 0.5,
-                }}
-              >
-                <GridCell align="center"></GridCell>
-                <GridCell />
+            <Box data-html2canvas-ignore="true" sx={{ mt: 1, borderTop: "1px dashed rgba(148,163,184,0.3)", pt: 1 }}>
+              {/* Draft Main Inputs */}
+              <Box sx={{ display: "grid", gridTemplateColumns: ITEM_GRID_TEMPLATE, alignItems: "center", px: 5, pb: 0.5 }}>
+                <GridCell /><GridCell />
                 <GridCell sx={{ px: 0 }}>
                   <SelectInput
                     value={additionalExpenses[mainIdx][0].label}
                     options={labelOptions}
-                    onChange={(e) =>
-                      handleAddExpChange(mainIdx, "label", e.target.value)
-                    }
+                    onChange={(e) => handleAddExpChange(mainIdx, "label", e.target.value)}
+                    sx={{ width: "100%", ".MuiOutlinedInput-notchedOutline": { border: "1px solid rgba(0, 0, 0, 0.12)", borderRadius: 1 }, ".MuiSelect-select": { fontSize: 13, p: "8px", pl: "5px" } }}
+                  />
+                </GridCell>
+                <GridCell />
+                <GridCell align="center"><SelectInput value={additionalExpenses[mainIdx][0].ratemode} options={rateOptions} onChange={(e) => handleAddExpChange(mainIdx, "ratemode", e.target.value)} sx={{ ".MuiOutlinedInput-notchedOutline": { border: "none" } }} /></GridCell>
+                <GridCell align="center"><NumberInput value={additionalExpenses[mainIdx][0].duration} onChange={(e) => handleAddExpChange(mainIdx, "duration", Number(e.target.value))} sx={{ width: 60, ".MuiOutlinedInput-notchedOutline": { border: "none" } }} /></GridCell>
+                <GridCell align="center"><NumberInput value={additionalExpenses[mainIdx][0].amount} onChange={(e) => handleAddExpChange(mainIdx, "amount", Number(e.target.value))} sx={{ width: 80, ".MuiOutlinedInput-notchedOutline": { border: "none" } }} /></GridCell>
+                <GridCell align="center"><CenterInput value={additionalExpenses[mainIdx][0].currency} onChange={(e) => handleAddExpChange(mainIdx, "currency", e.target.value)} sx={{ width: 50, ".MuiOutlinedInput-notchedOutline": { border: "none" } }} /></GridCell>
+                <GridCell />
+                <GridCell align="right"><IconButton onClick={() => handleConfirmAddExpense(mainIdx)} color="primary"><AddBoxIcon /></IconButton></GridCell>
+              </Box>
+
+              {/* Draft Description Input */}
+              <Box sx={{ display: "grid", gridTemplateColumns: ITEM_GRID_TEMPLATE, alignItems: "flex-start", px: 5, pb: 1.5, mt: -0.5 }}>
+                <GridCell /><GridCell />
+                <GridCell sx={{ px: 0 }}>
+                  <TextField
+                    multiline
+                    rows={1}
+                    placeholder="Expense Description"
+                    value={additionalExpenses[mainIdx][0].description || ""}
+                    onChange={(e) => handleAddExpChange(mainIdx, "description", e.target.value)}
                     sx={{
                       width: "100%",
-                      ".MuiOutlinedInput-notchedOutline": {
+                      ".MuiInputBase-root": {
+                        fontSize: 13,
+                        p: "10px",    // Height same as parent
+                        pl: "5px",    // Left padding set to 5px
                         border: "1px solid rgba(0, 0, 0, 0.12)",
                         borderRadius: 1,
+                        mt: 0.5,
+                        backgroundColor: "rgba(255,255,255,0.5)",
                       },
-                      ".MuiSelect-select": {
-                        fontSize: 13,
-                        p: "8px",
-                        pl: "5px",
-                      },
+                      "& fieldset": { border: "none" },
+                      "& textarea": { lineHeight: 1.5 },
                     }}
                   />
                 </GridCell>
-                <GridCell />
-                <GridCell align="center" sx={{ px: 0 }}>
-                  <SelectInput
-                    value={additionalExpenses[mainIdx][0].ratemode}
-                    options={rateOptions}
-                    onChange={(e) =>
-                      handleAddExpChange(mainIdx, "ratemode", e.target.value)
-                    }
-                    sx={{
-                      ".MuiOutlinedInput-notchedOutline": { border: "none" },
-                    }}
-                  />
-                </GridCell>
-
-                <GridCell align="center" sx={{ px: 0 }}>
-                  <NumberInput
-                    value={additionalExpenses[mainIdx][0].duration}
-                    onChange={(e) =>
-                      handleAddExpChange(
-                        mainIdx,
-                        "duration",
-                        Number(e.target.value)
-                      )
-                    }
-                    sx={{
-                      width: 60,
-                      ".MuiOutlinedInput-notchedOutline": { border: "none" },
-                    }}
-                  />
-                </GridCell>
-                <GridCell align="center" sx={{ px: 0 }}>
-                  <NumberInput
-                    value={additionalExpenses[mainIdx][0].amount}
-                    onChange={(e) =>
-                      handleAddExpChange(
-                        mainIdx,
-                        "amount",
-                        Number(e.target.value)
-                      )
-                    }
-                    sx={{
-                      width: 80,
-                      ".MuiOutlinedInput-notchedOutline": { border: "none" },
-                    }}
-                  />
-                </GridCell>
-                <GridCell align="center" sx={{ px: 0 }}>
-                  <CenterInput
-                    value={additionalExpenses[mainIdx][0].currency}
-                    onChange={(e) =>
-                      handleAddExpChange(mainIdx, "currency", e.target.value)
-                    }
-                    sx={{
-                      width: 50,
-                      ".MuiOutlinedInput-notchedOutline": { border: "none" },
-                    }}
-                  />
-                </GridCell>
-                <GridCell />
-                <GridCell align="right">
-                  <IconButton
-                    onClick={() => handleConfirmAddExpense(mainIdx)}
-                    color="primary"
-                  >
-                    <AddBoxIcon />
-                  </IconButton>
-                </GridCell>
+                <GridCell /><GridCell /><GridCell /><GridCell /><GridCell /><GridCell /><GridCell />
               </Box>
             </Box>
           )}
