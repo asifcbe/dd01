@@ -35,6 +35,7 @@ export default function Consultants() {
       fields={fields}
       displayFields={displayFields}
       initialForm={initialForm}
+      type2={()=>'Individual'}
     />
   );
 }

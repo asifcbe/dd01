@@ -3,6 +3,10 @@
     {
       "source": "/api/:path*",
       "destination": "https://apps.ddhost.in/invoice-generator/api/:path*"
+    },
+    {
+      "source": "/((?!api/).*)",
+      "destination": "/index.html"
     }
   ]
 }

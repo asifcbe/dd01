@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import {
   Box, Button, Card, CardContent, CardHeader, IconButton, Typography, Grid,
   Dialog, DialogTitle, DialogContent, DialogActions, TextField, Menu, MenuItem,
-  Fade, Avatar, Divider
+  Fade, Avatar, Divider, FormControl, InputLabel, Select, Snackbar, Alert
 } from "@mui/material";
 import {
   Assignment as ProjectsIcon
@@ -15,10 +15,12 @@ import LoadMask from "./LoadMask";
 export default function Projects() {
   const [projects, setProjects] = useState([]);
   const [dataLoaded, setDataLoaded] = useState(false);
+  const [participants, setParticipants] = useState([]);
   const [open, setOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [toEditIdx, setToEditIdx] = useState(null);
   const [menuAnchorEls, setMenuAnchorEls] = useState([]);
+  const [error, setError] = useState(null);
   const [newProject, setNewProject] = useState({
     name: "",
     description: "",
@@ -57,6 +59,18 @@ export default function Projects() {
         setDataLoaded(true);
         console.error("Error fetching projects:", error);
       });
+
+    fetch("api/participants", { method: "GET" })
+      .then((response) => {
+        if (response.status === 401) throw new Error("Unauthorized");
+        return response.json();
+      })
+      .then((data) => {
+        setParticipants(data);
+      })
+      .catch((error) => {
+        console.error("Error fetching participants:", error);
+      });
   }, []);
 
   const handleOpen = () => setOpen(true);
@@ -75,8 +89,15 @@ export default function Projects() {
     });
   };
   const handleEditOpen = (idx) => {
+    const project = projects[idx];
+    const givenByParticipant = participants.find(p => p.name === project.given_by);
+    const takenByParticipant = participants.find(p => p.name === project.taken_by);
+    setEditProject({
+      ...project,
+      given_by: givenByParticipant ? givenByParticipant.id : "",
+      taken_by: takenByParticipant ? takenByParticipant.id : "",
+    });
     setToEditIdx(idx);
-    setEditProject(projects[idx]);
     setEditOpen(true);
   };
   const handleEditClose = () => {
@@ -85,9 +106,93 @@ export default function Projects() {
   };
   const handleChange = (e) => { setNewProject((prev) => ({ ...prev, [e.target.name]: e.target.value })); };
   const handleEditChange = (e) => { setEditProject((prev) => ({ ...prev, [e.target.name]: e.target.value })); };
-  const handleAddProject = () => { setProjects((prev) => [...prev, newProject]); setMenuAnchorEls((prev) => [...prev, null]); handleClose(); };
-  const handleEditProject = () => { setProjects((prev) => prev.map((p, i) => (i === toEditIdx ? editProject : p))); handleEditClose(); };
-  const handleDeleteProject = (idx) => { setProjects((prev) => prev.filter((_, i) => i !== idx)); setMenuAnchorEls((prev) => prev.filter((_, i) => i !== idx)); };
+  const handleAddProject = () => {
+    fetch("/api/project", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(newProject),
+      credentials: "include",
+    })
+      .then((response) => {
+        if (!response.ok) {
+          return response.json().then((err) => {
+            const msg = err.detail?.message?.join(" ") || "Failed to add project";
+            throw new Error(msg);
+          });
+        }
+        return response.json();
+      })
+      .then(() => {
+        // Refetch projects to ensure the list is up to date with names
+        fetch("api/projects", { method: "GET" })
+          .then((response) => response.json())
+          .then((data) => {
+            setProjects(data);
+            setMenuAnchorEls(Array(data.length).fill(null));
+            handleClose();
+          })
+          .catch((error) => {
+            console.error("Error refetching projects:", error);
+            handleClose();
+          });
+      })
+      .catch((error) => {
+        console.error("Error adding project:", error);
+        setError(error.message);
+      });
+  };
+  const handleEditProject = () => {
+    fetch(`/api/project/${editProject.id}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(editProject),
+      credentials: "include",
+    })
+      .then((response) => {
+        if (!response.ok) {
+          return response.json().then((err) => {
+            const msg = err.detail?.message?.join(" ") || "Failed to update project";
+            throw new Error(msg);
+          });
+        }
+        return response.json();
+      })
+      .then((updatedProject) => {
+        setProjects((prev) =>
+          prev.map((p, i) => (i === toEditIdx ? updatedProject : p))
+        );
+        handleEditClose();
+      })
+      .catch((error) => {
+        console.error("Error updating project:", error);
+        setError(error.message);
+      });
+  };
+  const handleDeleteProject = (idx) => {
+    const projectToDelete = projects[idx];
+    fetch(`/api/project?project_id=${projectToDelete.id}`, {
+      method: "DELETE",
+      credentials: "include",
+    })
+      .then((response) => {
+        if (!response.ok) {
+          return response.json().then((err) => {
+            const msg = err.detail?.message?.join(" ") || "Failed to delete project";
+            throw new Error(msg);
+          });
+        }
+        setProjects((prev) => prev.filter((_, i) => i !== idx));
+        setMenuAnchorEls((prev) => prev.filter((_, i) => i !== idx));
+      })
+      .catch((error) => {
+        console.error("Error deleting project:", error);
+        setError(error.message);
+      });
+  };
   const handleMenuOpen = (event, idx) => { setMenuAnchorEls((prev) => prev.map((el, i) => (i === idx ? event.currentTarget : el))); };
   const handleMenuClose = (idx) => { setMenuAnchorEls((prev) => prev.map((el, i) => (i === idx ? null : el))); };
 
@@ -162,11 +267,54 @@ export default function Projects() {
         <DialogContent>
           <TextField margin="normal" fullWidth label="Name" name="name" value={newProject.name} onChange={handleChange} />
           <TextField margin="normal" fullWidth label="Description" name="description" value={newProject.description} onChange={handleChange} />
-          <TextField margin="normal" fullWidth label="Given By" name="given_by" value={newProject.given_by} onChange={handleChange} />
-          <TextField margin="normal" fullWidth label="Taken By" name="taken_by" value={newProject.taken_by} onChange={handleChange} />
-          <TextField margin="normal" fullWidth label="Start Date" name="start_date" value={newProject.start_date} onChange={handleChange} />
-          <TextField margin="normal" fullWidth label="End Date" name="end_date" value={newProject.end_date} onChange={handleChange} />
-          <TextField margin="normal" fullWidth label="Rate Mode" name="rate_mode" value={newProject.rate_mode} onChange={handleChange} />
+          <FormControl margin="normal" fullWidth>
+            <InputLabel>Given By</InputLabel>
+            <Select
+              name="given_by"
+              value={newProject.given_by}
+              label="Given By"
+              onChange={handleChange}
+            >
+              {participants.map((participant) => (
+                <MenuItem key={participant.id} value={participant.id}>
+                  {participant.name}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+          <FormControl margin="normal" fullWidth>
+            <InputLabel>Taken By</InputLabel>
+            <Select
+              name="taken_by"
+              value={newProject.taken_by}
+              label="Taken By"
+              onChange={handleChange}
+            >
+              {participants.map((participant) => (
+                <MenuItem key={participant.id} value={participant.id}>
+                  {participant.name}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+          <TextField margin="normal" fullWidth label="Start Date" name="start_date" type="date" value={newProject.start_date} onChange={handleChange} InputLabelProps={{ shrink: true }} />
+          <TextField margin="normal" fullWidth label="End Date" name="end_date" type="date" value={newProject.end_date} onChange={handleChange} InputLabelProps={{ shrink: true }} />
+          <FormControl margin="normal" fullWidth>
+            <InputLabel>Rate Mode</InputLabel>
+            <Select
+              name="rate_mode"
+              value={newProject.rate_mode}
+              label="Rate Mode"
+              onChange={handleChange}
+            >
+              <MenuItem value="Hourly">Hourly</MenuItem>
+              <MenuItem value="Daily">Daily</MenuItem>
+              <MenuItem value="Weekly">Weekly</MenuItem>
+              <MenuItem value="Monthly">Monthly</MenuItem>
+              <MenuItem value="Milestone">Milestone</MenuItem>
+              <MenuItem value="Fixed">Fixed</MenuItem>
+            </Select>
+          </FormControl>
           <TextField margin="normal" fullWidth label="Rate Amount" name="rate_amount" value={newProject.rate_amount} onChange={handleChange} />
           <TextField margin="normal" fullWidth label="Currency" name="currency" value={newProject.currency} onChange={handleChange} />
         </DialogContent>
@@ -180,11 +328,54 @@ export default function Projects() {
         <DialogContent>
           <TextField margin="normal" fullWidth label="Name" name="name" value={editProject.name} onChange={handleEditChange} />
           <TextField margin="normal" fullWidth label="Description" name="description" value={editProject.description} onChange={handleEditChange} />
-          <TextField margin="normal" fullWidth label="Given By" name="given_by" value={editProject.given_by} onChange={handleEditChange} />
-          <TextField margin="normal" fullWidth label="Taken By" name="taken_by" value={editProject.taken_by} onChange={handleEditChange} />
-          <TextField margin="normal" fullWidth label="Start Date" name="start_date" value={editProject.start_date} onChange={handleEditChange} />
-          <TextField margin="normal" fullWidth label="End Date" name="end_date" value={editProject.end_date} onChange={handleEditChange} />
-          <TextField margin="normal" fullWidth label="Rate Mode" name="rate_mode" value={editProject.rate_mode} onChange={handleEditChange} />
+          <FormControl margin="normal" fullWidth>
+            <InputLabel>Given By</InputLabel>
+            <Select
+              name="given_by"
+              value={editProject.given_by}
+              label="Given By"
+              onChange={handleEditChange}
+            >
+              {participants.map((participant) => (
+                <MenuItem key={participant.id} value={participant.id}>
+                  {participant.name}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+          <FormControl margin="normal" fullWidth>
+            <InputLabel>Taken By</InputLabel>
+            <Select
+              name="taken_by"
+              value={editProject.taken_by}
+              label="Taken By"
+              onChange={handleEditChange}
+            >
+              {participants.map((participant) => (
+                <MenuItem key={participant.id} value={participant.id}>
+                  {participant.name}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+          <TextField margin="normal" fullWidth label="Start Date" name="start_date" type="date" value={editProject.start_date} onChange={handleEditChange} InputLabelProps={{ shrink: true }} />
+          <TextField margin="normal" fullWidth label="End Date" name="end_date" type="date" value={editProject.end_date} onChange={handleEditChange} InputLabelProps={{ shrink: true }} />
+          <FormControl margin="normal" fullWidth>
+            <InputLabel>Rate Mode</InputLabel>
+            <Select
+              name="rate_mode"
+              value={editProject.rate_mode}
+              label="Rate Mode"
+              onChange={handleEditChange}
+            >
+              <MenuItem value="Hourly">Hourly</MenuItem>
+              <MenuItem value="Daily">Daily</MenuItem>
+              <MenuItem value="Weekly">Weekly</MenuItem>
+              <MenuItem value="Monthly">Monthly</MenuItem>
+              <MenuItem value="Milestone">Milestone</MenuItem>
+              <MenuItem value="Fixed">Fixed</MenuItem>
+            </Select>
+          </FormControl>
           <TextField margin="normal" fullWidth label="Rate Amount" name="rate_amount" value={editProject.rate_amount} onChange={handleEditChange} />
           <TextField margin="normal" fullWidth label="Currency" name="currency" value={editProject.currency} onChange={handleEditChange} />
         </DialogContent>
@@ -193,6 +384,28 @@ export default function Projects() {
           <Button onClick={handleEditProject} variant="contained">Save</Button>
         </DialogActions>
       </Dialog>
+      <Snackbar
+        open={!!error}
+        autoHideDuration={6000}
+        onClose={() => setError(null)}
+        anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+      >
+        <Alert
+          onClose={() => setError(null)}
+          severity="error"
+          variant="filled"
+          sx={{
+            width: "100%",
+            maxWidth: 600,
+            fontSize: "1rem",
+            fontWeight: 500,
+            boxShadow: 3,
+            borderRadius: 2,
+          }}
+        >
+          {error}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 }

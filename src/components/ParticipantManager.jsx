@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   Box,
   Button,
@@ -21,6 +21,8 @@ import {
   FormControl,
   InputLabel,
   Select,
+  Snackbar,
+  Alert,
 } from "@mui/material";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import EditIcon from "@mui/icons-material/Edit";
@@ -29,7 +31,7 @@ import LoadMask from "./LoadMask";
 
 export default function ParticipantManager({
   title,
-  icon: IconComponent,
+  icon,
   apiType,
   fields,
   displayFields,
@@ -38,6 +40,7 @@ export default function ParticipantManager({
   type2,
   type3 = "NotApplicable",
 }) {
+  const Icon = icon;
   const [items, setItems] = useState([]);
   const [dataLoaded, setDataLoaded] = useState(false);
   const [open, setOpen] = useState(false);
@@ -45,8 +48,9 @@ export default function ParticipantManager({
   const [menuAnchorEls, setMenuAnchorEls] = useState([]);
   const [newItem, setNewItem] = useState(initialForm);
   const [editItem, setEditItem] = useState(initialForm);
+  const [error, setError] = useState(null);
 
-  useEffect(() => {
+  const fetchItems = useCallback(() => {
     fetch(`api/participants?type1=${apiType}`, {
       method: "GET",
     })
@@ -59,13 +63,18 @@ export default function ParticipantManager({
       .then((data) => {
         setItems(data);
         setDataLoaded(true);
-        setMenuAnchorEls(Array(data.length).fill(null)); 
+        setMenuAnchorEls(Array(data.length).fill(null));
       })
       .catch((error) => {
         console.error(`Error fetching ${title.toLowerCase()}:`, error);
         setDataLoaded(true);
+        setError(error.message);
       });
   }, [apiType, title]);
+
+  useEffect(() => {
+    fetchItems();
+  }, [fetchItems]);
 
   const handleOpen = () => setOpen(true);
   const handleClose = () => {
@@ -111,29 +120,73 @@ export default function ParticipantManager({
     })
       .then((response) => {
         if (!response.ok) {
-          throw new Error(`Failed to add ${title.toLowerCase()}`);
+          return response.json().then((err) => {
+            const msg = err.detail?.message?.join(" ") || `Failed to add ${title.toLowerCase()}`;
+            throw new Error(msg);
+          });
         }
         return response.json();
       })
-      .then((createdItem) => {
-        setItems((prev) => [...prev, createdItem]);
-        setMenuAnchorEls((prev) => [...prev, null]);
+      .then(() => {
+        fetchItems(); // Refetch to ensure the list is up to date
         handleClose();
       })
       .catch((error) => {
         console.error(`Error adding ${title.toLowerCase()}:`, error);
+        setError(error.message);
       });
   };
 
   const handleEdit = () => {
-    // Placeholder for edit API
-    console.log("Edit not implemented yet");
-    handleEditClose();
+    fetch(`/api/participant/${editItem.id}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(editItem),
+      credentials: "include",
+    })
+      .then((response) => {
+        if (!response.ok) {
+          return response.json().then((err) => {
+            const msg = err.detail?.message?.join(" ") || `Failed to update ${title.toLowerCase()}`;
+            throw new Error(msg);
+          });
+        }
+        return response.json();
+      })
+      .then((updatedItem) => {
+        setItems((prev) =>
+          prev.map((item) => (item.id === updatedItem.id ? updatedItem : item))
+        );
+        handleEditClose();
+      })
+      .catch((error) => {
+        console.error(`Error updating ${title.toLowerCase()}:`, error);
+        setError(error.message);
+      });
   };
 
   const handleDelete = (idx) => {
-    // Placeholder for delete API
-    console.log("Delete not implemented yet", idx);
+    const itemToDelete = items[idx];
+    fetch(`/api/participant?participant_id=${itemToDelete.id}`, {
+      method: "DELETE",
+      credentials: "include",
+    })
+      .then((response) => {
+        if (!response.ok) {
+          return response.json().then((err) => {
+            const msg = err.detail?.message?.join(" ") || `Failed to delete ${title.toLowerCase()}`;
+            throw new Error(msg);
+          });
+        }
+        setItems((prev) => prev.filter((_, i) => i !== idx));
+        setMenuAnchorEls((prev) => prev.filter((_, i) => i !== idx));
+      })
+      .catch((error) => {
+        console.error(`Error deleting ${title.toLowerCase()}:`, error);
+        setError(error.message);
+      });
   };
 
   const handleMenuOpen = (event, idx) => {
@@ -214,7 +267,7 @@ export default function ParticipantManager({
                           height: 40,
                         }}
                       >
-                        <IconComponent />
+                        <Icon />
                       </Avatar>
                     }
                     title={
@@ -314,6 +367,28 @@ export default function ParticipantManager({
             </Button>
           </DialogActions>
         </Dialog>
-        </Box>
+        <Snackbar
+          open={!!error}
+          autoHideDuration={6000}
+          onClose={() => setError(null)}
+          anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+        >
+          <Alert
+            onClose={() => setError(null)}
+            severity="error"
+            variant="filled"
+            sx={{
+              width: "100%",
+              maxWidth: 600,
+              fontSize: "1rem",
+              fontWeight: 500,
+              boxShadow: 3,
+              borderRadius: 2,
+            }}
+          >
+            {error}
+          </Alert>
+        </Snackbar>
+      </Box>
     )
 }

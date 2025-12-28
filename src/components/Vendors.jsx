@@ -36,6 +36,7 @@ export default function Vendors() {
       fields={fields}
       displayFields={displayFields}
       initialForm={initialForm}
+      type2={()=>'Company'}
     />
   );
 }
