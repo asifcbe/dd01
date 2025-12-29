@@ -105,8 +105,11 @@ export default function DashboardLayout({ user, onLogout }) {
           )}
           <Typography variant="h6" sx={{ flexGrow: 1, color: "primary.main" }}></Typography>
           <Box display="flex" alignItems="center" gap={1}>
-            <Avatar src={user.avatar} sx={{ width: 36, height: 36 }} alt={user.name} />
-            <Typography sx={{ fontWeight: 500, color: "primary.main" }}>{user.name}</Typography>
+            <Avatar src={user.avatar} sx={{ width: 36, height: 36 }} alt={user.email} />
+            <Box>
+              <Typography sx={{ fontWeight: 500, color: "primary.main", fontSize: "0.9rem" }}>{user.email}</Typography>
+              <Typography sx={{ fontWeight: 400, color: "grey.600", fontSize: "0.8rem" }}>{user.org}</Typography>
+            </Box>
             <IconButton onClick={onLogout} color="primary" aria-label="logout"><LogoutIcon /></IconButton>
           </Box>
         </Toolbar>

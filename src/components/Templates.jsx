@@ -66,7 +66,7 @@ function mermaidToReactFlow(scriptArr) {
     levels[level].push(id);
     edgeArr
       .filter((edge) => edge.source === id)
-      .forEach((edge, i) => traverse(edge.target, level + 1));
+      .forEach((edge) => traverse(edge.target, level + 1));
   }
   roots.forEach((rootId, i) => traverse(rootId, 0, i));
   const nodeList = [];
@@ -85,7 +85,6 @@ function mermaidToReactFlow(scriptArr) {
 
 export default function Templates() {
   const [tabIdx, setTabIdx] = useState(0);
-  const [templateListObj, setTemplateListObj] = useState({});
   const [templateList, setTemplateList] = useState([]);
   const [selectedTemplateId, setSelectedTemplateId] = useState(null);
   const [nodes, setNodes] = useState([]);
@@ -99,7 +98,6 @@ export default function Templates() {
         return res.json();
       })
       .then((data) => {
-        setTemplateListObj(data);
         setTemplateList(Object.values(data));
       })
       .catch(console.error);

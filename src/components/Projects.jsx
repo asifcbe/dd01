@@ -2,15 +2,29 @@ import React, { useState, useEffect } from "react";
 import {
   Box, Button, Card, CardContent, CardHeader, IconButton, Typography, Grid,
   Dialog, DialogTitle, DialogContent, DialogActions, TextField, Menu, MenuItem,
-  Fade, Avatar, Divider, FormControl, InputLabel, Select, Snackbar, Alert
+  Fade, Avatar, Divider, FormControl, InputLabel, Select, Snackbar, Alert, Autocomplete
 } from "@mui/material";
 import {
   Assignment as ProjectsIcon
 } from "@mui/icons-material";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import EditIcon from "@mui/icons-material/Edit";
+import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import DeleteIcon from "@mui/icons-material/Delete";
 import LoadMask from "./LoadMask";
+
+const COUNTRIES = [
+  { name: 'United States', code: 'US', phoneCode: '+1' },
+  { name: 'United Kingdom', code: 'GB', phoneCode: '+44' },
+  { name: 'India', code: 'IN', phoneCode: '+91' },
+  { name: 'Germany', code: 'DE', phoneCode: '+49' },
+  { name: 'France', code: 'FR', phoneCode: '+33' },
+  { name: 'Japan', code: 'JP', phoneCode: '+81' },
+  { name: 'Canada', code: 'CA', phoneCode: '+1' },
+  { name: 'Australia', code: 'AU', phoneCode: '+61' },
+];
+
+const CURRENCIES = ['USD', 'EUR', 'GBP', 'INR', 'JPY', 'CAD', 'AUD'];
 
 export default function Projects() {
   const [projects, setProjects] = useState([]);
@@ -18,8 +32,13 @@ export default function Projects() {
   const [participants, setParticipants] = useState([]);
   const [open, setOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
-  const [toEditIdx, setToEditIdx] = useState(null);
-  const [menuAnchorEls, setMenuAnchorEls] = useState([]);
+  const [search, setSearch] = useState("");
+  const filteredProjects = projects.filter(project =>
+    project.name.toLowerCase().includes(search.toLowerCase()) ||
+    project.description?.toLowerCase().includes(search.toLowerCase()) ||
+    project.given_by?.toLowerCase().includes(search.toLowerCase()) ||
+    project.taken_by?.toLowerCase().includes(search.toLowerCase())
+  );
   const [error, setError] = useState(null);
   const [newProject, setNewProject] = useState({
     name: "",
@@ -30,7 +49,8 @@ export default function Projects() {
     end_date: "",
     rate_mode: "",
     rate_amount: "",
-    currency: ""
+    currency: "",
+    country: ""
   });
   const [editProject, setEditProject] = useState({
     name: "",
@@ -41,8 +61,10 @@ export default function Projects() {
     end_date: "",
     rate_mode: "",
     rate_amount: "",
-    currency: ""
+    currency: "",
+    country: ""
   });
+  const [menuAnchorEls, setMenuAnchorEls] = useState({});
 
   useEffect(() => {
     fetch("api/projects", { method: "GET" })
@@ -53,7 +75,7 @@ export default function Projects() {
       .then((data) => {
         setProjects(data);
         setDataLoaded(true);
-        setMenuAnchorEls(Array(data.length).fill(null));
+        setMenuAnchorEls({});
       })
       .catch((error) => {
         setDataLoaded(true);
@@ -85,24 +107,21 @@ export default function Projects() {
       end_date: "",
       rate_mode: "",
       rate_amount: "",
-      currency: ""
+      currency: "",
+      country: ""
     });
   };
-  const handleEditOpen = (idx) => {
-    const project = projects[idx];
-    const givenByParticipant = participants.find(p => p.name === project.given_by);
-    const takenByParticipant = participants.find(p => p.name === project.taken_by);
+  const handleEditOpen = (projectId) => {
+    const project = projects.find(p => p.id === projectId);
     setEditProject({
       ...project,
-      given_by: givenByParticipant ? givenByParticipant.id : "",
-      taken_by: takenByParticipant ? takenByParticipant.id : "",
+      given_by: participants.find(p => p.name === project.given_by)?.id || "",
+      taken_by: participants.find(p => p.name === project.taken_by)?.id || "",
     });
-    setToEditIdx(idx);
     setEditOpen(true);
   };
   const handleEditClose = () => {
     setEditOpen(false);
-    setToEditIdx(null);
   };
   const handleChange = (e) => { setNewProject((prev) => ({ ...prev, [e.target.name]: e.target.value })); };
   const handleEditChange = (e) => { setEditProject((prev) => ({ ...prev, [e.target.name]: e.target.value })); };
@@ -130,7 +149,7 @@ export default function Projects() {
           .then((response) => response.json())
           .then((data) => {
             setProjects(data);
-            setMenuAnchorEls(Array(data.length).fill(null));
+            setMenuAnchorEls({});
             handleClose();
           })
           .catch((error) => {
@@ -163,7 +182,7 @@ export default function Projects() {
       })
       .then((updatedProject) => {
         setProjects((prev) =>
-          prev.map((p, i) => (i === toEditIdx ? updatedProject : p))
+          prev.map((p) => (p.id === editProject.id ? updatedProject : p))
         );
         handleEditClose();
       })
@@ -172,8 +191,8 @@ export default function Projects() {
         setError(error.message);
       });
   };
-  const handleDeleteProject = (idx) => {
-    const projectToDelete = projects[idx];
+  const handleDeleteProject = (projectId) => {
+    const projectToDelete = projects.find(p => p.id === projectId);
     fetch(`/api/project?project_id=${projectToDelete.id}`, {
       method: "DELETE",
       credentials: "include",
@@ -185,22 +204,40 @@ export default function Projects() {
             throw new Error(msg);
           });
         }
-        setProjects((prev) => prev.filter((_, i) => i !== idx));
-        setMenuAnchorEls((prev) => prev.filter((_, i) => i !== idx));
+        setProjects((prev) => prev.filter(p => p.id !== projectId));
+        // No need to filter menuAnchorEls since it's by id
       })
       .catch((error) => {
         console.error("Error deleting project:", error);
         setError(error.message);
       });
   };
-  const handleMenuOpen = (event, idx) => { setMenuAnchorEls((prev) => prev.map((el, i) => (i === idx ? event.currentTarget : el))); };
-  const handleMenuClose = (idx) => { setMenuAnchorEls((prev) => prev.map((el, i) => (i === idx ? null : el))); };
+  const handleClone = (project) => {
+    setNewProject({
+      ...project,
+      name: `${project.name} (Copy)`,
+    });
+    setOpen(true);
+  };
+  const handleMenuOpen = (event, projectId) => { setMenuAnchorEls((prev) => ({ ...prev, [projectId]: event.currentTarget })); };
+  const handleMenuClose = (projectId) => { setMenuAnchorEls((prev) => ({ ...prev, [projectId]: null })); };
 
   return (
     !dataLoaded ? <LoadMask text='Loading Projects' /> : <Box>
-      <Typography variant="h4" sx={{ fontWeight: "bold", mb: 3 }}>Projects</Typography>
+      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
+        <Typography variant="h4" sx={{ fontWeight: "bold" }}>Projects</Typography>
+        <Button variant="contained" size="large" onClick={handleOpen}>Add Project</Button>
+      </Box>
+      <TextField
+        fullWidth
+        label="Search Projects"
+        variant="outlined"
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+        sx={{ mb: 3 }}
+      />
       <Grid container spacing={3} >
-        {projects.map((project, idx) => (
+        {filteredProjects.map((project, idx) => (
           <Grid item xs={12} sm={6} md={4} key={idx} sx={{ p: 1 }}>
             <Fade in>
               <Card elevation={4} sx={{
@@ -223,7 +260,7 @@ export default function Projects() {
                     </Typography>
                   }
                   action={
-                    <IconButton onClick={(e) => handleMenuOpen(e, idx)} sx={{ color: "#868ca0" }}>
+                    <IconButton onClick={(e) => handleMenuOpen(e, project.id)} sx={{ color: "#868ca0" }}>
                       <MoreVertIcon />
                     </IconButton>
                   }
@@ -231,13 +268,16 @@ export default function Projects() {
                     background: "#f0f2fa", borderBottom: "1px solid #e0e2ea", minHeight: 60
                   }}
                 />
-                <Menu anchorEl={menuAnchorEls[idx]} open={Boolean(menuAnchorEls[idx])} onClose={() => handleMenuClose(idx)}
+                <Menu anchorEl={menuAnchorEls[project.id]} open={Boolean(menuAnchorEls[project.id])} onClose={() => handleMenuClose(project.id)}
                   anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
                   transformOrigin={{ vertical: "top", horizontal: "right" }}>
-                  <MenuItem onClick={() => { handleEditOpen(idx); handleMenuClose(idx); }}>
+                  <MenuItem onClick={() => { handleEditOpen(project.id); handleMenuClose(project.id); }}>
                     <EditIcon fontSize="small" sx={{ mr: 1 }} /> Edit
                   </MenuItem>
-                  <MenuItem onClick={() => { handleDeleteProject(idx); handleMenuClose(idx); }}>
+                  <MenuItem onClick={() => { handleClone(project); handleMenuClose(project.id); }}>
+                    <ContentCopyIcon fontSize="small" sx={{ mr: 1 }} /> Clone
+                  </MenuItem>
+                  <MenuItem onClick={() => { handleDeleteProject(project.id); handleMenuClose(project.id); }}>
                     <DeleteIcon fontSize="small" sx={{ mr: 1, color: "#f44336" }} /> Delete
                   </MenuItem>
                 </Menu>
@@ -252,6 +292,7 @@ export default function Projects() {
                     <Typography sx={{ fontSize: 15, color: "grey.700" }}><b>Rate Mode:</b> {project.rate_mode}</Typography>
                     <Typography sx={{ fontSize: 15, color: "grey.700" }}><b>Rate Amount:</b> {project.rate_amount}</Typography>
                     <Typography sx={{ fontSize: 15, color: "grey.700" }}><b>Currency:</b> {project.currency}</Typography>
+                    <Typography sx={{ fontSize: 15, color: "grey.700" }}><b>Country:</b> {project.country}</Typography>
                   </Box>
                 </CardContent>
               </Card>
@@ -259,10 +300,10 @@ export default function Projects() {
           </Grid>
         ))}
       </Grid>
-      <Box sx={{ mt: 5, textAlign: "left" ,p: 1}}>
+      {/* <Box sx={{ mt: 5, textAlign: "left" ,p: 1}}>
         <Button variant="contained" size="large" onClick={handleOpen}>Add Project</Button>
-      </Box>
-      <Dialog open={open} onClose={handleClose}>
+      </Box> */}
+      <Dialog open={open} onClose={() => {}} disableEscapeKeyDown={true}>
         <DialogTitle>Add Project</DialogTitle>
         <DialogContent>
           <TextField margin="normal" fullWidth label="Name" name="name" value={newProject.name} onChange={handleChange} />
@@ -316,14 +357,32 @@ export default function Projects() {
             </Select>
           </FormControl>
           <TextField margin="normal" fullWidth label="Rate Amount" name="rate_amount" value={newProject.rate_amount} onChange={handleChange} />
-          <TextField margin="normal" fullWidth label="Currency" name="currency" value={newProject.currency} onChange={handleChange} />
+          <Autocomplete
+            options={CURRENCIES}
+            value={newProject.currency}
+            onChange={(event, newValue) => {
+              setNewProject((prev) => ({ ...prev, currency: newValue || "" }));
+            }}
+            renderInput={(params) => <TextField {...params} label="Currency" margin="normal" />}
+            fullWidth
+          />
+          <Autocomplete
+            options={COUNTRIES}
+            getOptionLabel={(option) => option.name}
+            value={COUNTRIES.find(c => c.name === newProject.country) || null}
+            onChange={(event, newValue) => {
+              setNewProject((prev) => ({ ...prev, country: newValue ? newValue.name : "" }));
+            }}
+            renderInput={(params) => <TextField {...params} label="Country" margin="normal" />}
+            fullWidth
+          />
         </DialogContent>
         <DialogActions sx={{ p: 2 }}>
           <Button onClick={handleClose}>Cancel</Button>
           <Button onClick={handleAddProject} variant="contained">Add</Button>
         </DialogActions>
       </Dialog>
-      <Dialog open={editOpen} onClose={handleEditClose}>
+      <Dialog open={editOpen} onClose={() => {}} disableEscapeKeyDown={true}>
         <DialogTitle>Edit Project</DialogTitle>
         <DialogContent>
           <TextField margin="normal" fullWidth label="Name" name="name" value={editProject.name} onChange={handleEditChange} />
@@ -377,7 +436,25 @@ export default function Projects() {
             </Select>
           </FormControl>
           <TextField margin="normal" fullWidth label="Rate Amount" name="rate_amount" value={editProject.rate_amount} onChange={handleEditChange} />
-          <TextField margin="normal" fullWidth label="Currency" name="currency" value={editProject.currency} onChange={handleEditChange} />
+          <Autocomplete
+            options={CURRENCIES}
+            value={editProject.currency}
+            onChange={(event, newValue) => {
+              setEditProject((prev) => ({ ...prev, currency: newValue || "" }));
+            }}
+            renderInput={(params) => <TextField {...params} label="Currency" margin="normal" />}
+            fullWidth
+          />
+          <Autocomplete
+            options={COUNTRIES}
+            getOptionLabel={(option) => option.name}
+            value={COUNTRIES.find(c => c.name === editProject.country) || null}
+            onChange={(event, newValue) => {
+              setEditProject((prev) => ({ ...prev, country: newValue ? newValue.name : "" }));
+            }}
+            renderInput={(params) => <TextField {...params} label="Country" margin="normal" />}
+            fullWidth
+          />
         </DialogContent>
         <DialogActions sx={{ p: 2 }}>
           <Button onClick={handleEditClose}>Cancel</Button>
@@ -401,6 +478,7 @@ export default function Projects() {
             fontWeight: 500,
             boxShadow: 3,
             borderRadius: 2,
+            whiteSpace: 'pre-wrap',
           }}
         >
           {error}

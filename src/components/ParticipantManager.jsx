@@ -23,11 +23,24 @@ import {
   Select,
   Snackbar,
   Alert,
+  Autocomplete,
 } from "@mui/material";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import EditIcon from "@mui/icons-material/Edit";
+import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import DeleteIcon from "@mui/icons-material/Delete";
 import LoadMask from "./LoadMask";
+
+const COUNTRIES = [
+  { name: 'United States', code: 'US', phoneCode: '+1' },
+  { name: 'United Kingdom', code: 'GB', phoneCode: '+44' },
+  { name: 'India', code: 'IN', phoneCode: '+91' },
+  { name: 'Germany', code: 'DE', phoneCode: '+49' },
+  { name: 'France', code: 'FR', phoneCode: '+33' },
+  { name: 'Japan', code: 'JP', phoneCode: '+81' },
+  { name: 'Canada', code: 'CA', phoneCode: '+1' },
+  { name: 'Australia', code: 'AU', phoneCode: '+61' },
+];
 
 export default function ParticipantManager({
   title,
@@ -49,6 +62,10 @@ export default function ParticipantManager({
   const [newItem, setNewItem] = useState(initialForm);
   const [editItem, setEditItem] = useState(initialForm);
   const [error, setError] = useState(null);
+  const [search, setSearch] = useState("");
+  const filteredItems = items.filter(item =>
+    fields.some(field => item[field.name]?.toLowerCase().includes(search.toLowerCase()))
+  );
 
   const fetchItems = useCallback(() => {
     fetch(`api/participants?type1=${apiType}`, {
@@ -85,9 +102,14 @@ export default function ParticipantManager({
   const handleEditOpen = (idx) => {
     setEditItem(items[idx]);
     setEditOpen(true);
-  };
-  const handleEditClose = () => {
+  };  const handleEditClose = () => {
     setEditOpen(false);
+  };  const handleClone = (item) => {
+    setNewItem({
+      ...item,
+      name: `${item.name} (Copy)`,
+    });
+    setOpen(true);
   };
 
   const handleChange = (e) => {
@@ -121,7 +143,7 @@ export default function ParticipantManager({
       .then((response) => {
         if (!response.ok) {
           return response.json().then((err) => {
-            const msg = err.detail?.message?.join(" ") || `Failed to add ${title.toLowerCase()}`;
+            const msg = err.detail?.message?.join("\n") || `Failed to add ${title.toLowerCase()}`;
             throw new Error(msg);
           });
         }
@@ -149,7 +171,7 @@ export default function ParticipantManager({
       .then((response) => {
         if (!response.ok) {
           return response.json().then((err) => {
-            const msg = err.detail?.message?.join(" ") || `Failed to update ${title.toLowerCase()}`;
+            const msg = err.detail?.message?.join("\n") || `Failed to update ${title.toLowerCase()}`;
             throw new Error(msg);
           });
         }
@@ -176,7 +198,7 @@ export default function ParticipantManager({
       .then((response) => {
         if (!response.ok) {
           return response.json().then((err) => {
-            const msg = err.detail?.message?.join(" ") || `Failed to delete ${title.toLowerCase()}`;
+            const msg = err.detail?.message?.join("\n") || `Failed to delete ${title.toLowerCase()}`;
             throw new Error(msg);
           });
         }
@@ -200,6 +222,55 @@ export default function ParticipantManager({
 
   const renderField = (field, value, onChange, isEdit = false) => {
     const labelId = `${isEdit ? 'edit' : 'add'}-${field.name}-label`;
+    if (field.name === 'mobile') {
+      const parts = value.split(' ');
+      const countryCode = parts[0] || '';
+      const phoneNumber = parts.slice(1).join(' ') || '';
+      const selectedCountry = COUNTRIES.find(c => c.phoneCode === countryCode) || null;
+      return (
+        <Box key={field.name} sx={{ mt: 2, mb: 1 }}>
+          <Autocomplete
+            options={COUNTRIES}
+            getOptionLabel={(option) => `${option.name} (${option.phoneCode})`}
+            value={selectedCountry}
+            onChange={(event, newValue) => {
+              const newCode = newValue ? newValue.phoneCode : '';
+              onChange({ target: { name: field.name, value: `${newCode} ${phoneNumber}`.trim() } });
+            }}
+            renderInput={(params) => <TextField {...params} label="Country" margin="normal" fullWidth />}
+          />
+          <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
+            <TextField
+              label="Country Code"
+              value={countryCode}
+              InputProps={{ readOnly: true }}
+              sx={{ width: '30%', mr: 1 }}
+              size="small"
+            />
+            <TextField
+              fullWidth
+              label={field.label}
+              value={phoneNumber}
+              onChange={(e) => onChange({ target: { name: field.name, value: `${countryCode} ${e.target.value}` } })}
+              inputProps={{ maxLength: 10 }}
+            />
+          </Box>
+        </Box>
+      );
+    }
+    if (field.type === 'autocomplete') {
+      return (
+        <Autocomplete
+          key={field.name}
+          options={field.options}
+          value={value}
+          onChange={(event, newValue) => {
+            onChange({ target: { name: field.name, value: newValue || "" } });
+          }}
+          renderInput={(params) => <TextField {...params} label={field.label} margin="normal" fullWidth />}
+        />
+      );
+    }
     if (field.type === 'select') {
       return (
         <FormControl margin="normal" fullWidth key={field.name}>
@@ -236,14 +307,25 @@ export default function ParticipantManager({
 
   return (
     !dataLoaded ? <LoadMask text={`Loading ${title}`} /> : <Box>
-        <Typography
-          variant="h4"
-          sx={{ fontWeight: "bold", mb: 3, letterSpacing: 1 }}
-        >
-          {title}
-        </Typography>
+        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
+          <Typography
+            variant="h4"
+            sx={{ fontWeight: "bold", letterSpacing: 1 }}
+          >
+            {title}
+          </Typography>
+          <Button variant="contained" size="large" onClick={handleOpen}>Add {apiType}</Button>
+        </Box>
+        <TextField
+          fullWidth
+          label={`Search ${title}`}
+          variant="outlined"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          sx={{ mb: 3 }}
+        />
         <Grid container spacing={3}>
-          {items.map((item, idx) => (
+          {filteredItems.map((item, idx) => (
             <Grid item xs={12} sm={6} md={4} key={idx} sx={{ p: 1 }}>
               <Fade in>
                 <Card
@@ -310,6 +392,14 @@ export default function ParticipantManager({
                     </MenuItem>
                     <MenuItem
                       onClick={() => {
+                        handleClone(filteredItems[idx]);
+                        handleMenuClose(idx);
+                      }}
+                    >
+                      <ContentCopyIcon fontSize="small" sx={{ mr: 1 }} /> Clone
+                    </MenuItem>
+                    <MenuItem
+                      onClick={() => {
                         handleDelete(idx);
                         handleMenuClose(idx);
                       }}
@@ -336,13 +426,13 @@ export default function ParticipantManager({
             </Grid>
           ))}
         </Grid>
-        <Box sx={{ mt: 5, textAlign: "left", p: 1 }}>
+        {/* <Box sx={{ mt: 5, textAlign: "left", p: 1 }}>
           <Button variant="contained" size="large" onClick={handleOpen}>
             Add {apiType}
           </Button>
-        </Box>
+        </Box> */}
         {/* Add Dialog */}
-        <Dialog open={open} onClose={handleClose}>
+        <Dialog open={open} onClose={() => {}} disableEscapeKeyDown={true}>
           <DialogTitle>Add {apiType}</DialogTitle>
           <DialogContent>
             {fields.map((field) => renderField(field, newItem[field.name], handleChange))}
@@ -355,7 +445,7 @@ export default function ParticipantManager({
           </DialogActions>
         </Dialog>
         {/* Edit Dialog */}
-        <Dialog open={editOpen} onClose={handleEditClose}>
+        <Dialog open={editOpen} onClose={() => {}} disableEscapeKeyDown={true}>
           <DialogTitle>Edit {title.slice(0, -1)}</DialogTitle>
           <DialogContent>
             {fields.map((field) => renderField(field, editItem[field.name], handleEditChange, true))}
@@ -384,6 +474,7 @@ export default function ParticipantManager({
               fontWeight: 500,
               boxShadow: 3,
               borderRadius: 2,
+              whiteSpace: 'pre-wrap',
             }}
           >
             {error}

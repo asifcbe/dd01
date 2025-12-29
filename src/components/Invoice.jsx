@@ -102,6 +102,7 @@ export default function Invoices() {
   const [notification, setNotification] = useState(null);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setLoadingTemplates(true);
     fetch("api/templates", { credentials: "include" })
       .then((res) => res.json())

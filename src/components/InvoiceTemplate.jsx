@@ -25,6 +25,7 @@ import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import ExpandLessIcon from "@mui/icons-material/ExpandLess";
 import EditIcon from "@mui/icons-material/Edit";
 import SaveIcon from "@mui/icons-material/Save";
+import RefreshIcon from "@mui/icons-material/Refresh";
 import PictureAsPdfIcon from "@mui/icons-material/PictureAsPdf";
 import PrintIcon from "@mui/icons-material/Print";
 import PhoneIcon from "@mui/icons-material/Phone";
@@ -402,6 +403,25 @@ export default function InvoiceTemplate({
       setLocalDueDate(formatISOToDisplay(editDueDate));
     }
     setIsEditing(!isEditing);
+  };
+
+  const handleReset = () => {
+    setLocalInvoiceDate(invoice.invoicedate);
+    setLocalDueDate(invoice.duedate);
+    setLocalInvoiceItems(invoice.invoiceitems);
+    setSavedExpenses(invoice.invoiceitems.map(() => []));
+    setAdditionalExpenses(invoice.invoiceitems.map((item) => [
+      {
+        label: "",
+        amount: "",
+        duration: 0,
+        currency: item.currency || "INR",
+        description: "",
+        ratemode: item.ratemode || "Flat",
+      },
+    ]));
+    setTaxPercent((invoice.tax / invoice.subtotal) * 100 || 10);
+    setExpandedItems({});
   };
 
   const toggleExpand = (idx) =>
@@ -948,6 +968,13 @@ const renderExpenseRows = (mainIdx) => {
             ) : (
               <EditIcon fontSize="small" />
             )}
+          </IconButton>
+          <IconButton
+            size="small"
+            onClick={handleReset}
+            title="Reset to Initial"
+          >
+            <RefreshIcon fontSize="small" />
           </IconButton>
           <IconButton
             size="small"

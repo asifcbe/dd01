@@ -10,6 +10,7 @@ import {
   Avatar,
   Alert,
   CircularProgress,
+  Snackbar,
 } from "@mui/material";
 import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
 import axios from "axios";
@@ -39,9 +40,10 @@ export default function AuthCard({ onLogin, onSignup }) {
         });
         if (res.status === 200) {
           const userEmail = res.data?.email || "User";
-          setUser({ name: userEmail });
+          const userOrg = res.data?.org || "Org";
+          setUser({ email: userEmail, org: userOrg });
           setIsLoggedIn(true);
-          onLogin();
+          onLogin({ email: userEmail, org: userOrg });
         } else {
           setIsLoggedIn(false);
           setUser(null);
@@ -77,12 +79,14 @@ export default function AuthCard({ onLogin, onSignup }) {
         withCredentials: true,
       });
       if (res.status === 200) {
-        setUser({ name: form.email });
+        setUser({ email: form.email, org: form.org });
         setIsLoggedIn(true);
-        onLogin();
+        onLogin({ email: form.email, org: form.org });
       }
     } catch (err) {
-      setError(err.response?.data?.error || err.message || "Sign in failed");
+      const errorMsg = err.response?.data?.detail?.message;
+      const msg = Array.isArray(errorMsg) ? errorMsg.join('\n') : (err.response?.data?.error || err.message || "Sign in failed");
+      setError(msg);
     } finally {
       setLoading(false);
     }
@@ -111,7 +115,9 @@ export default function AuthCard({ onLogin, onSignup }) {
         setTab("signin");
       }
     } catch (err) {
-      setError(err.response?.data?.error || err.message || "Sign up failed");
+      const errorMsg = err.response?.data?.detail?.message;
+      const msg = Array.isArray(errorMsg) ? errorMsg.join('\n') : (err.response?.data?.error || err.message || "Sign up failed");
+      setError(msg);
     } finally {
       setLoading(false);
     }
@@ -196,9 +202,29 @@ export default function AuthCard({ onLogin, onSignup }) {
             </Tabs>
 
             {error && (
-              <Alert severity="error" sx={{ mb: 2, width: "100%" }}>
-                {error}
-              </Alert>
+              <Snackbar
+                open={!!error}
+                autoHideDuration={6000}
+                onClose={() => setError("")}
+                anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+              >
+                <Alert
+                  onClose={() => setError("")}
+                  severity="error"
+                  variant="filled"
+                  sx={{
+                    width: "100%",
+                    maxWidth: 600,
+                    fontSize: "1rem",
+                    fontWeight: 500,
+                    boxShadow: 3,
+                    borderRadius: 2,
+                    whiteSpace: 'pre-wrap',
+                  }}
+                >
+                  {error}
+                </Alert>
+              </Snackbar>
             )}
 
             {tab === "signin" ? (

@@ -11,7 +11,8 @@ const theme = createTheme();
 export default function App() {
   const [loggedIn, setLoggedIn] = useState(false);
   const [user, setUser] = useState({
-    name: "Jane Doe",
+    email: "",
+    org: "",
     avatar: "https://i.pravatar.cc/300",
   });
   const logOut = async () => {
@@ -42,7 +43,7 @@ export default function App() {
               element={
                 !loggedIn ? (
                   <AuthCard
-                    onLogin={() => setLoggedIn(true)}
+                    onLogin={(userData) => { setUser(userData); setLoggedIn(true); }}
                     onSignup={() => setLoggedIn(true)}
                   />
                 ) : (
