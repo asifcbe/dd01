@@ -10,13 +10,14 @@ const fields = [
   { name: "email", label: "Email", type: "text" },
   { name: "type", label: "Type", type: "select", options: clientTypes },
   { name: "mobile", label: "Mobile", type: "text" },
-  { name: "address", label: "Address", type: "text" },
-];
+  { name: "address", label: "Address", type: "text" }
+ ];
 
 const displayFields = [
   { name: "email", label: "Email" },
   { name: "mobile", label: "Mobile" },
   { name: "address", label: "Address" },
+  {name:'country', label:'Country'}
 ];
 
 const initialForm = {
@@ -24,7 +25,7 @@ const initialForm = {
   email: "",
   mobile: "",
   address: "",
-  type: "Individual",
+  type: "Individual"
 };
 
 export default function Clients() {

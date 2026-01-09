@@ -31,10 +31,10 @@ import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import DeleteIcon from "@mui/icons-material/Delete";
 import LoadMask from "./LoadMask";
 
-const COUNTRIES = [
+export const COUNTRIES = [
   { name: 'United States', code: 'US', phoneCode: '+1' },
   { name: 'United Kingdom', code: 'GB', phoneCode: '+44' },
-  { name: 'India', code: 'IN', phoneCode: '+91' },
+  { name: 'India', code: 'India', phoneCode: '+91' },
   { name: 'Germany', code: 'DE', phoneCode: '+49' },
   { name: 'France', code: 'FR', phoneCode: '+33' },
   { name: 'Japan', code: 'JP', phoneCode: '+81' },
@@ -63,11 +63,25 @@ export default function ParticipantManager({
   const [editItem, setEditItem] = useState(initialForm);
   const [error, setError] = useState(null);
   const [search, setSearch] = useState("");
+  const [addFields, setAddFields] = useState(fields);
+  const [editFields, setEditFields] = useState(fields);
   const filteredItems = items.filter(item =>
     fields.some(field => item[field.name]?.toLowerCase().includes(search.toLowerCase()))
   );
 
   const fetchItems = useCallback(() => {
+    if (apiType === "Bank") {
+      // Dummy data for Banks
+      const dummyBanks = [
+        { id: 1, region: "America", name: "Bank of America", email: "info@boa.com", mobile: "123-456-7890", address: "123 Main St, New York, NY", country: "US", bankCode: "121000358" },
+        { id: 2, region: "America", name: "Chase Bank", email: "info@chase.com", mobile: "098-765-4321", address: "456 Elm St, Chicago, IL", country: "US", bankCode: "021000021" },
+        { id: 3, region: "India", name: "State Bank of India", email: "info@sbi.com", mobile: "555-123-4567", address: "789 Oak Ave, Mumbai, MH", country: "IN", bankCode: "SBIN0001234" },
+      ];
+      setItems(dummyBanks);
+      setDataLoaded(true);
+      setMenuAnchorEls(Array(dummyBanks.length).fill(null));
+      return;
+    }
     fetch(`api/participants?type1=${apiType}`, {
       method: "GET",
     })
@@ -93,6 +107,28 @@ export default function ParticipantManager({
     fetchItems();
   }, [fetchItems]);
 
+  useEffect(() => {
+    if (apiType === "Bank") {
+      const updateFields = (item) => {
+        return fields.map(field => {
+          if (field.name === "bankCode") {
+            let label = "Bank Code";
+            if (item.region === "India") label = "IFSC Code";
+            else if (item.region === "America") label = "Routing Number";
+            else if (item.region === "Europe") label = "IBAN";
+            return { ...field, label };
+          }
+          return field;
+        });
+      };
+      setAddFields(updateFields(newItem));
+      setEditFields(updateFields(editItem));
+    } else {
+      setAddFields(fields);
+      setEditFields(fields);
+    }
+  }, [fields, newItem.region, editItem.region, apiType]);
+
   const handleOpen = () => setOpen(true);
   const handleClose = () => {
     setOpen(false);
@@ -106,6 +142,7 @@ export default function ParticipantManager({
     setEditOpen(false);
   };  const handleClone = (item) => {
     setNewItem({
+      ...initialForm,
       ...item,
       name: `${item.name} (Copy)`,
     });
@@ -126,6 +163,19 @@ export default function ParticipantManager({
   };
 
   const handleAdd = () => {
+    if (apiType === "Bank") {
+      const newId = Math.max(...items.map(item => item.id), 0) + 1;
+      const itemToAdd = {
+        ...newItem,
+        id: newId,
+        type1: apiType,
+        type2: type2 ? type2(newItem) : "NotApplicable",
+        type3,
+      };
+      setItems(prev => [...prev, itemToAdd]);
+      handleClose();
+      return;
+    }
     const itemToAdd = {
       ...newItem,
       type1: apiType,
@@ -143,7 +193,9 @@ export default function ParticipantManager({
       .then((response) => {
         if (!response.ok) {
           return response.json().then((err) => {
-            const msg = err.detail?.message?.join("\n") || `Failed to add ${title.toLowerCase()}`;
+            const errorMsg=err?.detail?.message;
+            const msg =Array.isArray(errorMsg) ? errorMsg.map(e => `• ${e}`).join('\n') : errorMsg || `Failed to add ${title.toLowerCase()}`;
+            // const msg = err.detail?.message?.join("\n") || `Failed to add ${title.toLowerCase()}`;
             throw new Error(msg);
           });
         }
@@ -160,6 +212,13 @@ export default function ParticipantManager({
   };
 
   const handleEdit = () => {
+    if (apiType === "Bank") {
+      setItems((prev) =>
+        prev.map((item) => (item.id === editItem.id ? editItem : item))
+      );
+      handleEditClose();
+      return;
+    }
     fetch(`/api/participant/${editItem.id}`, {
       method: "PUT",
       headers: {
@@ -171,7 +230,7 @@ export default function ParticipantManager({
       .then((response) => {
         if (!response.ok) {
           return response.json().then((err) => {
-            const msg = err.detail?.message?.join("\n") || `Failed to update ${title.toLowerCase()}`;
+            const msg = Array.isArray(err.detail?.message) ? err.detail?.message?.map(e => `• ${e}`).join("\n") : err.detail?.message || `Failed to update ${title.toLowerCase()}`;
             throw new Error(msg);
           });
         }
@@ -190,6 +249,11 @@ export default function ParticipantManager({
   };
 
   const handleDelete = (idx) => {
+    if (apiType === "Bank") {
+      setItems((prev) => prev.filter((_, i) => i !== idx));
+      setMenuAnchorEls((prev) => prev.filter((_, i) => i !== idx));
+      return;
+    }
     const itemToDelete = items[idx];
     fetch(`/api/participant?participant_id=${itemToDelete.id}`, {
       method: "DELETE",
@@ -198,7 +262,7 @@ export default function ParticipantManager({
       .then((response) => {
         if (!response.ok) {
           return response.json().then((err) => {
-            const msg = err.detail?.message?.join("\n") || `Failed to delete ${title.toLowerCase()}`;
+            const msg = Array.isArray(err.detail?.message) ? err.detail?.message?.map(e => `• ${e}`).join("\n") : err.detail?.message || `Failed to delete ${title.toLowerCase()}`;
             throw new Error(msg);
           });
         }
@@ -283,8 +347,8 @@ export default function ParticipantManager({
             onChange={onChange}
           >
             {field.options.map((option) => (
-              <MenuItem key={option} value={option}>
-                {option}
+              <MenuItem key={option.value || option} value={option.value || option}>
+                {option.label || option}
               </MenuItem>
             ))}
           </Select>
@@ -414,11 +478,19 @@ export default function ParticipantManager({
                   <Divider sx={{ mb: 2, mt: 0 }} />
                   <CardContent>
                     <Box sx={{ display: "grid", gap: 1 }}>
-                      {displayFields.map((df) => (
-                        <Typography key={df.name} sx={{ fontSize: 15, color: "grey.700" }}>
-                          <b>{df.label}:</b> {item[df.name]}
-                        </Typography>
-                      ))}
+                      {displayFields.map((df) => {
+                        let displayLabel = df.label;
+                        if (apiType === "Bank" && df.name === "bankCode") {
+                          if (item.region === "India") displayLabel = "IFSC Code";
+                          else if (item.region === "America") displayLabel = "Routing Number";
+                          else if (item.region === "Europe") displayLabel = "IBAN";
+                        }
+                        return (
+                          <Typography key={df.name} sx={{ fontSize: 15, color: "grey.700" }}>
+                            <b>{displayLabel}:</b> {item[df.name]}
+                          </Typography>
+                        );
+                      })}
                     </Box>
                   </CardContent>
                 </Card>
@@ -435,7 +507,7 @@ export default function ParticipantManager({
         <Dialog open={open} onClose={() => {}} disableEscapeKeyDown={true}>
           <DialogTitle>Add {apiType}</DialogTitle>
           <DialogContent>
-            {fields.map((field) => renderField(field, newItem[field.name], handleChange))}
+            {addFields.map((field) => renderField(field, newItem[field.name], handleChange))}
           </DialogContent>
           <DialogActions sx={{ p: 2 }}>
             <Button onClick={handleClose}>Cancel</Button>
@@ -448,7 +520,7 @@ export default function ParticipantManager({
         <Dialog open={editOpen} onClose={() => {}} disableEscapeKeyDown={true}>
           <DialogTitle>Edit {title.slice(0, -1)}</DialogTitle>
           <DialogContent>
-            {fields.map((field) => renderField(field, editItem[field.name], handleEditChange, true))}
+            {editFields.map((field) => renderField(field, editItem[field.name], handleEditChange, true))}
           </DialogContent>
           <DialogActions sx={{ p: 2 }}>
             <Button onClick={handleEditClose}>Cancel</Button>

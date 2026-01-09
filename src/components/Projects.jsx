@@ -216,6 +216,8 @@ export default function Projects() {
     setNewProject({
       ...project,
       name: `${project.name} (Copy)`,
+      given_by: participants.find(p => p.name === project.given_by)?.id || "",
+      taken_by: participants.find(p => p.name === project.taken_by)?.id || "",
     });
     setOpen(true);
   };
@@ -292,7 +294,7 @@ export default function Projects() {
                     <Typography sx={{ fontSize: 15, color: "grey.700" }}><b>Rate Mode:</b> {project.rate_mode}</Typography>
                     <Typography sx={{ fontSize: 15, color: "grey.700" }}><b>Rate Amount:</b> {project.rate_amount}</Typography>
                     <Typography sx={{ fontSize: 15, color: "grey.700" }}><b>Currency:</b> {project.currency}</Typography>
-                    <Typography sx={{ fontSize: 15, color: "grey.700" }}><b>Country:</b> {project.country}</Typography>
+                    <Typography sx={{ fontSize: 15, color: "grey.700" }}><b>Country:</b> {COUNTRIES.find(c => c.code === project.country)?.name || project.country}</Typography>
                   </Box>
                 </CardContent>
               </Card>
@@ -308,36 +310,26 @@ export default function Projects() {
         <DialogContent>
           <TextField margin="normal" fullWidth label="Name" name="name" value={newProject.name} onChange={handleChange} />
           <TextField margin="normal" fullWidth label="Description" name="description" value={newProject.description} onChange={handleChange} />
-          <FormControl margin="normal" fullWidth>
-            <InputLabel>Given By</InputLabel>
-            <Select
-              name="given_by"
-              value={newProject.given_by}
-              label="Given By"
-              onChange={handleChange}
-            >
-              {participants.map((participant) => (
-                <MenuItem key={participant.id} value={participant.id}>
-                  {participant.name}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-          <FormControl margin="normal" fullWidth>
-            <InputLabel>Taken By</InputLabel>
-            <Select
-              name="taken_by"
-              value={newProject.taken_by}
-              label="Taken By"
-              onChange={handleChange}
-            >
-              {participants.map((participant) => (
-                <MenuItem key={participant.id} value={participant.id}>
-                  {participant.name}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
+          <Autocomplete
+            options={participants}
+            getOptionLabel={(option) => option.name}
+            value={participants.find(p => p.id === newProject.given_by) || null}
+            onChange={(event, newValue) => {
+              setNewProject((prev) => ({ ...prev, given_by: newValue ? newValue.id : "" }));
+            }}
+            renderInput={(params) => <TextField {...params} label="Given By" margin="normal" />}
+            fullWidth
+          />
+          <Autocomplete
+            options={participants}
+            getOptionLabel={(option) => option.name}
+            value={participants.find(p => p.id === newProject.taken_by) || null}
+            onChange={(event, newValue) => {
+              setNewProject((prev) => ({ ...prev, taken_by: newValue ? newValue.id : "" }));
+            }}
+            renderInput={(params) => <TextField {...params} label="Taken By" margin="normal" />}
+            fullWidth
+          />
           <TextField margin="normal" fullWidth label="Start Date" name="start_date" type="date" value={newProject.start_date} onChange={handleChange} InputLabelProps={{ shrink: true }} />
           <TextField margin="normal" fullWidth label="End Date" name="end_date" type="date" value={newProject.end_date} onChange={handleChange} InputLabelProps={{ shrink: true }} />
           <FormControl margin="normal" fullWidth>
@@ -369,9 +361,9 @@ export default function Projects() {
           <Autocomplete
             options={COUNTRIES}
             getOptionLabel={(option) => option.name}
-            value={COUNTRIES.find(c => c.name === newProject.country) || null}
+            value={COUNTRIES.find(c => c.code === newProject.country) || null}
             onChange={(event, newValue) => {
-              setNewProject((prev) => ({ ...prev, country: newValue ? newValue.name : "" }));
+              setNewProject((prev) => ({ ...prev, country: newValue ? newValue.code : "" }));
             }}
             renderInput={(params) => <TextField {...params} label="Country" margin="normal" />}
             fullWidth
@@ -387,36 +379,26 @@ export default function Projects() {
         <DialogContent>
           <TextField margin="normal" fullWidth label="Name" name="name" value={editProject.name} onChange={handleEditChange} />
           <TextField margin="normal" fullWidth label="Description" name="description" value={editProject.description} onChange={handleEditChange} />
-          <FormControl margin="normal" fullWidth>
-            <InputLabel>Given By</InputLabel>
-            <Select
-              name="given_by"
-              value={editProject.given_by}
-              label="Given By"
-              onChange={handleEditChange}
-            >
-              {participants.map((participant) => (
-                <MenuItem key={participant.id} value={participant.id}>
-                  {participant.name}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-          <FormControl margin="normal" fullWidth>
-            <InputLabel>Taken By</InputLabel>
-            <Select
-              name="taken_by"
-              value={editProject.taken_by}
-              label="Taken By"
-              onChange={handleEditChange}
-            >
-              {participants.map((participant) => (
-                <MenuItem key={participant.id} value={participant.id}>
-                  {participant.name}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
+          <Autocomplete
+            options={participants}
+            getOptionLabel={(option) => option.name}
+            value={participants.find(p => p.id === editProject.given_by) || null}
+            onChange={(event, newValue) => {
+              setEditProject((prev) => ({ ...prev, given_by: newValue ? newValue.id : "" }));
+            }}
+            renderInput={(params) => <TextField {...params} label="Given By" margin="normal" />}
+            fullWidth
+          />
+          <Autocomplete
+            options={participants}
+            getOptionLabel={(option) => option.name}
+            value={participants.find(p => p.id === editProject.taken_by) || null}
+            onChange={(event, newValue) => {
+              setEditProject((prev) => ({ ...prev, taken_by: newValue ? newValue.id : "" }));
+            }}
+            renderInput={(params) => <TextField {...params} label="Taken By" margin="normal" />}
+            fullWidth
+          />
           <TextField margin="normal" fullWidth label="Start Date" name="start_date" type="date" value={editProject.start_date} onChange={handleEditChange} InputLabelProps={{ shrink: true }} />
           <TextField margin="normal" fullWidth label="End Date" name="end_date" type="date" value={editProject.end_date} onChange={handleEditChange} InputLabelProps={{ shrink: true }} />
           <FormControl margin="normal" fullWidth>
@@ -448,9 +430,9 @@ export default function Projects() {
           <Autocomplete
             options={COUNTRIES}
             getOptionLabel={(option) => option.name}
-            value={COUNTRIES.find(c => c.name === editProject.country) || null}
+            value={COUNTRIES.find(c => c.code === editProject.country) || null}
             onChange={(event, newValue) => {
-              setEditProject((prev) => ({ ...prev, country: newValue ? newValue.name : "" }));
+              setEditProject((prev) => ({ ...prev, country: newValue ? newValue.code : "" }));
             }}
             renderInput={(params) => <TextField {...params} label="Country" margin="normal" />}
             fullWidth

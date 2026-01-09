@@ -85,7 +85,7 @@ export default function AuthCard({ onLogin, onSignup }) {
       }
     } catch (err) {
       const errorMsg = err.response?.data?.detail?.message;
-      const msg = Array.isArray(errorMsg) ? errorMsg.join('\n') : (err.response?.data?.error || err.message || "Sign in failed");
+      const msg = Array.isArray(errorMsg) ? errorMsg.join('\n') : errorMsg || (err.response?.data?.error) || err.message || "Sign in failed";
       setError(msg);
     } finally {
       setLoading(false);

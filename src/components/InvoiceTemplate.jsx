@@ -26,6 +26,7 @@ import ExpandLessIcon from "@mui/icons-material/ExpandLess";
 import EditIcon from "@mui/icons-material/Edit";
 import SaveIcon from "@mui/icons-material/Save";
 import RefreshIcon from "@mui/icons-material/Refresh";
+import CancelIcon from '@mui/icons-material/Cancel';
 import PictureAsPdfIcon from "@mui/icons-material/PictureAsPdf";
 import PrintIcon from "@mui/icons-material/Print";
 import PhoneIcon from "@mui/icons-material/Phone";
@@ -974,7 +975,7 @@ const renderExpenseRows = (mainIdx) => {
             onClick={handleReset}
             title="Reset to Initial"
           >
-            <RefreshIcon fontSize="small" />
+            <CancelIcon fontSize="small" />
           </IconButton>
           <IconButton
             size="small"
