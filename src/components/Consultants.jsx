@@ -29,6 +29,8 @@ export default function Consultants() {
       title="Consultants"
       icon={ConsultantsIcon}
       apiType="Consultant"
+      apiDetailType="consultants"
+      apiDetailTypeSingle="consultant"
       fields={fields}
       displayFields={displayFields}
       initialForm={initialForm}

@@ -43,6 +43,8 @@ export default function Vendors() {
       title="Vendors"
       icon={VendorsIcon}
       apiType="Vendor"
+      apiDetailType="vendors"
+      apiDetailTypeSingle="vendor"
       fields={fields}
       displayFields={displayFields}
       initialForm={initialForm}

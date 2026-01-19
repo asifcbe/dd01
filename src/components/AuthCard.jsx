@@ -35,7 +35,7 @@ export default function AuthCard({ onLogin, onSignup }) {
     async function checkLogin() {
       setLoading(true);
       try {
-        const res = await axios.get("/api/participants?type1=Client", {
+        const res = await axios.get("/api/me", {
           withCredentials: true,
         });
         if (res.status === 200) {

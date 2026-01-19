@@ -32,20 +32,23 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import LoadMask from "./LoadMask";
 
 export const COUNTRIES = [
-  { name: 'United States', code: 'US', phoneCode: '+1' },
-  { name: 'United Kingdom', code: 'GB', phoneCode: '+44' },
-  { name: 'India', code: 'India', phoneCode: '+91' },
-  { name: 'Germany', code: 'DE', phoneCode: '+49' },
-  { name: 'France', code: 'FR', phoneCode: '+33' },
-  { name: 'Japan', code: 'JP', phoneCode: '+81' },
-  { name: 'Canada', code: 'CA', phoneCode: '+1' },
-  { name: 'Australia', code: 'AU', phoneCode: '+61' },
+  { name: 'United States', code: 'US', phoneCode: '+1', shortCode: 'USA' },
+  { name: 'United Kingdom', code: 'GB', phoneCode: '+44' ,shortCode: 'UK'},
+  { name: 'India', code: 'India', phoneCode: '+91',shortCode: 'India' },
+  { name: 'Germany', code: 'DE', phoneCode: '+49',shortCode: 'Germany' },
+  { name: 'France', code: 'FR', phoneCode: '+33', shortCode: 'France' },
+  { name: 'Japan', code: 'JP', phoneCode: '+81', shortCode: 'Japan' },
+  { name: 'Canada', code: 'CA', phoneCode: '+1',shortCode: 'Canada' },
+  { name: 'Australia', code: 'AU', phoneCode: '+61' ,shortCode: 'Australia'},
+  {name:'China', code:'CN', phoneCode:'+86', shortCode:'China'},
 ];
 
 export default function ParticipantManager({
   title,
   icon,
   apiType,
+  apiDetailType,
+  apiDetailTypeSingle,
   fields,
   displayFields,
   subheaderField,
@@ -70,19 +73,26 @@ export default function ParticipantManager({
   );
 
   const fetchItems = useCallback(() => {
-    if (apiType === "Bank") {
-      // Dummy data for Banks
-      const dummyBanks = [
-        { id: 1, region: "America", name: "Bank of America", email: "info@boa.com", mobile: "123-456-7890", address: "123 Main St, New York, NY", country: "US", bankCode: "121000358" },
-        { id: 2, region: "America", name: "Chase Bank", email: "info@chase.com", mobile: "098-765-4321", address: "456 Elm St, Chicago, IL", country: "US", bankCode: "021000021" },
-        { id: 3, region: "India", name: "State Bank of India", email: "info@sbi.com", mobile: "555-123-4567", address: "789 Oak Ave, Mumbai, MH", country: "IN", bankCode: "SBIN0001234" },
-      ];
-      setItems(dummyBanks);
-      setDataLoaded(true);
-      setMenuAnchorEls(Array(dummyBanks.length).fill(null));
-      return;
+    let url = "";
+    // if (apiType === "Bank") {
+    //   // Dummy data for Banks
+    //   const dummyBanks = [
+    //     { id: 1, region: "America", name: "Bank of America", email: "info@boa.com", mobile: "123-456-7890", address: "123 Main St, New York, NY", country: "US", bankCode: "121000358" },
+    //     { id: 2, region: "America", name: "Chase Bank", email: "info@chase.com", mobile: "098-765-4321", address: "456 Elm St, Chicago, IL", country: "US", bankCode: "021000021" },
+    //     { id: 3, region: "India", name: "State Bank of India", email: "info@sbi.com", mobile: "555-123-4567", address: "789 Oak Ave, Mumbai, MH", country: "IN", bankCode: "SBIN0001234" },
+    //   ];
+    //   setItems(dummyBanks);
+    //   setDataLoaded(true);
+    //   setMenuAnchorEls(Array(dummyBanks.length).fill(null));
+    //   return;
+    // }
+    
+    if(true){
+      url=`/api/${apiDetailType}`
+    }else{
+      url=`/api/participants?type1=${apiType}`
     }
-    fetch(`api/participants?type1=${apiType}`, {
+    fetch(url, {
       method: "GET",
     })
       .then((response) => {
@@ -178,11 +188,12 @@ export default function ParticipantManager({
     }
     const itemToAdd = {
       ...newItem,
+      country: newItem.country || "",
       type1: apiType,
       type2: type2 ? type2(newItem) : "NotApplicable",
       type3,
     };
-    fetch("/api/participant", {
+    fetch(`/api/${apiDetailTypeSingle}`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -295,21 +306,24 @@ export default function ParticipantManager({
         <Box key={field.name} sx={{ mt: 2, mb: 1 }}>
           <Autocomplete
             options={COUNTRIES}
-            getOptionLabel={(option) => `${option.name} (${option.phoneCode})`}
+            getOptionLabel={(option) => option.name}
             value={selectedCountry}
             onChange={(event, newValue) => {
               const newCode = newValue ? newValue.phoneCode : '';
               onChange({ target: { name: field.name, value: `${newCode} ${phoneNumber}`.trim() } });
+              if (newValue) {
+                onChange({ target: { name: 'country', value: newValue.shortCode } });
+              }
             }}
             renderInput={(params) => <TextField {...params} label="Country" margin="normal" fullWidth />}
           />
-          <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', mt: 1, gap: 1 }}>
             <TextField
-              label="Country Code"
+              label="Code"
               value={countryCode}
               InputProps={{ readOnly: true }}
-              sx={{ width: '30%', mr: 1 }}
               size="small"
+              sx={{ width: '80px' }}
             />
             <TextField
               fullWidth

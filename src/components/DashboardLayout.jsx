@@ -22,6 +22,7 @@ import {
   ChevronLeft as ChevronLeftIcon,
   ChevronRight as ChevronRightIcon,
   Groups as ClientsIcon,
+  Code as DeveloperIcon,
   Business as CompaniesIcon,
   Store as VendorsIcon,
   Engineering as ConsultantsIcon,
@@ -34,6 +35,7 @@ import { NavLink, Routes, Route, useLocation, Navigate } from "react-router-dom"
 import LoadMask from "./LoadMask";
 
 const Clients = lazy(() => import("./Clients"));
+const Developer = lazy(() => import("./Developer"));
 const Companies = lazy(() => import("./Companies"));
 const Vendors = lazy(() => import("./Vendors"));
 const Consultants = lazy(() => import("./Consultants"));
@@ -46,6 +48,7 @@ const drawerWidthCollapsed = 60;
 
 const dashboardItems = [
   { key: "clients", label: "Clients", icon: <ClientsIcon />, path: "clients" },
+  { key: "developer", label: "Developer", icon: <DeveloperIcon />, path: "developer" },
   { key: "companies", label: "Companies", icon: <CompaniesIcon />, path: "companies" },
   { key: "vendors", label: "Vendors", icon: <VendorsIcon />, path: "vendors" },
   { key: "consultants", label: "Consultants", icon: <ConsultantsIcon />, path: "consultants" },
@@ -129,6 +132,7 @@ export default function DashboardLayout({ user, onLogout }) {
               <Routes>
                 <Route index element={<Navigate replace to={dashboardItems[0].path} />} />
                 <Route path="clients" element={<Clients />} />
+                <Route path="developer" element={<Developer />} />
                 <Route path="companies" element={<Companies />} />
                 <Route path="vendors" element={<Vendors />} />
                 <Route path="consultants" element={<Consultants />} />

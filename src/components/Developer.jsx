@@ -1,17 +1,17 @@
 import {
-  Groups as ClientsIcon
+  Code as DeveloperIcon
 } from "@mui/icons-material";
 import ParticipantManager from "./ParticipantManager";
 
-const clientTypes = ["Individual", "Company", "Organization"];
+const developerTypes = ["Individual", "Company", "Organization"];
 
 const fields = [
   { name: "name", label: "Name", type: "text" },
   { name: "email", label: "Email", type: "text" },
-  { name: "type", label: "Type", type: "select", options: clientTypes },
+  { name: "type", label: "Type", type: "select", options: developerTypes },
   { name: "mobile", label: "Mobile", type: "text" },
   { name: "address", label: "Address", type: "text" }
- ];
+];
 
 const displayFields = [
   { name: "email", label: "Email" },
@@ -28,14 +28,14 @@ const initialForm = {
   type: "Individual"
 };
 
-export default function Clients() {
+export default function Developer() {
   return (
     <ParticipantManager
-      title="Clients"
-      icon={ClientsIcon}
-      apiType="Client"
-      apiDetailType="clients"
-      apiDetailTypeSingle="client"
+      title="Developer"
+      icon={DeveloperIcon}
+      apiType="Developer"
+      apiDetailTypeSingle="developer"
+      apiDetailType="developers"
       fields={fields}
       displayFields={displayFields}
       subheaderField="type2"

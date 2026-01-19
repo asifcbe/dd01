@@ -29,30 +29,36 @@ const companyInitialForm = {
 };
 
 const bankFields = [
-  { name: "region", label: "Region", type: "select", options: ["India", "America", "Europe"] },
-  { name: "bankCode", label: "Bank Code", type: "text" },
   { name: "name", label: "Name", type: "text" },
-  { name: "email", label: "Email", type: "text" },
-  { name: "mobile", label: "Mobile", type: "text" },
-  { name: "address", label: "Address", type: "text" },
+  { name: "code", label: "Code", type: "text" },
+  { name: "swift_code", label: "Swift Code", type: "text" },
+  { name: "country", label: "Country", type: "text" },
+  { name: "branch", label: "Branch", type: "text" },
+  { name: "city", label: "City", type: "text" },
+  { name: "account_number", label: "Account Number", type: "text" },
+  { name: "account_holder_name", label: "Account Holder Name", type: "text" },
 ];
 
 const bankDisplayFields = [
-  { name: "region", label: "Region" },
-  { name: "bankCode", label: "Bank Code" },
-  { name: "email", label: "Email" },
-  { name: "mobile", label: "Mobile" },
-  { name: "address", label: "Address" },
+  { name: "name", label: "Name" },
+  { name: "code", label: "Code" },
+  { name: "swift_code", label: "Swift Code" },
+  { name: "country", label: "Country" },
+  { name: "branch", label: "Branch" },
+  { name: "city", label: "City" },
+  { name: "account_number", label: "Account Number" },
+  { name: "account_holder_name", label: "Account Holder Name" },
 ];
 
 const bankInitialForm = {
-  region: "",
   name: "",
-  email: "",
-  mobile: "",
-  address: "",
+  code: "",
+  swift_code: "",
   country: "",
-  bankCode: "",
+  branch: "",
+  city: "",
+  account_number: "",
+  account_holder_name: "",
 };
 
 export default function Companies() {
@@ -73,6 +79,8 @@ export default function Companies() {
           title="Companies"
           icon={CompaniesIcon}
           apiType="Company"
+          apiDetailType="companies"
+          apiDetailTypeSingle="company"
           fields={companyFields}
           displayFields={companyDisplayFields}
           initialForm={companyInitialForm}
@@ -84,6 +92,8 @@ export default function Companies() {
           title="Banks"
           icon={BanksIcon}
           apiType="Bank"
+          apiDetailType="banks"
+          apiDetailTypeSingle="bank"
           fields={bankFields}
           displayFields={bankDisplayFields}
           initialForm={bankInitialForm}
