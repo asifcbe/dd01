@@ -8,12 +8,15 @@ const fields = [
   { name: "email", label: "Email", type: "text" },
   { name: "mobile", label: "Mobile", type: "text" },
   { name: "address", label: "Address", type: "text" },
+  {name:"expense_limit", label:"Expense Limit", type:"number"},
+  { name: "type", label: "Type", type: "select", options: ["PartTime", "FullTime"] }
 ];
 
 const displayFields = [
   { name: "email", label: "Email" },
   { name: "mobile", label: "Mobile" },
   { name: "address", label: "Address" },
+  {name:"expense_limit", label:"Expense Limit"}
 ];
 
 const initialForm = {
@@ -21,6 +24,8 @@ const initialForm = {
   email: "",
   mobile: "",
   address: "",
+  expense_limit: 0,
+  type: "PartTime",
 };
 
 export default function Consultants() {

@@ -68,24 +68,19 @@ export default function ParticipantManager({
   const [search, setSearch] = useState("");
   const [addFields, setAddFields] = useState(fields);
   const [editFields, setEditFields] = useState(fields);
+  
+  // Separate state for phone number input (10 digits only)
+  const [newItemPhoneNumber, setNewItemPhoneNumber] = useState("");
+  const [editItemPhoneNumber, setEditItemPhoneNumber] = useState("");
+  const [newItemCountryCode, setNewItemCountryCode] = useState("");
+  const [editItemCountryCode, setEditItemCountryCode] = useState("");
+  
   const filteredItems = items.filter(item =>
     fields.some(field => item[field.name]?.toLowerCase().includes(search.toLowerCase()))
   );
 
   const fetchItems = useCallback(() => {
     let url = "";
-    // if (apiType === "Bank") {
-    //   // Dummy data for Banks
-    //   const dummyBanks = [
-    //     { id: 1, region: "America", name: "Bank of America", email: "info@boa.com", mobile: "123-456-7890", address: "123 Main St, New York, NY", country: "US", bankCode: "121000358" },
-    //     { id: 2, region: "America", name: "Chase Bank", email: "info@chase.com", mobile: "098-765-4321", address: "456 Elm St, Chicago, IL", country: "US", bankCode: "021000021" },
-    //     { id: 3, region: "India", name: "State Bank of India", email: "info@sbi.com", mobile: "555-123-4567", address: "789 Oak Ave, Mumbai, MH", country: "IN", bankCode: "SBIN0001234" },
-    //   ];
-    //   setItems(dummyBanks);
-    //   setDataLoaded(true);
-    //   setMenuAnchorEls(Array(dummyBanks.length).fill(null));
-    //   return;
-    // }
     
     if(true){
       url=`/api/${apiDetailType}`
@@ -111,7 +106,7 @@ export default function ParticipantManager({
         setDataLoaded(true);
         setError(error.message);
       });
-  }, [apiType, title]);
+  }, [apiType, title, apiDetailType]);
 
   useEffect(() => {
     fetchItems();
@@ -139,23 +134,46 @@ export default function ParticipantManager({
     }
   }, [fields, newItem.region, editItem.region, apiType]);
 
-  const handleOpen = () => setOpen(true);
+  const handleOpen = () => {
+    setOpen(true);
+    // Reset phone fields
+    setNewItemPhoneNumber("");
+    setNewItemCountryCode("");
+  };
+  
   const handleClose = () => {
     setOpen(false);
     setNewItem(initialForm);
+    setNewItemPhoneNumber("");
+    setNewItemCountryCode("");
   };
 
   const handleEditOpen = (idx) => {
-    setEditItem(items[idx]);
+    const item = items[idx];
+    setEditItem(item);
+    // Parse backend phone data for edit form
+    setEditItemPhoneNumber(item.mobile || "");
+    const country = COUNTRIES.find(c => c.shortCode === item.country);
+    setEditItemCountryCode(country?.phoneCode || "");
     setEditOpen(true);
-  };  const handleEditClose = () => {
+  }; 
+  
+  const handleEditClose = () => {
     setEditOpen(false);
-  };  const handleClone = (item) => {
+    setEditItem(initialForm);
+    setEditItemPhoneNumber("");
+    setEditItemCountryCode("");
+  }; 
+  
+  const handleClone = (item) => {
     setNewItem({
       ...initialForm,
       ...item,
       name: `${item.name} (Copy)`,
     });
+    setNewItemPhoneNumber(item.mobile || "");
+    const country = COUNTRIES.find(c => c.shortCode === item.country);
+    setNewItemCountryCode(country?.phoneCode || "");
     setOpen(true);
   };
 
@@ -165,6 +183,7 @@ export default function ParticipantManager({
       [e.target.name]: e.target.value,
     }));
   };
+  
   const handleEditChange = (e) => {
     setEditItem((prev) => ({
       ...prev,
@@ -172,12 +191,45 @@ export default function ParticipantManager({
     }));
   };
 
+  // Update phone number states when country changes
+  const handleNewCountryChange = (event, newValue) => {
+    const newCode = newValue ? newValue.phoneCode : '';
+    setNewItemCountryCode(newCode);
+    setNewItem({
+      ...newItem,
+      country: newValue ? newValue.shortCode : ""
+    });
+  };
+
+  const handleEditCountryChange = (event, newValue) => {
+    const newCode = newValue ? newValue.phoneCode : '';
+    setEditItemCountryCode(newCode);
+    setEditItem({
+      ...editItem,
+      country: newValue ? newValue.shortCode : ""
+    });
+  };
+
+  // Helper to get 10-digit phone number for backend
+  const getPhoneNumberForBackend = (phoneNumber) => {
+    return phoneNumber.replace(/\D/g, '').slice(0, 10);
+  };
+
+  // Helper to format full mobile for display
+  const getFullMobileForDisplay = (backendPhoneNumber, countryCode) => {
+    if (!backendPhoneNumber) return '';
+    return `${countryCode} ${backendPhoneNumber}`;
+  };
+
   const handleAdd = () => {
+    const backendPhoneNumber = getPhoneNumberForBackend(newItemPhoneNumber);
+    
     if (apiType === "Bank") {
       const newId = Math.max(...items.map(item => item.id), 0) + 1;
       const itemToAdd = {
         ...newItem,
         id: newId,
+        mobile: backendPhoneNumber,
         type1: apiType,
         type2: type2 ? type2(newItem) : "NotApplicable",
         type3,
@@ -186,13 +238,16 @@ export default function ParticipantManager({
       handleClose();
       return;
     }
+    
     const itemToAdd = {
       ...newItem,
+      mobile: backendPhoneNumber,
       country: newItem.country || "",
       type1: apiType,
       type2: type2 ? type2(newItem) : "NotApplicable",
       type3,
     };
+    
     fetch(`/api/${apiDetailTypeSingle}`, {
       method: "POST",
       headers: {
@@ -206,14 +261,13 @@ export default function ParticipantManager({
           return response.json().then((err) => {
             const errorMsg=err?.detail?.message;
             const msg =Array.isArray(errorMsg) ? errorMsg.map(e => `• ${e}`).join('\n') : errorMsg || `Failed to add ${title.toLowerCase()}`;
-            // const msg = err.detail?.message?.join("\n") || `Failed to add ${title.toLowerCase()}`;
             throw new Error(msg);
           });
         }
         return response.json();
       })
       .then(() => {
-        fetchItems(); // Refetch to ensure the list is up to date
+        fetchItems(); 
         handleClose();
       })
       .catch((error) => {
@@ -223,19 +277,30 @@ export default function ParticipantManager({
   };
 
   const handleEdit = () => {
+    const backendPhoneNumber = getPhoneNumberForBackend(editItemPhoneNumber);
+    
     if (apiType === "Bank") {
       setItems((prev) =>
-        prev.map((item) => (item.id === editItem.id ? editItem : item))
+        prev.map((item) => (item.id === editItem.id ? {
+          ...editItem,
+          mobile: backendPhoneNumber
+        } : item))
       );
       handleEditClose();
       return;
     }
+    
+    const updatedItem = {
+      ...editItem,
+      mobile: backendPhoneNumber,
+    };
+    
     fetch(`/api/participant/${editItem.id}`, {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify(editItem),
+      body: JSON.stringify(updatedItem),
       credentials: "include",
     })
       .then((response) => {
@@ -247,9 +312,9 @@ export default function ParticipantManager({
         }
         return response.json();
       })
-      .then((updatedItem) => {
+      .then((updatedItemFromServer) => {
         setItems((prev) =>
-          prev.map((item) => (item.id === updatedItem.id ? updatedItem : item))
+          prev.map((item) => (item.id === updatedItemFromServer.id ? updatedItemFromServer : item))
         );
         handleEditClose();
       })
@@ -291,36 +356,32 @@ export default function ParticipantManager({
       prev.map((el, i) => (i === idx ? event.currentTarget : el))
     );
   };
+  
   const handleMenuClose = (idx) => {
     setMenuAnchorEls((prev) => prev.map((el, i) => (i === idx ? null : el)));
   };
 
   const renderField = (field, value, onChange, isEdit = false) => {
     const labelId = `${isEdit ? 'edit' : 'add'}-${field.name}-label`;
+    
     if (field.name === 'mobile') {
-      const parts = value.split(' ');
-      const countryCode = parts[0] || '';
-      const phoneNumber = parts.slice(1).join(' ') || '';
-      const selectedCountry = COUNTRIES.find(c => c.phoneCode === countryCode) || null;
+      const currentCountryCode = isEdit ? editItemCountryCode : newItemCountryCode;
+      const currentPhoneNumber = isEdit ? editItemPhoneNumber : newItemPhoneNumber;
+      const selectedCountry = COUNTRIES.find(c => c.phoneCode === currentCountryCode) || null;
+      
       return (
         <Box key={field.name} sx={{ mt: 2, mb: 1 }}>
           <Autocomplete
             options={COUNTRIES}
             getOptionLabel={(option) => option.name}
             value={selectedCountry}
-            onChange={(event, newValue) => {
-              const newCode = newValue ? newValue.phoneCode : '';
-              onChange({ target: { name: field.name, value: `${newCode} ${phoneNumber}`.trim() } });
-              if (newValue) {
-                onChange({ target: { name: 'country', value: newValue.shortCode } });
-              }
-            }}
+            onChange={isEdit ? handleEditCountryChange : handleNewCountryChange}
             renderInput={(params) => <TextField {...params} label="Country" margin="normal" fullWidth />}
           />
           <Box sx={{ display: 'flex', alignItems: 'center', mt: 1, gap: 1 }}>
             <TextField
               label="Code"
-              value={countryCode}
+              value={currentCountryCode}
               InputProps={{ readOnly: true }}
               size="small"
               sx={{ width: '80px' }}
@@ -328,14 +389,22 @@ export default function ParticipantManager({
             <TextField
               fullWidth
               label={field.label}
-              value={phoneNumber}
-              onChange={(e) => onChange({ target: { name: field.name, value: `${countryCode} ${e.target.value}` } })}
+              value={currentPhoneNumber}
+              onChange={(e) => {
+                const phoneNumber = e.target.value.replace(/\D/g, '').slice(0, 10);
+                if (isEdit) {
+                  setEditItemPhoneNumber(phoneNumber);
+                } else {
+                  setNewItemPhoneNumber(phoneNumber);
+                }
+              }}
               inputProps={{ maxLength: 10 }}
             />
           </Box>
         </Box>
       );
     }
+    
     if (field.type === 'autocomplete') {
       return (
         <Autocomplete
@@ -384,7 +453,10 @@ export default function ParticipantManager({
   };
 
   return (
-    !dataLoaded ? <LoadMask text={`Loading ${title}`} /> : <Box>
+    !dataLoaded ? (
+      <LoadMask text={`Loading ${title}`} />
+    ) : (
+      <Box>
         <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
           <Typography
             variant="h4"
@@ -392,8 +464,11 @@ export default function ParticipantManager({
           >
             {title}
           </Typography>
-          <Button variant="contained" size="large" onClick={handleOpen}>Add {apiType}</Button>
+          <Button variant="contained" size="large" onClick={handleOpen}>
+            Add {apiType}
+          </Button>
         </Box>
+        
         <TextField
           fullWidth
           label={`Search ${title}`}
@@ -402,6 +477,7 @@ export default function ParticipantManager({
           onChange={(e) => setSearch(e.target.value)}
           sx={{ mb: 3 }}
         />
+        
         <Grid container spacing={3}>
           {filteredItems.map((item, idx) => (
             <Grid item xs={12} sm={6} md={4} key={idx} sx={{ p: 1 }}>
@@ -453,6 +529,7 @@ export default function ParticipantManager({
                       minHeight: 60,
                     }}
                   />
+                  
                   <Menu
                     anchorEl={menuAnchorEls[idx]}
                     open={Boolean(menuAnchorEls[idx])}
@@ -489,11 +566,20 @@ export default function ParticipantManager({
                       Delete
                     </MenuItem>
                   </Menu>
+                  
                   <Divider sx={{ mb: 2, mt: 0 }} />
                   <CardContent>
                     <Box sx={{ display: "grid", gap: 1 }}>
                       {displayFields.map((df) => {
                         let displayLabel = df.label;
+                        let displayValue = item[df.name];
+                        
+                        // Format mobile for display with country code
+                        if (df.name === 'mobile' && item.country) {
+                          const country = COUNTRIES.find(c => c.shortCode === item.country);
+                          displayValue = getFullMobileForDisplay(item[df.name], country?.phoneCode || '');
+                        }
+                        
                         if (apiType === "Bank" && df.name === "bankCode") {
                           if (item.region === "India") displayLabel = "IFSC Code";
                           else if (item.region === "America") displayLabel = "Routing Number";
@@ -501,7 +587,7 @@ export default function ParticipantManager({
                         }
                         return (
                           <Typography key={df.name} sx={{ fontSize: 15, color: "grey.700" }}>
-                            <b>{displayLabel}:</b> {item[df.name]}
+                            <b>{displayLabel}:</b> {displayValue}
                           </Typography>
                         );
                       })}
@@ -512,16 +598,12 @@ export default function ParticipantManager({
             </Grid>
           ))}
         </Grid>
-        {/* <Box sx={{ mt: 5, textAlign: "left", p: 1 }}>
-          <Button variant="contained" size="large" onClick={handleOpen}>
-            Add {apiType}
-          </Button>
-        </Box> */}
+
         {/* Add Dialog */}
         <Dialog open={open} onClose={() => {}} disableEscapeKeyDown={true}>
           <DialogTitle>Add {apiType}</DialogTitle>
           <DialogContent>
-            {addFields.map((field) => renderField(field, newItem[field.name], handleChange))}
+            {addFields.map((field) => renderField(field, newItem[field.name], handleChange, false))}
           </DialogContent>
           <DialogActions sx={{ p: 2 }}>
             <Button onClick={handleClose}>Cancel</Button>
@@ -530,6 +612,7 @@ export default function ParticipantManager({
             </Button>
           </DialogActions>
         </Dialog>
+
         {/* Edit Dialog */}
         <Dialog open={editOpen} onClose={() => {}} disableEscapeKeyDown={true}>
           <DialogTitle>Edit {title.slice(0, -1)}</DialogTitle>
@@ -543,6 +626,7 @@ export default function ParticipantManager({
             </Button>
           </DialogActions>
         </Dialog>
+
         <Snackbar
           open={!!error}
           autoHideDuration={6000}
@@ -568,4 +652,5 @@ export default function ParticipantManager({
         </Snackbar>
       </Box>
     )
+  );
 }

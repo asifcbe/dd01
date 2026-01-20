@@ -10,14 +10,16 @@ const fields = [
   { name: "email", label: "Email", type: "text" },
   { name: "type", label: "Type", type: "select", options: clientTypes },
   { name: "mobile", label: "Mobile", type: "text" },
-  { name: "address", label: "Address", type: "text" }
- ];
+  { name: "address", label: "Address", type: "text" },
+  { name: "tax_id", label: "Tax Id", type: "text" }
+];
 
 const displayFields = [
   { name: "email", label: "Email" },
   { name: "mobile", label: "Mobile" },
   { name: "address", label: "Address" },
-  {name:'country', label:'Country'}
+  { name: "country", label: "Country" },
+  { name: "tax_id", label: "Tax Id" }
 ];
 
 const initialForm = {
