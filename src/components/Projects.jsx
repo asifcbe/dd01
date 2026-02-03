@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { handleApiError } from "./utils";
 import {
   Box, Button, Card, CardContent, CardHeader, IconButton, Typography, Grid,
   Dialog, DialogTitle, DialogContent, DialogActions, TextField, Menu, MenuItem,
@@ -40,6 +41,7 @@ export default function Projects() {
     project.taken_by?.toLowerCase().includes(search.toLowerCase())
   );
   const [error, setError] = useState(null);
+  const [success, setSuccess] = useState(null);
   const [newProject, setNewProject] = useState({
     name: "",
     description: "",
@@ -49,8 +51,7 @@ export default function Projects() {
     end_date: "",
     rate_mode: "",
     rate_amount: "",
-    currency: "",
-    country: ""
+    currency: ""
   });
   const [editProject, setEditProject] = useState({
     name: "",
@@ -61,17 +62,14 @@ export default function Projects() {
     end_date: "",
     rate_mode: "",
     rate_amount: "",
-    currency: "",
-    country: ""
+    currency: ""
   });
   const [menuAnchorEls, setMenuAnchorEls] = useState({});
 
   useEffect(() => {
     fetch("api/projects", { method: "GET" })
-      .then((response) => {
-        if (response.status === 401) throw new Error("Unauthorized");
-        return response.json();
-      })
+      .then((res) => handleApiError(res, "Failed to fetch projects"))
+      .then((response) => response.json())
       .then((data) => {
         setProjects(data);
         setDataLoaded(true);
@@ -83,10 +81,8 @@ export default function Projects() {
       });
 
     fetch("api/participants", { method: "GET" })
-      .then((response) => {
-        if (response.status === 401) throw new Error("Unauthorized");
-        return response.json();
-      })
+      .then((res) => handleApiError(res, "Failed to fetch participants"))
+      .then((response) => response.json())
       .then((data) => {
         setParticipants(data);
       })
@@ -107,8 +103,7 @@ export default function Projects() {
       end_date: "",
       rate_mode: "",
       rate_amount: "",
-      currency: "",
-      country: ""
+      currency: ""
     });
   };
   const handleEditOpen = (projectId) => {
@@ -133,16 +128,10 @@ export default function Projects() {
       },
       body: JSON.stringify(newProject),
       credentials: "include",
+      credentials: "include",
     })
-      .then((response) => {
-        if (!response.ok) {
-          return response.json().then((err) => {
-            const msg = err.detail?.message?.join(" ") || "Failed to add project";
-            throw new Error(msg);
-          });
-        }
-        return response.json();
-      })
+      .then((res) => handleApiError(res, "Failed to add project"))
+      .then((response) => response.json())
       .then(() => {
         // Refetch projects to ensure the list is up to date with names
         fetch("api/projects", { method: "GET" })
@@ -155,6 +144,7 @@ export default function Projects() {
           .catch((error) => {
             console.error("Error refetching projects:", error);
             handleClose();
+            setSuccess("Project added successfully!");
           });
       })
       .catch((error) => {
@@ -170,21 +160,16 @@ export default function Projects() {
       },
       body: JSON.stringify(editProject),
       credentials: "include",
+      credentials: "include",
     })
-      .then((response) => {
-        if (!response.ok) {
-          return response.json().then((err) => {
-            const msg = err.detail?.message?.join(" ") || "Failed to update project";
-            throw new Error(msg);
-          });
-        }
-        return response.json();
-      })
+      .then((res) => handleApiError(res, "Failed to update project"))
+      .then((response) => response.json())
       .then((updatedProject) => {
         setProjects((prev) =>
           prev.map((p) => (p.id === editProject.id ? updatedProject : p))
         );
         handleEditClose();
+        setSuccess("Project updated successfully!");
       })
       .catch((error) => {
         console.error("Error updating project:", error);
@@ -196,14 +181,10 @@ export default function Projects() {
     fetch(`/api/project?project_id=${projectToDelete.id}`, {
       method: "DELETE",
       credentials: "include",
+      credentials: "include",
     })
+      .then((res) => handleApiError(res, "Failed to delete project"))
       .then((response) => {
-        if (!response.ok) {
-          return response.json().then((err) => {
-            const msg = err.detail?.message?.join(" ") || "Failed to delete project";
-            throw new Error(msg);
-          });
-        }
         setProjects((prev) => prev.filter(p => p.id !== projectId));
         // No need to filter menuAnchorEls since it's by id
       })
@@ -294,8 +275,7 @@ export default function Projects() {
                     <Typography sx={{ fontSize: 15, color: "grey.700" }}><b>Rate Mode:</b> {project.rate_mode}</Typography>
                     <Typography sx={{ fontSize: 15, color: "grey.700" }}><b>Rate Amount:</b> {project.rate_amount}</Typography>
                     <Typography sx={{ fontSize: 15, color: "grey.700" }}><b>Currency:</b> {project.currency}</Typography>
-                    <Typography sx={{ fontSize: 15, color: "grey.700" }}><b>Country:</b> {COUNTRIES.find(c => c.code === project.country)?.name || project.country}</Typography>
-                  </Box>
+                   </Box>
                 </CardContent>
               </Card>
             </Fade>
@@ -358,16 +338,7 @@ export default function Projects() {
             renderInput={(params) => <TextField {...params} label="Currency" margin="normal" />}
             fullWidth
           />
-          <Autocomplete
-            options={COUNTRIES}
-            getOptionLabel={(option) => option.name}
-            value={COUNTRIES.find(c => c.code === newProject.country) || null}
-            onChange={(event, newValue) => {
-              setNewProject((prev) => ({ ...prev, country: newValue ? newValue.code : "" }));
-            }}
-            renderInput={(params) => <TextField {...params} label="Country" margin="normal" />}
-            fullWidth
-          />
+          
         </DialogContent>
         <DialogActions sx={{ p: 2 }}>
           <Button onClick={handleClose}>Cancel</Button>
@@ -464,6 +435,28 @@ export default function Projects() {
           }}
         >
           {error}
+        </Alert>
+      </Snackbar>
+      <Snackbar
+        open={!!success}
+        autoHideDuration={3000}
+        onClose={() => setSuccess(null)}
+        anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+      >
+        <Alert
+          onClose={() => setSuccess(null)}
+          severity="success"
+          variant="filled"
+          sx={{
+            width: "100%",
+            maxWidth: 600,
+            fontSize: "1rem",
+            fontWeight: 500,
+            boxShadow: 3,
+            borderRadius: 2,
+          }}
+        >
+          {success}
         </Alert>
       </Snackbar>
     </Box>

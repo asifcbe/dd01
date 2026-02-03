@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { handleApiError } from "./utils";
 import {
   Box,
   Button,
@@ -65,6 +66,7 @@ export default function ParticipantManager({
   const [newItem, setNewItem] = useState(initialForm);
   const [editItem, setEditItem] = useState(initialForm);
   const [error, setError] = useState(null);
+  const [success, setSuccess] = useState(null);
   const [search, setSearch] = useState("");
   const [addFields, setAddFields] = useState(fields);
   const [editFields, setEditFields] = useState(fields);
@@ -90,12 +92,8 @@ export default function ParticipantManager({
     fetch(url, {
       method: "GET",
     })
-      .then((response) => {
-        if (response.status === 401) {
-          throw new Error("Unauthorized");
-        }
-        return response.json();
-      })
+      .then((res) => handleApiError(res, `Failed to fetch ${title.toLowerCase()}`))
+      .then((response) => response.json())
       .then((data) => {
         setItems(data);
         setDataLoaded(true);
@@ -256,19 +254,12 @@ export default function ParticipantManager({
       body: JSON.stringify(itemToAdd),
       credentials: "include",
     })
-      .then((response) => {
-        if (!response.ok) {
-          return response.json().then((err) => {
-            const errorMsg=err?.detail?.message;
-            const msg =Array.isArray(errorMsg) ? errorMsg.map(e => `• ${e}`).join('\n') : errorMsg || `Failed to add ${title.toLowerCase()}`;
-            throw new Error(msg);
-          });
-        }
-        return response.json();
-      })
+      .then((res) => handleApiError(res, `Failed to add ${title.toLowerCase()}`))
+      .then((response) => response.json())
       .then(() => {
         fetchItems(); 
         handleClose();
+        setSuccess(`${title.slice(0, -1)} added successfully!`);
       })
       .catch((error) => {
         console.error(`Error adding ${title.toLowerCase()}:`, error);
@@ -303,15 +294,8 @@ export default function ParticipantManager({
       body: JSON.stringify(updatedItem),
       credentials: "include",
     })
-      .then((response) => {
-        if (!response.ok) {
-          return response.json().then((err) => {
-            const msg = Array.isArray(err.detail?.message) ? err.detail?.message?.map(e => `• ${e}`).join("\n") : err.detail?.message || `Failed to update ${title.toLowerCase()}`;
-            throw new Error(msg);
-          });
-        }
-        return response.json();
-      })
+      .then((res) => handleApiError(res, `Failed to update ${title.toLowerCase()}`))
+      .then((response) => response.json())
       .then((updatedItemFromServer) => {
         setItems((prev) =>
           prev.map((item) => (item.id === updatedItemFromServer.id ? updatedItemFromServer : item))
@@ -335,13 +319,8 @@ export default function ParticipantManager({
       method: "DELETE",
       credentials: "include",
     })
-      .then((response) => {
-        if (!response.ok) {
-          return response.json().then((err) => {
-            const msg = Array.isArray(err.detail?.message) ? err.detail?.message?.map(e => `• ${e}`).join("\n") : err.detail?.message || `Failed to delete ${title.toLowerCase()}`;
-            throw new Error(msg);
-          });
-        }
+      .then((res) => handleApiError(res, `Failed to delete ${title.toLowerCase()}`))
+      .then(() => {
         setItems((prev) => prev.filter((_, i) => i !== idx));
         setMenuAnchorEls((prev) => prev.filter((_, i) => i !== idx));
       })
@@ -650,6 +629,28 @@ export default function ParticipantManager({
             {error}
           </Alert>
         </Snackbar>
+      <Snackbar
+        open={!!success}
+        autoHideDuration={3000}
+        onClose={() => setSuccess(null)}
+        anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+      >
+        <Alert
+          onClose={() => setSuccess(null)}
+          severity="success"
+          variant="filled"
+          sx={{
+            width: "100%",
+            maxWidth: 600,
+            fontSize: "1rem",
+            fontWeight: 500,
+            boxShadow: 3,
+            borderRadius: 2,
+          }}
+        >
+          {success}
+        </Alert>
+      </Snackbar>
       </Box>
     )
   );

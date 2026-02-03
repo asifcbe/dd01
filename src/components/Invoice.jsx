@@ -1,4 +1,5 @@
 import React, { useState, useEffect, lazy, Suspense } from "react";
+import { handleApiError } from "./utils";
 import {
   Box,
   Tabs,
@@ -105,13 +106,14 @@ export default function Invoices() {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setLoadingTemplates(true);
     fetch("api/templates", { credentials: "include" })
+      .then((res) => handleApiError(res, "Failed to fetch templates"))
       .then((res) => res.json())
       .then((data) => {
         setTemplates(data);
         setLoadingTemplates(false);
       })
-      .catch(() => {
-        setNotification({ severity: "error", message: "Failed to load templates" });
+      .catch((error) => {
+        setNotification({ severity: "error", message: error.message });
         setLoadingTemplates(false);
       });
   }, []);
@@ -120,14 +122,15 @@ export default function Invoices() {
 
   const fetchInvoiceData = (template_id) => {
     setLoadingInvoice(true);
-    fetch(`api/invoice/print-view?template_id=${template_id}`, { credentials: "include" })
+    fetch(`api/invoice/print-view?template_id=${template_id}&hirearchy=true`, { credentials: "include" })
+      .then((res) => handleApiError(res, "Failed to fetch invoice"))
       .then((res) => res.json())
       .then((data) => {
         setInvoiceData(data);
         setLoadingInvoice(false);
       })
-      .catch(() => {
-        setNotification({ severity: "error", message: "Failed to load invoice" });
+      .catch((error) => {
+        setNotification({ severity: "error", message: error.message });
         setLoadingInvoice(false);
       });
   };
@@ -186,7 +189,7 @@ export default function Invoices() {
           <CircularProgress />
         ) : invoiceData ? (
           <Suspense fallback={<div>Loading invoice template...</div>}>
-            <InvoiceTemplate template={selectedTemplate} {...extractInvoiceViewData(invoiceData)} />
+            <InvoiceTemplate template={selectedTemplate} invoiceData={invoiceData} />
           </Suspense>
         ) : (
           <Typography>

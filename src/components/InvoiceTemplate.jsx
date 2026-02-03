@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
+import { getInvoiceData } from "./utils";
 import {
   Typography,
   TextField,
@@ -32,6 +33,7 @@ import PrintIcon from "@mui/icons-material/Print";
 import PhoneIcon from "@mui/icons-material/Phone";
 import EmailIcon from "@mui/icons-material/Email";
 import LocationOnIcon from "@mui/icons-material/LocationOn";
+import AccountBalanceIcon from "@mui/icons-material/AccountBalance";
 import { LocalizationProvider, DatePicker } from "@mui/x-date-pickers";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 
@@ -208,66 +210,15 @@ const SelectInput = ({ value, onChange, options, sx }) => (
 );
 
 export default function InvoiceTemplate({
-  invoice = {
-    invoiceId: "INV-1",
-    from: {
-      name: "Yahoo Finance",
-      mobile: "7845945950",
-      email: "yahoo@outlook.com",
-      address: "California",
-    },
-    to: {
-      name: "Reed Ireland",
-      mobile: "7845945951",
-      email: "reedIreland@gmail.com",
-      address: "Dublin",
-    },
-    invoicedate: "20, Nov 2025",
-    duedate: "20, Dec 2025",
-    invoiceitems: [
-      {
-        id: 1,
-        name: "Dinesh, Madurai, Tamil Nadu",
-        duration: 0,
-        ratemode: "Daily",
-        rateamount: 30000,
-        currency: "INR",
-        total: 0,
-        description: "",
-      },
-      {
-        id: 2,
-        name: "Palanisamy, Salem, Tamil Nadu",
-        duration: 0,
-        ratemode: "Monthly",
-        rateamount: 20000,
-        currency: "INR",
-        total: 0,
-        description: "",
-      },
-      {
-        id: 3,
-        name: "Macron, Paris",
-        duration: 0,
-        ratemode: "Monthly",
-        rateamount: 20000,
-        currency: "INR",
-        total: 0,
-        description: "",
-      },
-    ],
-    subtotal: 100000,
-    tax: 10000,
-    total: 110000,
-    notice:
-      "A finance charge of 1.5% will be made on unpaid balances after 30 days.",
-  },
+  invoiceData,
   template = { name: "Invoice" },
 }) {
+  let invoice=getInvoiceData(invoiceData);
   const componentRef = useRef(null);
   const [themeIdx, setThemeIdx] = useState(0);
   const [isGenerating, setIsGenerating] = useState(false);
   const theme = COLOR_THEMES[themeIdx];
+  const [bank, setBank] = useState(null);
 
   const [viewMode, setViewMode] = useState("full");
   const [selectedItemIdx, setSelectedItemIdx] = useState(0);
@@ -307,6 +258,24 @@ export default function InvoiceTemplate({
   );
   const [taxAmount, setTaxAmount] = useState(0);
   const [grandTotal, setGrandTotal] = useState(0);
+
+  // Fetch bank details if bank_id exists
+  useEffect(() => {
+    if (invoice.bank_id) {
+      fetch(`/api/bank?bank_id=${invoice.bank_id}`, { method: "GET" })
+        .then((res) => {
+          if (!res.ok) throw new Error("Failed to fetch bank");
+          return res.json();
+        })
+        .then((data) => {
+          setBank(data);
+        })
+        .catch((error) => {
+          console.error("Error fetching bank:", error);
+          setBank(null);
+        });
+    }
+  }, []);
 
   // --- HTML2CANVAS EXPORT LOGIC ---
   const handleExport = async (mode = "print") => {
@@ -1187,6 +1156,29 @@ const renderExpenseRows = (mainIdx) => {
             </Box>
           </Box>
         </CardContent>
+
+        {/* Bank Details Section */}
+        <Box
+          sx={{
+            px: 5,
+            py: 2,
+            backgroundColor: theme.bg,
+            borderTop: "1px solid rgba(148,163,184,0.2)",
+          }}
+        >
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}>
+            <AccountBalanceIcon fontSize="small" sx={{ color: theme.accent }} />
+          {bank ? (
+            <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2 }}>
+              <Typography variant="body2" color="text.secondary">
+               {bank.name} ,{bank.country}
+              </Typography>
+            </Box>
+          ) : (
+            <Typography variant="body2" color="text.secondary">-</Typography>
+          )}
+          </Box>
+        </Box>
 
         <Box
           sx={{

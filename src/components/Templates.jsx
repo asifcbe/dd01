@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
+import { handleApiError } from "./utils";
 import {
-  DesignServices as TemplatesIcon
+  DesignServices as TemplatesIcon,
+  AccountBalance as AccountBalanceIcon
 } from "@mui/icons-material";
 import {
   Box,
@@ -19,13 +21,26 @@ import {
   MenuItem,
   Divider,
   Button,
-  Avatar
+  Avatar,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TextField,
+  FormControl,
+  InputLabel,
+  Select,
+  Autocomplete,
+  Snackbar,
+  Alert
 } from "@mui/material";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import ReactFlow, { Background, Controls } from "reactflow";
 import "reactflow/dist/style.css";
+
+const CURRENCIES = ['USD', 'EUR', 'GBP', 'INR', 'JPY', 'CAD', 'AUD'];
 
 // Converter: Mermaid-style script to ReactFlow nodes/edges for neat tree
 function mermaidToReactFlow(scriptArr) {
@@ -90,15 +105,56 @@ export default function Templates() {
   const [nodes, setNodes] = useState([]);
   const [edges, setEdges] = useState([]);
   const [menuAnchors, setMenuAnchors] = useState({});
+  const [open, setOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+  const [projects, setProjects] = useState([]);
+  const [banks, setBanks] = useState([]);
+  const [error, setError] = useState(null);
+  const [success, setSuccess] = useState(null);
+  const [newTemplate, setNewTemplate] = useState({
+    name: "",
+    description: "",
+    currency: "",
+    project_ids: [],
+    bank_id: 0
+  });
+  const [editTemplate, setEditTemplate] = useState({
+    id: null,
+    name: "",
+    description: "",
+    currency: "",
+    project_ids: [],
+    bank_id: 0
+  });
 
   useEffect(() => {
     fetch("api/templates", { method: "GET" })
-      .then((res) => {
-        if (!res.ok) throw new Error("Failed to fetch templates");
-        return res.json();
-      })
+      .then((res) => handleApiError(res, "Failed to fetch templates"))
+      .then((res) => res.json())
       .then((data) => {
         setTemplateList(Object.values(data));
+      })
+      .catch(console.error);
+  }, []);
+
+  // Fetch projects
+  useEffect(() => {
+    fetch("api/projects", { method: "GET" })
+      .then((res) => handleApiError(res, "Failed to fetch projects"))
+      .then((res) => res.json())
+      .then((data) => {
+        setProjects(Array.isArray(data) ? data : Object.values(data));
+      })
+      .catch(console.error);
+  }, []);
+
+  // Fetch banks
+  useEffect(() => {
+    fetch("api/banks", { method: "GET" })
+      .then((res) => handleApiError(res, "Failed to fetch banks"))
+      .then((res) => res.json())
+      .then((data) => {
+        setBanks(Array.isArray(data) ? data : Object.values(data));
       })
       .catch(console.error);
   }, []);
@@ -106,10 +162,8 @@ export default function Templates() {
   useEffect(() => {
     if (!selectedTemplateId) return;
     fetch(`api/template/tree-view?template_id=${selectedTemplateId}`)
-      .then((res) => {
-        if (!res.ok) throw new Error("Failed to fetch tree data");
-        return res.json();
-      })
+      .then((res) => handleApiError(res, "Failed to fetch tree data"))
+      .then((res) => res.json())
       .then((data) => {
         const { nodes, edges } = mermaidToReactFlow(data.script);
         setNodes(nodes);
@@ -119,6 +173,179 @@ export default function Templates() {
       .catch(console.error);
   }, [selectedTemplateId]);
 
+  // Dialog handlers
+  const handleOpen = () => {
+    setOpen(true);
+  };
+
+  const handleClose = () => {
+    setOpen(false);
+    setNewTemplate({
+      name: "",
+      description: "",
+      currency: "",
+      project_ids: [],
+      bank_id: 0
+    });
+  };
+
+  const handleEditOpen = (template) => {
+    setEditTemplate({
+      id: template.id,
+      name: template.name || "",
+      description: template.description || "",
+      currency: template.currency || "",
+      project_ids: Array.isArray(template.project_ids) ? template.project_ids : [],
+      bank_id: template.bank_id || 0
+    });
+    setEditOpen(true);
+    handleMenuClose(template.id);
+  };
+
+  const handleEditClose = () => {
+    setEditOpen(false);
+    setEditTemplate({
+      id: null,
+      name: "",
+      description: "",
+      currency: "",
+      project_ids: [],
+      bank_id: 0
+    });
+  };
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setNewTemplate((prev) => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleProjectsChange = (event, newValue) => {
+    setNewTemplate((prev) => ({
+      ...prev,
+      project_ids: newValue ? newValue.map(p => p.id) : []
+    }));
+  };
+
+  const handleEditChange = (e) => {
+    const { name, value } = e.target;
+    setEditTemplate((prev) => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleEditProjectsChange = (event, newValue) => {
+    setEditTemplate((prev) => ({
+      ...prev,
+      project_ids: newValue ? newValue.map(p => p.id) : []
+    }));
+  };
+
+  const handleAddTemplate = () => {
+    if (!newTemplate.name || !newTemplate.currency || !newTemplate.bank_id) {
+      setError("Please fill in all required fields");
+      return;
+    }
+
+    fetch("api/template", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(newTemplate),
+      credentials: "include"
+    })
+      .then((res) => handleApiError(res, "Failed to add template"))
+      .then((response) => response.json())
+      .then(() => {
+        // Refresh templates list
+        fetch("api/templates", { method: "GET" })
+          .then((res) => handleApiError(res, "Failed to fetch templates"))
+          .then((res) => res.json())
+          .then((data) => {
+            setTemplateList(Object.values(data));
+          })
+          .catch(console.error);
+        handleClose();
+        setSuccess("Template added successfully!");
+      })
+      .catch((error) => {
+        console.error("Error adding template:", error);
+        setError(error.message);
+      });
+  };
+
+  const handleEditSubmit = () => {
+    if (!editTemplate.name || !editTemplate.currency || !editTemplate.bank_id) {
+      setError("Please fill in all required fields");
+      return;
+    }
+
+    fetch(`api/template?template_id=${editTemplate.id}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        name: editTemplate.name,
+        description: editTemplate.description,
+        currency: editTemplate.currency,
+        project_ids: editTemplate.project_ids,
+        bank_id: editTemplate.bank_id
+      }),
+      credentials: "include"
+    })
+      .then((res) => handleApiError(res, "Failed to update template"))
+      .then((response) => response.json())
+      .then(() => {
+        // Refresh templates list
+        fetch("api/templates", { method: "GET" })
+          .then((res) => handleApiError(res, "Failed to fetch templates"))
+          .then((res) => res.json())
+          .then((data) => {
+            setTemplateList(Object.values(data));
+          })
+          .catch(console.error);
+        handleEditClose();
+        setSuccess("Template updated successfully!");
+      })
+      .catch((error) => {
+        console.error("Error updating template:", error);
+        setError(error.message);
+      });
+  };
+
+  const handleDeleteConfirm = (templateId) => {
+    if (!window.confirm("Are you sure you want to delete this template?")) {
+      return;
+    }
+
+    fetch(`api/template?template_id=${templateId}`, {
+      method: "DELETE",
+      credentials: "include"
+    })
+      .then((res) => handleApiError(res, "Failed to delete template"))
+      .then((response) => response.json())
+      .then(() => {
+        // Refresh templates list
+        fetch("api/templates", { method: "GET" })
+          .then((res) => handleApiError(res, "Failed to fetch templates"))
+          .then((res) => res.json())
+          .then((data) => {
+            setTemplateList(Object.values(data));
+          })
+          .catch(console.error);
+        handleMenuClose(templateId);
+      })
+      .catch((error) => {
+        console.error("Error deleting template:", error);
+        setError(error.message);
+      });
+  };
+
   // Menu handlers
   const handleMenuOpen = (event, templateId) => {
     setMenuAnchors((prev) => ({ ...prev, [templateId]: event.currentTarget }));
@@ -127,21 +354,16 @@ export default function Templates() {
     setMenuAnchors((prev) => ({ ...prev, [templateId]: null }));
   };
 
-  // Placeholder edit/delete logic
-  const handleEditTemplate = (templateId) => {
-    alert(`Edit Template ${templateId}`);
-    handleMenuClose(templateId);
-  };
-  const handleDeleteTemplate = (templateId) => {
-    alert(`Delete Template ${templateId}`);
-    handleMenuClose(templateId);
-  };
-
   return (
     <Box>
-      <Typography variant="h4" sx={{ fontWeight: "bold", mb: 3 }}>
-        Templates
-      </Typography>
+      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
+        <Typography variant="h4" sx={{ fontWeight: "bold", mb: 0 }}>
+          Templates
+        </Typography>
+        <Button variant="contained" size="large" onClick={handleOpen}>
+          Add Template
+        </Button>
+      </Box>
       <Tabs value={tabIdx} onChange={(_, v) => setTabIdx(v)} sx={{ mb: 2 }}>
         <Tab label="List Templates" />
         <Tab label="Tree View" disabled={!selectedTemplateId} />
@@ -207,12 +429,12 @@ export default function Templates() {
                         }}
                       >
                         <MenuItem
-                          onClick={() => handleEditTemplate(template.id)}
+                          onClick={() => handleEditOpen(template)}
                         >
                           <EditIcon fontSize="small" sx={{ mr: 1 }} /> Edit
                         </MenuItem>
                         <MenuItem
-                          onClick={() => handleDeleteTemplate(template.id)}
+                          onClick={() => handleDeleteConfirm(template.id)}
                         >
                           <DeleteIcon
                             fontSize="small"
@@ -268,6 +490,48 @@ export default function Templates() {
                       No projects
                     </Typography>
                   )}
+                  <Divider sx={{ my: 1 }} />
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, mb: 0.5 }}>
+                    <AccountBalanceIcon fontSize="small" sx={{ color: "primary.main" }} />
+                    <Typography sx={{ fontWeight: "bold" }}>
+                      Bank Details:
+                    </Typography>
+                  </Box>
+                  {template.bank_id ? (
+                    <>
+                      {(() => {
+                        const bank = banks.find(b => b.id === template.bank_id);
+                        return bank ? (
+                          <>
+                            <Typography variant="body2" color="text.secondary">
+                              <b>Name:</b> {bank.name}
+                            </Typography>
+                            {bank.bankCode && (
+                              <Typography variant="body2" color="text.secondary">
+                                <b>Code:</b> {bank.bankCode}
+                              </Typography>
+                            )}
+                            {bank.region && (
+                              <Typography variant="body2" color="text.secondary">
+                                <b>Region:</b> {bank.region}
+                              </Typography>
+                            )}
+                          </>
+                        ) : (
+                          <Typography variant="body2" color="text.secondary">
+                            Unknown Bank
+                          </Typography>
+                        );
+                      })()}
+                    </>
+                  ) : (
+                    <Typography variant="body2" color="text.secondary">
+                      No bank assigned
+                    </Typography>
+                  )}
+                  <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+                    <b>Currency:</b> {template.currency || "N/A"}
+                  </Typography>
                 </CardContent>
                 <Box sx={{ p: 1, pt: 0, textAlign: "right" }}>
                   <Button
@@ -296,6 +560,220 @@ export default function Templates() {
           )}
         </Box>
       )}
+
+      {/* Add Template Dialog */}
+      <Dialog open={open} onClose={() => {}} disableEscapeKeyDown={true}>
+        <DialogTitle>Add Template</DialogTitle>
+        <DialogContent sx={{ minWidth: 400 }}>
+          <TextField
+            margin="normal"
+            fullWidth
+            label="Name"
+            name="name"
+            value={newTemplate.name}
+            onChange={handleChange}
+            InputLabelProps={{ shrink: true }}
+          />
+          <TextField
+            margin="normal"
+            fullWidth
+            multiline
+            rows={3}
+            label="Description"
+            name="description"
+            value={newTemplate.description}
+            onChange={handleChange}
+            InputLabelProps={{ shrink: true }}
+          />
+          <Autocomplete
+            options={CURRENCIES}
+            value={newTemplate.currency || null}
+            onChange={(event, newValue) => {
+              setNewTemplate((prev) => ({ ...prev, currency: newValue || "" }));
+            }}
+            renderInput={(params) => (
+              <TextField
+                {...params}
+                label="Currency"
+                margin="normal"
+                InputLabelProps={{ shrink: true }}
+              />
+            )}
+            fullWidth
+          />
+          <Autocomplete
+            multiple
+            options={projects}
+            getOptionLabel={(option) => option.name}
+            value={projects.filter(p => newTemplate.project_ids.includes(p.id))}
+            onChange={handleProjectsChange}
+            renderInput={(params) => (
+              <TextField
+                {...params}
+                label="Projects"
+                margin="normal"
+                InputLabelProps={{ shrink: true }}
+              />
+            )}
+            fullWidth
+          />
+          <FormControl margin="normal" fullWidth>
+            <InputLabel shrink>Bank</InputLabel>
+            <Select
+              name="bank_id"
+              value={newTemplate.bank_id}
+              label="Bank"
+              onChange={handleChange}
+            >
+              <MenuItem value={0}>Select a Bank</MenuItem>
+              {banks.map((bank) => (
+                <MenuItem key={bank.id} value={bank.id}>
+                  {bank.name}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        </DialogContent>
+        <DialogActions sx={{ p: 2 }}>
+          <Button onClick={handleClose}>Cancel</Button>
+          <Button onClick={handleAddTemplate} variant="contained">
+            Add Template
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Edit Template Dialog */}
+      <Dialog open={editOpen} onClose={() => {}} disableEscapeKeyDown={true}>
+        <DialogTitle>Edit Template</DialogTitle>
+        <DialogContent sx={{ minWidth: 400 }}>
+          <TextField
+            margin="normal"
+            fullWidth
+            label="Name"
+            name="name"
+            value={editTemplate.name}
+            onChange={handleEditChange}
+            InputLabelProps={{ shrink: true }}
+          />
+          <TextField
+            margin="normal"
+            fullWidth
+            multiline
+            rows={3}
+            label="Description"
+            name="description"
+            value={editTemplate.description}
+            onChange={handleEditChange}
+            InputLabelProps={{ shrink: true }}
+          />
+          <Autocomplete
+            options={CURRENCIES}
+            value={editTemplate.currency || null}
+            onChange={(event, newValue) => {
+              setEditTemplate((prev) => ({ ...prev, currency: newValue || "" }));
+            }}
+            renderInput={(params) => (
+              <TextField
+                {...params}
+                label="Currency"
+                margin="normal"
+                InputLabelProps={{ shrink: true }}
+              />
+            )}
+            fullWidth
+          />
+          <Autocomplete
+            multiple
+            options={projects}
+            getOptionLabel={(option) => option.name}
+            value={projects.filter(p => editTemplate.project_ids.includes(p.id))}
+            onChange={handleEditProjectsChange}
+            renderInput={(params) => (
+              <TextField
+                {...params}
+                label="Projects"
+                margin="normal"
+                InputLabelProps={{ shrink: true }}
+              />
+            )}
+            fullWidth
+          />
+          <FormControl margin="normal" fullWidth>
+            <InputLabel shrink>Bank</InputLabel>
+            <Select
+              name="bank_id"
+              value={editTemplate.bank_id || 0}
+              label="Bank"
+              onChange={(e) => {
+                setEditTemplate((prev) => ({
+                  ...prev,
+                  bank_id: e.target.value
+                }));
+              }}
+            >
+              <MenuItem value={0}>Select a Bank</MenuItem>
+              {banks.map((bank) => (
+                <MenuItem key={bank.id} value={bank.id}>
+                  {bank.name}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        </DialogContent>
+        <DialogActions sx={{ p: 2 }}>
+          <Button onClick={handleEditClose}>Cancel</Button>
+          <Button onClick={handleEditSubmit} variant="contained">
+            Save Changes
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Error Snackbar */}
+      <Snackbar
+        open={!!error}
+        autoHideDuration={6000}
+        onClose={() => setError(null)}
+        anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+      >
+        <Alert
+          onClose={() => setError(null)}
+          severity="error"
+          variant="filled"
+          sx={{
+            width: "100%",
+            maxWidth: 600,
+            fontSize: "1rem",
+            fontWeight: 500,
+            boxShadow: 3,
+            borderRadius: 2,
+            whiteSpace: 'pre-wrap',
+          }}
+        >
+          {error}
+        </Alert>
+      </Snackbar>
+      <Snackbar
+        open={!!success}
+        autoHideDuration={3000}
+        onClose={() => setSuccess(null)}
+        anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+      >
+        <Alert
+          onClose={() => setSuccess(null)}
+          severity="success"
+          variant="filled"
+          sx={{
+            width: "100%",
+            maxWidth: 600,
+            fontSize: "1rem",
+            fontWeight: 500,
+            boxShadow: 3,
+            borderRadius: 2,
+          }}
+        >
+          {success}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 }
