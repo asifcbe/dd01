@@ -1,12 +1,16 @@
 import React, { useState, Suspense, lazy } from "react";
-import AuthCard from "./components/AuthCard.jsx"; // Make sure your AuthCard uses centering Box wrapper from earlier
+import AuthCard from "./components/AuthCard.jsx";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 const Layout = lazy(() => import("./components/DashboardLayout.jsx"));
-import { CssBaseline, ThemeProvider, createTheme } from "@mui/material";
+import { CssBaseline } from "@mui/material";
 import axios from "axios";
 import "./App.scss";
 import LoadMask from "./components/LoadMask.jsx";
-const theme = createTheme();
+import { AppThemeProvider } from "./context/ThemeContext";
+import "@fontsource/inter"; // Import the font
+
+// Settings page lazy load
+const Settings = lazy(() => import("./components/Settings.jsx"));
 
 export default function App() {
   const [loggedIn, setLoggedIn] = useState(false);
@@ -33,7 +37,7 @@ export default function App() {
   };
 
   return (
-    <ThemeProvider theme={theme}>
+    <AppThemeProvider>
       <CssBaseline />
       <div className="app">
         <BrowserRouter>
@@ -51,12 +55,16 @@ export default function App() {
                 )
               }
             />
+            {/* Main App Routes */}
             <Route
               path="/*"
               element={
                 loggedIn ? (
                   <Suspense fallback={<LoadMask text="Loading Dashboard" />}>
-                    <Layout user={user} onLogout={logOut} />
+                     <Routes>
+                        <Route path="settings" element={<Settings />} /> 
+                        <Route path="*" element={<Layout user={user} onLogout={logOut} />} />
+                     </Routes>
                   </Suspense>
                 ) : (
                   <Navigate replace to="/" />
@@ -68,6 +76,6 @@ export default function App() {
           </Routes>
         </BrowserRouter>
       </div>
-    </ThemeProvider>
+    </AppThemeProvider>
   );
 }

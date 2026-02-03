@@ -3,8 +3,10 @@ import { handleApiError } from "./utils";
 import {
   Box, Button, Card, CardContent, CardHeader, IconButton, Typography, Grid,
   Dialog, DialogTitle, DialogContent, DialogActions, TextField, Menu, MenuItem,
-  Fade, Avatar, Divider, FormControl, InputLabel, Select, Snackbar, Alert, Autocomplete
+  Fade, Avatar, Divider, FormControl, InputLabel, Select, Snackbar, Alert, Autocomplete,
+  InputAdornment
 } from "@mui/material";
+import SearchIcon from "@mui/icons-material/Search";
 import {
   Assignment as ProjectsIcon
 } from "@mui/icons-material";
@@ -208,18 +210,56 @@ export default function Projects() {
 
   return (
     !dataLoaded ? <LoadMask text='Loading Projects' /> : <Box>
-      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
-        <Typography variant="h4" sx={{ fontWeight: "bold" }}>Projects</Typography>
-        <Button variant="contained" size="large" onClick={handleOpen}>Add Project</Button>
-      </Box>
-      <TextField
-        fullWidth
-        label="Search Projects"
-        variant="outlined"
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
-        sx={{ mb: 3 }}
-      />
+      <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", mb: 4, position: 'relative' }}>
+          
+          {/* Centered Search Bar */}
+          <TextField
+             placeholder="Search Projects..."
+             variant="outlined"
+             value={search}
+             onChange={(e) => setSearch(e.target.value)}
+             sx={{ 
+                width: '100%', 
+                maxWidth: 500,
+                '& .MuiOutlinedInput-root': {
+                    borderRadius: '50px',
+                    bgcolor: 'background.paper',
+                    boxShadow: '0 4px 20px rgba(0,0,0,0.05)',
+                    '& fieldset': { border: '1px solid', borderColor: 'divider' },
+                    '&:hover fieldset': { borderColor: 'primary.main' },
+                    '&.Mui-focused fieldset': { borderColor: 'primary.main' },
+                    pl: 2
+                }
+             }}
+             InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <SearchIcon color="action" />
+                  </InputAdornment>
+                ),
+             }}
+          />
+
+          {/* Add Button positioned absolutely to the right */}
+          <Button 
+            variant="contained" 
+            size="large" 
+            onClick={handleOpen}
+            sx={{ 
+                position: { md: 'absolute' }, 
+                right: { md: 0 },
+                top: { md: '50%' },
+                transform: { md: 'translateY(-50%)' },
+                borderRadius: '50px',
+                px: 3,
+                textTransform: 'none',
+                ml: { xs: 2, md: 0 }, // Margin for mobile where it might wrap or sit next
+                boxShadow: '0 4px 14px rgba(0, 163, 255, 0.3)'
+            }}
+          >
+            Add Project
+          </Button>
+        </Box>
       <Grid container spacing={3} >
         {filteredProjects.map((project, idx) => (
           <Grid item xs={12} sm={6} md={4} key={idx} sx={{ p: 1 }}>

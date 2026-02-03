@@ -1,26 +1,24 @@
-import React, { lazy, Suspense } from "react";
+import React, { lazy, Suspense, useEffect, useState } from "react";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import {
   Box,
   CssBaseline,
-  Drawer,
-  List,
-  ListItem,
-  ListItemButton,
-  ListItemIcon,
-  ListItemText,
   Toolbar,
   Typography,
   IconButton,
-  Divider,
   Container,
   Avatar,
-  useMediaQuery,
+  Tab,
+  Tabs,
+  Button,
+  AppBar,
+  Badge,
+  Tooltip
 } from "@mui/material";
 import LogoutIcon from "@mui/icons-material/Logout";
+import SettingsIcon from "@mui/icons-material/Settings";
+import NotificationsIcon from "@mui/icons-material/Notifications";
 import {
-  Menu as MenuIcon,
-  ChevronLeft as ChevronLeftIcon,
-  ChevronRight as ChevronRightIcon,
   Groups as ClientsIcon,
   Code as DeveloperIcon,
   Business as CompaniesIcon,
@@ -31,7 +29,7 @@ import {
   ReceiptLong as InvoicesIcon,
 } from "@mui/icons-material";
 import CustomIcon from "./CustomIcon";
-import { NavLink, Routes, Route, useLocation, Navigate } from "react-router-dom";
+import { useNavigate, useLocation, Outlet, Link } from "react-router-dom";
 import LoadMask from "./LoadMask";
 
 const Clients = lazy(() => import("./Clients"));
@@ -43,112 +41,243 @@ const Projects = lazy(() => import("./Projects"));
 const Templates = lazy(() => import("./Templates"));
 const Invoices = lazy(() => import("./Invoice"));
 
-const drawerWidthExpanded = 240;
-const drawerWidthCollapsed = 60;
-
 const dashboardItems = [
   { key: "clients", label: "Clients", icon: <ClientsIcon />, path: "clients" },
-  { key: "developer", label: "Developer", icon: <DeveloperIcon />, path: "developer" },
   { key: "companies", label: "Companies", icon: <CompaniesIcon />, path: "companies" },
   { key: "vendors", label: "Vendors", icon: <VendorsIcon />, path: "vendors" },
   { key: "consultants", label: "Consultants", icon: <ConsultantsIcon />, path: "consultants" },
   { key: "projects", label: "Projects", icon: <ProjectsIcon />, path: "projects" },
   { key: "templates", label: "Templates", icon: <TemplatesIcon />, path: "templates" },
   { key: "invoices", label: "Invoices", icon: <InvoicesIcon />, path: "invoices" },
+  // Developer item moved to end or hidden if needed, keeping it for now
+  // { key: "developer", label: "Developer", icon: <DeveloperIcon />, path: "developer" }, 
 ];
 
+function LinkTab(props) {
+  return (
+    <Tab
+      component={Link}
+      sx={{
+        minHeight: '48px',
+        borderRadius: '24px',
+        px: 3,
+        mx: 0.5,
+        textTransform: 'none',
+        fontWeight: 600,
+        fontSize: '0.9rem',
+        color: 'text.secondary',
+        '&.Mui-selected': {
+          color: 'common.white',
+          bgcolor: 'primary.main',
+        },
+        '&:hover': {
+           bgcolor: 'action.hover',
+           color: 'primary.main',
+           '&.Mui-selected': {
+             color: 'common.white',
+             bgcolor: 'primary.dark',
+           }
+        }
+      }}
+      {...props}
+    />
+  );
+}
+
 export default function DashboardLayout({ user, onLogout }) {
-  const [mobileOpen, setMobileOpen] = React.useState(false);
-  const [drawerOpen, setDrawerOpen] = React.useState(true);
+  const navigate = useNavigate();
   const location = useLocation();
   const pathParts = location.pathname.split("/").filter(Boolean);
-  const currentKey = pathParts[0] || "";
-  const isMobile = useMediaQuery((theme) => theme.breakpoints.down("sm"));
+  const currentKey = pathParts[0] || "clients"; // Default to clients
+  
+  const [counts, setCounts] = useState({
+    clients: 0,
+    companies: 0,
+    vendors: 0,
+    consultants: 0,
+    projects: 0,
+    templates: 0,
+    invoices: 0
+  });
 
-  const handleDrawerToggle = () => setMobileOpen(!mobileOpen);
-  const handleDrawerOpenToggle = () => setDrawerOpen(!drawerOpen);
-  const drawerWidth = drawerOpen ? drawerWidthExpanded : drawerWidthCollapsed;
+  // Find index for Tabs
+  const currentTabValue = dashboardItems.findIndex(item => item.key === currentKey);
+  const tabValue = currentTabValue !== -1 ? currentTabValue : false;
 
-  const drawer = (
-    <>
-      <Toolbar sx={{ justifyContent: drawerOpen ? "space-between" : "center", px: 2 }}>
-        {drawerOpen && (
-          <Box sx={{ display: "flex", alignItems: "center" }}>
-            <CustomIcon />
-            <Typography sx={{ color: "primary.main", ml: 1, fontWeight: "bold", fontSize: "16px" }}>Invoice Generator</Typography>
-          </Box>
-        )}
-        <IconButton onClick={handleDrawerOpenToggle} size="small">{drawerOpen ? <ChevronLeftIcon /> : <ChevronRightIcon />}</IconButton>
-      </Toolbar>
-      <Divider />
-      <List>
-        {dashboardItems.map((item) => (
-          <ListItem key={item.key} disablePadding>
-            <ListItemButton component={NavLink} to={`/${item.path}`} selected={currentKey === item.key} onClick={() => { if (isMobile) setMobileOpen(false); }} sx={{ "&.Mui-selected": { backgroundColor: "primary.main", color: "white", "& .MuiListItemIcon-root": { color: "white" }, "&:hover": { backgroundColor: "primary.main" } }, justifyContent: drawerOpen ? "initial" : "center", px: drawerOpen ? 2 : 1.5 }}>
-              <ListItemIcon sx={{ minWidth: 0, mr: drawerOpen ? 3 : "auto", justifyContent: "center" }}>{item.icon}</ListItemIcon>
-              {drawerOpen && <ListItemText primary={item.label} primaryTypographyProps={{ fontWeight: 500 }} />}
-            </ListItemButton>
-          </ListItem>
-        ))}
-      </List>
-    </>
-  );
+  useEffect(() => {
+    const fetchCounts = async () => {
+      try {
+        const endpoints = [
+          { key: 'clients', url: '/api/participants?type1=Client' },
+          { key: 'companies', url: '/api/participants?type1=Company' },
+          { key: 'vendors', url: '/api/participants?type1=Vendor' },
+          { key: 'consultants', url: '/api/participants?type1=Consultant' },
+          { key: 'projects', url: '/api/projects' },
+          { key: 'templates', url: '/api/templates' },
+          { key: 'invoices', url: '/api/invoices' }
+        ];
+
+        const results = await Promise.all(
+          endpoints.map(ep => 
+            fetch(ep.url).then(res => res.json()).then(data => ({ key: ep.key, count: data.length })).catch(err => ({ key: ep.key, count: 0 }))
+          )
+        );
+
+        const newCounts = {};
+        results.forEach(r => newCounts[r.key] = r.count);
+        setCounts(newCounts);
+      } catch (error) {
+        console.error("Error fetching counts", error);
+      }
+    };
+
+    fetchCounts();
+  }, []);
 
   return (
-    <Box sx={{ display: "flex", minHeight: "100vh", bgcolor: "background.default" }}>
+    <Box sx={{ display: "flex", flexDirection: "column", minHeight: "100vh", bgcolor: "background.default" }}>
       <CssBaseline />
 
-      {/* AppBar */}
-      <Box sx={{ position: "fixed", top: 0, width: { sm: `calc(100% - ${drawerWidth}px)` }, ml: { sm: `${drawerWidth}px` }, bgcolor: "white", color: "primary.main", borderBottom: "1px solid #e0e0e0", zIndex: 1200, px: 2 }}>
-        <Toolbar>
-          {isMobile && (
-            <IconButton edge="start" color="primary" onClick={handleDrawerToggle} sx={{ mr: 2, display: { sm: "none" } }} aria-label="menu">
-              <MenuIcon />
-            </IconButton>
-          )}
-          <Typography variant="h6" sx={{ flexGrow: 1, color: "primary.main" }}></Typography>
-          <Box display="flex" alignItems="center" gap={1}>
-            <Avatar src={user.avatar} sx={{ width: 36, height: 36 }} alt={user.email} />
-            <Box>
-              <Typography sx={{ fontWeight: 500, color: "primary.main", fontSize: "0.9rem" }}>{user.email}</Typography>
-              <Typography sx={{ fontWeight: 400, color: "grey.600", fontSize: "0.8rem" }}>{user.org}</Typography>
+      {/* Top Header */}
+      <AppBar 
+        position="sticky" 
+        color="inherit" 
+        elevation={0}
+        sx={{ 
+          bgcolor: "background.paper", 
+          borderBottom: "1px solid",
+          borderColor: "divider",
+          zIndex: 1200 
+        }}
+      >
+        <Toolbar sx={{ justifyContent: "space-between", py: 1 }}>
+          {/* Logo & Title */}
+          <Box sx={{ display: "flex", alignItems: "center" }}>
+            <Box 
+              sx={{ 
+                bgcolor: 'primary.main', 
+                borderRadius: '8px', 
+                p: 0.8, 
+                display: 'flex', 
+                mr: 2,
+                boxShadow: '0 4px 12px rgba(0,0,0,0.1)' 
+              }}
+            >
+              <CustomIcon sx={{ color: 'white', fontSize: 28 }} />
             </Box>
-            <IconButton onClick={onLogout} color="primary" aria-label="logout"><LogoutIcon /></IconButton>
+            <Box>
+                <Typography variant="h6" sx={{ fontWeight: 700, lineHeight: 1.2, color: 'text.primary' }}>
+                Invoice Generator
+                </Typography>
+                <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 500 }}>
+                Business Dashboard
+                </Typography>
+            </Box>
+          </Box>
+
+          {/* Right Section: Theme, Notifications, User */}
+          <Box display="flex" alignItems="center" gap={2}>
+              <Button 
+                startIcon={<SettingsIcon />} 
+                variant="outlined" 
+                size="small"
+                onClick={() => navigate('/settings')}
+                sx={{ 
+                    borderRadius: '20px', 
+                    textTransform: 'none', 
+                    borderColor: 'divider', 
+                    color: 'text.primary' 
+                }}
+              >
+                Theme
+              </Button>
+              
+              <Box sx={{ bgcolor: 'action.hover', borderRadius: '50%', p: 0.5 }}>
+                 <Avatar src={user.avatar} sx={{ width: 32, height: 32 }} alt={user.email} /> 
+              </Box>
+              <Box sx={{ display: { xs: 'none', md: 'block' } }}>
+                <Typography sx={{ fontWeight: 600, fontSize: '0.875rem', lineHeight: 1.2, color: 'text.primary' }}>
+                   {user.email}
+                </Typography>
+                <Typography sx={{ fontWeight: 400, fontSize: '0.75rem', color: 'text.secondary', lineHeight: 1 }}>
+                   {user.org}
+                </Typography>
+              </Box>
+              <Tooltip title="Logout">
+                <IconButton onClick={onLogout} color="primary">
+                  <LogoutIcon />
+                </IconButton>
+              </Tooltip>
           </Box>
         </Toolbar>
-      </Box>
 
-      {/* Sidebar nav */}
-      <Box component="nav" sx={{ width: { sm: drawerWidth }, flexShrink: { sm: 0 } }} aria-label="sidebar">
-        <Drawer variant="temporary" open={mobileOpen} onClose={handleDrawerToggle} ModalProps={{ keepMounted: true }} sx={{ display: { xs: "block", sm: "none" }, "& .MuiDrawer-paper": { boxSizing: "border-box", width: drawerWidthExpanded, bgcolor: "white" } }}>{drawer}</Drawer>
-        <Drawer variant="permanent" open sx={{ display: { xs: "none", sm: "block" }, width: drawerWidth, flexShrink: 0, "& .MuiDrawer-paper": { width: drawerWidth, boxSizing: "border-box", bgcolor: "white", transition: "width 0.3s", overflowX: "hidden" } }}>{drawer}</Drawer>
-      </Box>
-
-      {/* Main content */}
-      <Box component="main" sx={{ flexGrow: 1, width: { sm: `calc(100% - ${drawerWidth}px)` }, mt: 10, height: "calc(100vh - 64px - 56px)", transition: "width 0.3s", display: "flex", flexDirection: "column" }}>
-        <Container maxWidth={false} sx={{ bgcolor: "white", borderRadius: 1, flexGrow: 1, p: 0, display: "flex", flexDirection: "column" }}>
-          <Box sx={{ flexGrow: 1, overflowY: "auto", width: "100%", p: 0 }}>
-            <Suspense fallback={<LoadMask text='Loading'/>}>
-              <Routes>
-                <Route index element={<Navigate replace to={dashboardItems[0].path} />} />
-                <Route path="clients" element={<Clients />} />
-                <Route path="developer" element={<Developer />} />
-                <Route path="companies" element={<Companies />} />
-                <Route path="vendors" element={<Vendors />} />
-                <Route path="consultants" element={<Consultants />} />
-                <Route path="projects" element={<Projects />} />
-                <Route path="templates" element={<Templates />} />
-                <Route path="invoices" element={<Invoices />} />
-              </Routes>
-            </Suspense>
-          </Box>
-        </Container>
-
-        {/* Footer */}
-        <Box component="footer" sx={{ height: "2vh", textAlign: "center", mt: "auto", color: "grey.600", letterSpacing: 1, fontSize: 10 }}>
-          <Divider sx={{ mb: 1 }} />© {new Date().getFullYear()} Invoice Generator
+        {/* Navigation Pills */}
+        <Box sx={{ px: 2, pb: 2, pt: 1, bgcolor: "background.paper" }}>
+             <Tabs 
+                value={tabValue} 
+                variant="scrollable" 
+                scrollButtons="auto"
+                allowScrollButtonsMobile
+                sx={{ 
+                    '& .MuiTabs-indicator': { display: 'none' }, // Hide underline indicator
+                    minHeight: '48px'
+                }}
+             >
+                {dashboardItems.map((item) => (
+                    <LinkTab 
+                        key={item.key} 
+                        label={
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                {item.icon}
+                                {item.label}
+                                <Typography 
+                                  component="span" 
+                                  sx={{ 
+                                    bgcolor: tabValue === dashboardItems.indexOf(item) ? 'rgba(255,255,255,0.2)' : 'action.selected',
+                                    color: tabValue === dashboardItems.indexOf(item) ? 'inherit' : 'text.secondary',
+                                    borderRadius: '12px',
+                                    px: 1,
+                                    fontSize: '0.75rem',
+                                    fontWeight: 600,
+                                    transition: 'all 0.2s'
+                                  }}
+                                >
+                                  {counts[item.key] || 0}
+                                </Typography>
+                            </Box>
+                        } 
+                        to={`/${item.path}`} 
+                    />
+                ))}
+             </Tabs>
         </Box>
-      </Box>
+      </AppBar>
+
+      {/* Main Content */}
+      <Container maxWidth={false} sx={{ mt: 3, mb: 4, flexGrow: 1 }}>
+        <Suspense fallback={<LoadMask text='Loading'/>}>
+          <Outlet /> 
+          {/* We need to render the routes defined in App.jsx here, but since App.jsx defines them as children of Layout in a sense (or rather Layout renders them via passed props or Outlet), we need to check how App.jsx uses Layout.
+             Currently App.jsx uses Layout as a wrapper component: <Layout ... /> inside a Route. But Layout was handling Routes internally. 
+             I will adapt this to use Outlet if migrated to nested routes, OR keep the internal Routes if simpler for now. 
+             Reviewing App.jsx: it renders <Layout> inside a route. And Layout contained the Routes. 
+             So I will keep the internal Routes here for minimal friction.
+          */}
+             <Box sx={{ minHeight: '60vh' }}>
+                <Routes>
+                    <Route index element={<Clients />} />
+                    <Route path="clients" element={<Clients />} />
+                    <Route path="developer" element={<Developer />} />
+                    <Route path="companies" element={<Companies />} />
+                    <Route path="vendors" element={<Vendors />} />
+                    <Route path="consultants" element={<Consultants />} />
+                    <Route path="projects" element={<Projects />} />
+                    <Route path="templates" element={<Templates />} />
+                    <Route path="invoices" element={<Invoices />} />
+                </Routes>
+             </Box>
+        </Suspense>
+      </Container>
     </Box>
   );
 }

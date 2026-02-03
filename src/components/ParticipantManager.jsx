@@ -30,6 +30,8 @@ import MoreVertIcon from "@mui/icons-material/MoreVert";
 import EditIcon from "@mui/icons-material/Edit";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import DeleteIcon from "@mui/icons-material/Delete";
+import SearchIcon from "@mui/icons-material/Search";
+import { InputAdornment } from "@mui/material";
 import LoadMask from "./LoadMask";
 
 export const COUNTRIES = [
@@ -441,78 +443,115 @@ export default function ParticipantManager({
       <LoadMask text={`Loading ${title}`} />
     ) : (
       <Box>
-        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
-          <Typography
-            variant="h4"
-            sx={{ fontWeight: "bold", letterSpacing: 1 }}
+        {/* Header Bar with Centered Search and Add Button */}
+        <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", mb: 4, position: 'relative' }}>
+          
+          {/* Centered Search Bar */}
+          <TextField
+             placeholder={`Search ${title}...`}
+             variant="outlined"
+             value={search}
+             onChange={(e) => setSearch(e.target.value)}
+             sx={{ 
+                width: '100%', 
+                maxWidth: 500,
+                '& .MuiOutlinedInput-root': {
+                    borderRadius: '50px',
+                    bgcolor: 'background.paper',
+                    boxShadow: '0 4px 20px rgba(0,0,0,0.05)',
+                    '& fieldset': { border: '1px solid', borderColor: 'divider' },
+                    '&:hover fieldset': { borderColor: 'primary.main' },
+                    '&.Mui-focused fieldset': { borderColor: 'primary.main' },
+                    pl: 2
+                }
+             }}
+             InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <SearchIcon color="action" />
+                  </InputAdornment>
+                ),
+             }}
+          />
+
+          {/* Add Button positioned absolutely to the right */}
+          <Button 
+            variant="contained" 
+            size="large" 
+            onClick={handleOpen}
+            sx={{ 
+                position: { md: 'absolute' }, 
+                right: { md: 0 },
+                top: { md: '50%' },
+                transform: { md: 'translateY(-50%)' },
+                borderRadius: '50px',
+                px: 3,
+                textTransform: 'none',
+                ml: { xs: 2, md: 0 }, // Margin for mobile where it might wrap or sit next
+                boxShadow: '0 4px 14px rgba(0, 163, 255, 0.3)'
+            }}
           >
-            {title}
-          </Typography>
-          <Button variant="contained" size="large" onClick={handleOpen}>
             Add {apiType}
           </Button>
         </Box>
-        
-        <TextField
-          fullWidth
-          label={`Search ${title}`}
-          variant="outlined"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          sx={{ mb: 3 }}
-        />
         
         <Grid container spacing={3}>
           {filteredItems.map((item, idx) => (
             <Grid item xs={12} sm={6} md={4} key={idx} sx={{ p: 1 }}>
               <Fade in>
-                <Card
-                  elevation={4}
-                  sx={{
-                    borderRadius: 3,
-                    bgcolor: "#f7fafc",
-                    ":hover": { boxShadow: 8, borderColor: "primary.light" },
-                    border: "1px solid #f0f2fa",
-                    position: "relative",
-                    width: '300px',
-                  }}
-                >
-                  <CardHeader
-                    avatar={
-                      <Avatar
-                        sx={{
-                          bgcolor: "primary.main",
-                          mr: 1,
-                          width: 40,
-                          height: 40,
-                        }}
-                      >
-                        <Icon />
-                      </Avatar>
-                    }
-                    title={
-                      <Typography
-                        variant="h6"
-                        sx={{ fontWeight: "bold", color: "#161d33" }}
-                      >
-                        {item.name}
-                      </Typography>
-                    }
-                    subheader={subheaderField ? item[subheaderField] : undefined}
-                    action={
-                      <IconButton
-                        onClick={(e) => handleMenuOpen(e, idx)}
-                        sx={{ color: "#868ca0" }}
-                      >
-                        <MoreVertIcon />
-                      </IconButton>
-                    }
+                  <Card
+                    elevation={0}
                     sx={{
-                      background: "#f0f2fa",
-                      borderBottom: "1px solid #e0e2ea",
-                      minHeight: 60,
+                      borderRadius: 3,
+                      bgcolor: "background.paper", // Use theme background
+                      ":hover": { 
+                          boxShadow: (theme) => theme.shadows[4], 
+                          borderColor: "primary.main" 
+                      },
+                      border: "1px solid",
+                      borderColor: "divider", // Use theme border
+                      position: "relative",
+                      width: '100%', // Flexible width
+                      transition: 'all 0.2s ease-in-out'
                     }}
-                  />
+                  >
+                    <CardHeader
+                      avatar={
+                        <Avatar
+                          sx={{
+                            bgcolor: "primary.main",
+                            mr: 1,
+                            width: 40,
+                            height: 40,
+                          }}
+                        >
+                          <Icon sx={{ color: 'primary.contrastText' }} />
+                        </Avatar>
+                      }
+                      title={
+                        <Typography
+                          variant="h6"
+                          sx={{ fontWeight: "bold", color: "text.primary" }}
+                        >
+                          {item.name}
+                        </Typography>
+                      }
+                      subheader={subheaderField ? item[subheaderField] : undefined}
+                      action={
+                        <IconButton
+                          onClick={(e) => handleMenuOpen(e, idx)}
+                          sx={{ color: "text.secondary" }}
+                        >
+                          <MoreVertIcon />
+                        </IconButton>
+                      }
+                      sx={{
+                        background: (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.05)' : "#f8f9fa", // Slight contrast for header
+                        borderBottom: "1px solid",
+                        borderColor: "divider",
+                        minHeight: 60,
+                      }}
+                    />
                   
                   <Menu
                     anchorEl={menuAnchorEls[idx]}
@@ -570,7 +609,7 @@ export default function ParticipantManager({
                           else if (item.region === "Europe") displayLabel = "IBAN";
                         }
                         return (
-                          <Typography key={df.name} sx={{ fontSize: 15, color: "grey.700" }}>
+                          <Typography key={df.name} sx={{ fontSize: 15, color: "text.secondary" }}>
                             <b>{displayLabel}:</b> {displayValue}
                           </Typography>
                         );

@@ -32,8 +32,10 @@ import {
   Select,
   Autocomplete,
   Snackbar,
-  Alert
+  Alert,
+  InputAdornment
 } from "@mui/material";
+import SearchIcon from "@mui/icons-material/Search";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -109,6 +111,7 @@ export default function Templates() {
   const [editOpen, setEditOpen] = useState(false);
   const [projects, setProjects] = useState([]);
   const [banks, setBanks] = useState([]);
+  const [search, setSearch] = useState("");
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
   const [newTemplate, setNewTemplate] = useState({
@@ -357,13 +360,55 @@ export default function Templates() {
 
   return (
     <Box>
-      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
-        <Typography variant="h4" sx={{ fontWeight: "bold", mb: 0 }}>
-          Templates
-        </Typography>
-        <Button variant="contained" size="large" onClick={handleOpen}>
-          Add Template
-        </Button>
+      <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", mb: 4, position: 'relative' }}>
+          
+          {/* Centered Search Bar */}
+          <TextField
+             placeholder="Search Templates..."
+             variant="outlined"
+             value={search}
+             onChange={(e) => setSearch(e.target.value)}
+             sx={{ 
+                width: '100%', 
+                maxWidth: 500,
+                '& .MuiOutlinedInput-root': {
+                    borderRadius: '50px',
+                    bgcolor: 'background.paper',
+                    boxShadow: '0 4px 20px rgba(0,0,0,0.05)',
+                    '& fieldset': { border: '1px solid', borderColor: 'divider' },
+                    '&:hover fieldset': { borderColor: 'primary.main' },
+                    '&.Mui-focused fieldset': { borderColor: 'primary.main' },
+                    pl: 2
+                }
+             }}
+             InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <SearchIcon color="action" />
+                  </InputAdornment>
+                ),
+             }}
+          />
+
+          {/* Add Button positioned absolutely to the right */}
+          <Button 
+            variant="contained" 
+            size="large" 
+            onClick={handleOpen}
+            sx={{ 
+                position: { md: 'absolute' }, 
+                right: { md: 0 },
+                top: { md: '50%' },
+                transform: { md: 'translateY(-50%)' },
+                borderRadius: '50px',
+                px: 3,
+                textTransform: 'none',
+                ml: { xs: 2, md: 0 }, // Margin for mobile where it might wrap or sit next
+                boxShadow: '0 4px 14px rgba(0, 163, 255, 0.3)'
+            }}
+          >
+            Add Template
+          </Button>
       </Box>
       <Tabs value={tabIdx} onChange={(_, v) => setTabIdx(v)} sx={{ mb: 2 }}>
         <Tab label="List Templates" />
@@ -371,7 +416,9 @@ export default function Templates() {
       </Tabs>
       {tabIdx === 0 && (
         <Grid container spacing={4}>
-          {templateList.map((template) => (
+          {templateList
+            .filter(t => t.name.toLowerCase().includes(search.toLowerCase()) || (t.description && t.description.toLowerCase().includes(search.toLowerCase())))
+            .map((template) => (
             <Grid
               item
               xs={12}

@@ -15,8 +15,12 @@ import {
   Paper,
   Snackbar,
   Alert,
+  Alert,
   CircularProgress,
+  TextField,
+  InputAdornment
 } from "@mui/material";
+import SearchIcon from "@mui/icons-material/Search";
 
 const InvoiceTemplate = lazy(() => import("./InvoiceTemplate")); // lazy-load heavy template
 
@@ -101,6 +105,7 @@ export default function Invoices() {
   const [invoiceData, setInvoiceData] = useState(null);
   const [loadingInvoice, setLoadingInvoice] = useState(false);
   const [notification, setNotification] = useState(null);
+  const [search, setSearch] = useState("");
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -143,6 +148,35 @@ export default function Invoices() {
 
   return (
     <Box>
+      <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", mb: 2, mt: 2, position: 'relative' }}>
+          <TextField
+             placeholder="Search Invoices/Templates..."
+             variant="outlined"
+             value={search}
+             onChange={(e) => setSearch(e.target.value)}
+             sx={{ 
+                width: '100%', 
+                maxWidth: 500,
+                '& .MuiOutlinedInput-root': {
+                    borderRadius: '50px',
+                    bgcolor: 'background.paper',
+                    boxShadow: '0 4px 20px rgba(0,0,0,0.05)',
+                    '& fieldset': { border: '1px solid', borderColor: 'divider' },
+                    '&:hover fieldset': { borderColor: 'primary.main' },
+                    '&.Mui-focused fieldset': { borderColor: 'primary.main' },
+                    pl: 2
+                }
+             }}
+             InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <SearchIcon color="action" />
+                  </InputAdornment>
+                ),
+             }}
+          />
+      </Box>
+
       <Tabs value={tabIndex} onChange={(_, v) => setTabIndex(v)} aria-label="Invoice tabs">
         <Tab label="Templates" id="invoice-tab-0" aria-controls="invoice-tabpanel-0" />
         <Tab label="Invoice" id="invoice-tab-1" aria-controls="invoice-tabpanel-1" />
@@ -164,7 +198,9 @@ export default function Invoices() {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {templateArray.map((tpl) => (
+                {templateArray
+                  .filter(tpl => tpl.name.toLowerCase().includes(search.toLowerCase()) || (tpl.description && tpl.description.toLowerCase().includes(search.toLowerCase())))
+                  .map((tpl) => (
                   <TableRow key={tpl.id}>
                     <TableCell>{tpl.name}</TableCell>
                     <TableCell>{tpl.description || "No description"}</TableCell>
