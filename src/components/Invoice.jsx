@@ -15,7 +15,6 @@ import {
   Paper,
   Snackbar,
   Alert,
-  Alert,
   CircularProgress,
   TextField,
   InputAdornment

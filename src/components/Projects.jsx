@@ -129,8 +129,7 @@ export default function Projects() {
         "Content-Type": "application/json",
       },
       body: JSON.stringify(newProject),
-      credentials: "include",
-      credentials: "include",
+      credentials: "include"
     })
       .then((res) => handleApiError(res, "Failed to add project"))
       .then((response) => response.json())
@@ -161,8 +160,7 @@ export default function Projects() {
         "Content-Type": "application/json",
       },
       body: JSON.stringify(editProject),
-      credentials: "include",
-      credentials: "include",
+      credentials: "include"
     })
       .then((res) => handleApiError(res, "Failed to update project"))
       .then((response) => response.json())
@@ -182,8 +180,7 @@ export default function Projects() {
     const projectToDelete = projects.find(p => p.id === projectId);
     fetch(`/api/project?project_id=${projectToDelete.id}`, {
       method: "DELETE",
-      credentials: "include",
-      credentials: "include",
+      credentials: "include"
     })
       .then((res) => handleApiError(res, "Failed to delete project"))
       .then((response) => {
