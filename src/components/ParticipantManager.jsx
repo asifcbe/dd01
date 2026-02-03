@@ -234,6 +234,7 @@ export default function ParticipantManager({
       };
       setItems(prev => [...prev, itemToAdd]);
       handleClose();
+      setSuccess("Bank added successfully!");
       return;
     }
     
@@ -278,6 +279,7 @@ export default function ParticipantManager({
         } : item))
       );
       handleEditClose();
+      setSuccess("Bank updated successfully!");
       return;
     }
     
@@ -301,6 +303,7 @@ export default function ParticipantManager({
           prev.map((item) => (item.id === updatedItemFromServer.id ? updatedItemFromServer : item))
         );
         handleEditClose();
+        setSuccess(`${title.slice(0, -1)} updated successfully!`);
       })
       .catch((error) => {
         console.error(`Error updating ${title.toLowerCase()}:`, error);
@@ -312,6 +315,7 @@ export default function ParticipantManager({
     if (apiType === "Bank") {
       setItems((prev) => prev.filter((_, i) => i !== idx));
       setMenuAnchorEls((prev) => prev.filter((_, i) => i !== idx));
+      setSuccess("Bank deleted successfully!");
       return;
     }
     const itemToDelete = items[idx];
@@ -323,6 +327,7 @@ export default function ParticipantManager({
       .then(() => {
         setItems((prev) => prev.filter((_, i) => i !== idx));
         setMenuAnchorEls((prev) => prev.filter((_, i) => i !== idx));
+        setSuccess(`${title.slice(0, -1)} deleted successfully!`);
       })
       .catch((error) => {
         console.error(`Error deleting ${title.toLowerCase()}:`, error);

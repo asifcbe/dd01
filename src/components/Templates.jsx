@@ -339,6 +339,7 @@ export default function Templates() {
           })
           .catch(console.error);
         handleMenuClose(templateId);
+        setSuccess("Template deleted successfully!");
       })
       .catch((error) => {
         console.error("Error deleting template:", error);

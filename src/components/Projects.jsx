@@ -187,6 +187,7 @@ export default function Projects() {
       .then((response) => {
         setProjects((prev) => prev.filter(p => p.id !== projectId));
         // No need to filter menuAnchorEls since it's by id
+        setSuccess("Project deleted successfully!");
       })
       .catch((error) => {
         console.error("Error deleting project:", error);
