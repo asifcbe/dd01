@@ -39,6 +39,8 @@ import SearchIcon from "@mui/icons-material/Search";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
+import FingerprintIcon from "@mui/icons-material/Fingerprint";
+import BadgeIcon from "@mui/icons-material/Badge";
 import ReactFlow, { Background, Controls } from "reactflow";
 import "reactflow/dist/style.css";
 
@@ -428,7 +430,7 @@ export default function Templates() {
               sx={{ display: "flex", justifyContent: "center", p: 1 }}
             >
               <Card
-                elevation={4}
+                elevation={0}
                 sx={{
                   width: 370,
                   maxWidth: "100%",
@@ -437,9 +439,16 @@ export default function Templates() {
                   display: "flex",
                   flexDirection: "column",
                   justifyContent: "space-between",
-                  boxShadow: 5,
+                  bgcolor: "background.paper",
+                  ":hover": { 
+                      boxShadow: (theme) => theme.shadows[4], 
+                      borderColor: "primary.main" 
+                  },
+                  border: "1px solid",
+                  borderColor: "divider",
                   p: 0,
                   mx: "auto",
+                  transition: 'all 0.2s ease-in-out'
                 }}
               >
                 <CardHeader
@@ -454,6 +463,14 @@ export default function Templates() {
                     <Typography variant="h6" fontWeight="bold" noWrap>
                       {template.name}
                     </Typography>
+                  }
+                  subheader={
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.2 }}>
+                      <BadgeIcon sx={{ fontSize: 12, color: 'text.secondary', opacity: 0.7 }} />
+                      <Typography sx={{ fontSize: 10, fontWeight: 'medium', color: 'text.secondary', opacity: 0.7 }}>
+                        ID: {template.id}
+                      </Typography>
+                    </Box>
                   }
                   action={
                     <>
@@ -494,8 +511,9 @@ export default function Templates() {
                     </>
                   }
                   sx={{
-                    background: "#f0f2fa",
-                    // borderBottom: "1px solid #e0e2ea",
+                    background: (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.05)' : "#f0f2fa",
+                    borderBottom: "1px solid",
+                    borderColor: "divider",
                     minHeight: 60,
                     px: 2,
                   }}
@@ -597,10 +615,10 @@ export default function Templates() {
         </Grid>
       )}
       {tabIdx === 1 && (
-        <Box sx={{ height: 600, bgcolor: "#f9faff", borderRadius: 2 }}>
+        <Box sx={{ height: 600, bgcolor: "action.hover", borderRadius: 2 }}>
           {nodes.length > 0 ? (
             <ReactFlow nodes={nodes} edges={edges} fitView>
-              <Background color="black" />
+              <Background color="#aaa" />
               <Controls showInteractive={false} showZoom={true} />
             </ReactFlow>
           ) : (

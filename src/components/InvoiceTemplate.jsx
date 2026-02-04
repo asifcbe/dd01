@@ -19,6 +19,7 @@ import {
   ToggleButton,
   CircularProgress,
   Backdrop,
+  useTheme,
 } from "@mui/material";
 import AddBoxIcon from "@mui/icons-material/AddBox";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -148,7 +149,7 @@ const NumberInput = ({
       "& input": { pr: 1.5, pl: "5px" },
       "& input::-webkit-outer-spin-button, & input::-webkit-inner-spin-button":
         { "-webkit-appearance": "none", margin: 0 },
-      "& input::placeholder": { color: "#000000", opacity: 0.7 },
+      "& input::placeholder": { color: "text.primary", opacity: 0.6 },
       ".MuiOutlinedInput-notchedOutline": {
         borderColor: "rgba(0, 0, 0, 0.12)",
         borderWidth: "1px",
@@ -169,7 +170,7 @@ const CenterInput = ({ value, onChange, placeholder, sx, ...props }) => (
       ...sx,
       ".MuiInputBase-root": { fontSize: 13, height: 32, minHeight: 32 },
       "& input": { pl: "5px" },
-      "& input::placeholder": { color: "#000000", opacity: 0.7 },
+      "& input::placeholder": { color: "text.primary", opacity: 0.6 },
       ".MuiOutlinedInput-notchedOutline": {
         borderColor: "rgba(0, 0, 0, 0.12)",
         borderWidth: "1px",
@@ -215,9 +216,22 @@ export default function InvoiceTemplate({
 }) {
   let invoice=getInvoiceData(invoiceData);
   const componentRef = useRef(null);
+  const muiTheme = useTheme();
+  const isDark = muiTheme.palette.mode === 'dark';
+  
   const [themeIdx, setThemeIdx] = useState(0);
   const [isGenerating, setIsGenerating] = useState(false);
-  const theme = COLOR_THEMES[themeIdx];
+  
+  // Create mode-aware instance of the current theme
+  const selectedBaseTheme = COLOR_THEMES[themeIdx];
+  const theme = {
+    ...selectedBaseTheme,
+    bg: isDark ? (selectedBaseTheme.bg === "#ffffff" || selectedBaseTheme.bg.startsWith("#f") ? "#1e1e1e" : selectedBaseTheme.bg) : selectedBaseTheme.bg,
+    notice: isDark ? "#1e3a8a33" : selectedBaseTheme.notice,
+    header: isDark ? "#ffffff" : selectedBaseTheme.header,
+    secondary: isDark ? "#94a3b8" : selectedBaseTheme.secondary,
+  };
+
   const [bank, setBank] = useState(null);
 
   const [viewMode, setViewMode] = useState("full");
@@ -465,9 +479,10 @@ export default function InvoiceTemplate({
           py: 2,
           borderBottom:
             !expandedItems[idx] && idx < localInvoiceItems.length - 1
-              ? "1px solid rgba(148,163,184,0.15)"
+              ? "1px solid"
               : "none",
-          backgroundColor: idx % 2 === 0 ? "white" : "rgba(248,250,252,0.6)",
+          borderColor: "divider",
+          backgroundColor: idx % 2 === 0 ? "transparent" : (isDark ? "rgba(255,255,255,0.02)" : "rgba(248,250,252,0.6)"),
           transition: "background-color 0.2s",
         }}
       >
@@ -495,7 +510,8 @@ export default function InvoiceTemplate({
                   fontSize: 13,
                   p: "10px",
                   pl: 0,
-                  border: "1px solid rgba(0, 0, 0, 0.12)",
+                  border: "1px solid",
+                  borderColor: "divider",
                   borderRadius: 1,
                 },
                 "& fieldset": { border: "none" },
@@ -632,8 +648,9 @@ const renderExpenseRows = (mainIdx) => {
       <Collapse in={expandedItems[mainIdx]} timeout="auto" unmountOnExit>
         <Box
           sx={{
-            backgroundColor: "rgba(248,250,252,0.4)",
-            borderBottom: "1px solid rgba(148,163,184,0.2)",
+            backgroundColor: isDark ? "rgba(255,255,255,0.03)" : "rgba(248,250,252,0.4)",
+            borderBottom: "1px solid",
+            borderColor: "divider",
             pb: 2,
           }}
         >
@@ -670,8 +687,8 @@ const renderExpenseRows = (mainIdx) => {
           {savedExpenses[mainIdx].map((exp, eIdx) => {
             const rowBgColor =
               mainIdx % 2 === 0
-                ? "rgba(248,250,252,0.3)"
-                : "rgba(236,246,255,0.3)";
+                ? (isDark ? "rgba(255,255,255,0.02)" : "rgba(248,250,252,0.3)")
+                : (isDark ? "rgba(255,255,255,0.04)" : "rgba(236,246,255,0.3)");
             return (
               <React.Fragment key={`${mainIdx}-${eIdx}`}>
                 <Box
@@ -739,9 +756,10 @@ const renderExpenseRows = (mainIdx) => {
                             fontSize: 13,
                             p: "10px",    // Height same as parent
                             pl: "5px",    // Left padding set to 5px
-                            border: "1px solid rgba(0, 0, 0, 0.12)",
+                            border: "1px solid",
+                            borderColor: "divider",
                             borderRadius: 1,
-                            backgroundColor: "rgba(255,255,255,0.5)",
+                            backgroundColor: isDark ? "rgba(255,255,255,0.05)" : "rgba(255,255,255,0.5)",
                           },
                           "& fieldset": { border: "none" },
                           "& textarea": { lineHeight: 1.5 },
@@ -851,10 +869,12 @@ const renderExpenseRows = (mainIdx) => {
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
-          bgcolor: "white",
+          bgcolor: isDark ? "background.paper" : "white",
           p: 1.5,
           borderRadius: 2,
-          boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
+          boxShadow: isDark ? "none" : "0 4px 12px rgba(0,0,0,0.05)",
+          border: isDark ? "1px solid" : "none",
+          borderColor: "divider",
         }}
       >
         <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
@@ -929,7 +949,7 @@ const renderExpenseRows = (mainIdx) => {
               bgcolor: isEditing ? theme.accent : "transparent",
               color: isEditing ? "white" : "inherit",
               "&:hover": {
-                bgcolor: isEditing ? theme.accent + "E6" : "#f1f5f9",
+                bgcolor: isEditing ? theme.accent + "E6" : (isDark ? "rgba(255,255,255,0.08)" : "#f1f5f9"),
               },
             }}
           >
@@ -970,10 +990,12 @@ const renderExpenseRows = (mainIdx) => {
           width: "100%",
           maxWidth: 1160,
           borderRadius: 3,
-          boxShadow: "0 22px 60px rgba(15,23,42,0.16)",
-          border: "1px solid rgba(148,163,184,0.25)",
+          boxShadow: isDark ? "none" : "0 22px 60px rgba(15,23,42,0.16)",
+          border: "1px solid",
+          borderColor: "divider",
           overflow: "hidden",
-          backgroundColor: "white",
+          backgroundColor: isDark ? "background.paper" : "white",
+          color: isDark ? "text.primary" : "#1e293b",
         }}
       >
         <Box
@@ -983,8 +1005,11 @@ const renderExpenseRows = (mainIdx) => {
             justifyContent: "space-between",
             px: 5,
             py: 1.75,
-            borderBottom: "1px solid rgba(148,163,184,0.3)",
-            background: `linear-gradient(90deg, ${theme.accent}12, white)`,
+            borderBottom: "1px solid",
+            borderColor: "divider",
+            background: isDark 
+              ? `linear-gradient(90deg, ${theme.accent}22, ${muiTheme.palette.background.paper})` 
+              : `linear-gradient(90deg, ${theme.accent}12, white)`,
           }}
         >
           <Typography
@@ -1162,8 +1187,9 @@ const renderExpenseRows = (mainIdx) => {
           sx={{
             px: 5,
             py: 2,
-            backgroundColor: theme.bg,
-            borderTop: "1px solid rgba(148,163,184,0.2)",
+            backgroundColor: (theme.bg === 'white' || theme.bg === '#ffffff') ? 'transparent' : theme.bg,
+            borderTop: "1px solid",
+            borderColor: "divider",
           }}
         >
           <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}>
@@ -1184,8 +1210,9 @@ const renderExpenseRows = (mainIdx) => {
           sx={{
             px: 5,
             py: 1.5,
-            borderBottom: "2px solid rgba(148,163,184,0.3)",
-            backgroundColor: "rgba(243,244,246,0.8)",
+            borderBottom: "2px solid",
+            borderColor: "divider",
+            backgroundColor: isDark ? "rgba(255,255,255,0.05)" : "rgba(243,244,246,0.8)",
             display: "grid",
             gridTemplateColumns: ITEM_GRID_TEMPLATE,
             fontSize: 12,
@@ -1226,7 +1253,7 @@ const renderExpenseRows = (mainIdx) => {
             display: "flex",
             justifyContent: "space-between",
             alignItems: "flex-start",
-            backgroundColor: "white",
+            backgroundColor: "transparent",
           }}
         >
           <Box
@@ -1234,8 +1261,9 @@ const renderExpenseRows = (mainIdx) => {
               maxWidth: 400,
               p: 2,
               borderRadius: 2,
-              border: "1px dashed #3b82f6",
-              bgcolor: "#eff6ff",
+              border: "1px dashed",
+              borderColor: "primary.main",
+              bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(0, 163, 255, 0.1)' : "#eff6ff",
               display: "flex",
               flexDirection: "column",
               gap: 0.5,
@@ -1243,11 +1271,11 @@ const renderExpenseRows = (mainIdx) => {
           >
             <Typography
               variant="body2"
-              sx={{ fontWeight: 600, color: "#1e40af" }}
+              sx={{ fontWeight: 600, color: "primary.main" }}
             >
               Notice
             </Typography>
-            <Typography variant="caption" sx={{ color: "#1e3a8a" }}>
+            <Typography variant="caption" sx={{ color: "text.secondary" }}>
               {invoice.notice}
             </Typography>
           </Box>
@@ -1298,7 +1326,7 @@ const renderExpenseRows = (mainIdx) => {
                 display: "flex",
                 justifyContent: "space-between",
                 alignItems: "center",
-                bgcolor: theme.accent + "15",
+                bgcolor: isDark ? `${theme.accent}33` : `${theme.accent}15`,
                 p: 1.5,
                 borderRadius: 2,
               }}

@@ -45,12 +45,12 @@ const dashboardItems = [
   { key: "clients", label: "Clients", icon: <ClientsIcon />, path: "clients" },
   { key: "companies", label: "Companies", icon: <CompaniesIcon />, path: "companies" },
   { key: "vendors", label: "Vendors", icon: <VendorsIcon />, path: "vendors" },
+  { key: "developer", label: "Developers", icon: <DeveloperIcon />, path: "developer" }, 
   { key: "consultants", label: "Consultants", icon: <ConsultantsIcon />, path: "consultants" },
   { key: "projects", label: "Projects", icon: <ProjectsIcon />, path: "projects" },
   { key: "templates", label: "Templates", icon: <TemplatesIcon />, path: "templates" },
   { key: "invoices", label: "Invoices", icon: <InvoicesIcon />, path: "invoices" },
   // Developer item moved to end or hidden if needed, keeping it for now
-  // { key: "developer", label: "Developer", icon: <DeveloperIcon />, path: "developer" }, 
 ];
 
 function LinkTab(props) {
@@ -95,6 +95,7 @@ export default function DashboardLayout({ user, onLogout }) {
     companies: 0,
     vendors: 0,
     consultants: 0,
+    developer: 0,
     projects: 0,
     templates: 0,
     invoices: 0
@@ -108,23 +109,36 @@ export default function DashboardLayout({ user, onLogout }) {
     const fetchCounts = async () => {
       try {
         const endpoints = [
-          { key: 'clients', url: '/api/participants?type1=Client' },
-          { key: 'companies', url: '/api/participants?type1=Company' },
-          { key: 'vendors', url: '/api/participants?type1=Vendor' },
-          { key: 'consultants', url: '/api/participants?type1=Consultant' },
+          { key: 'clients', url: '/api/clients' },
+          { key: 'companies', url: '/api/companies' },
+          { key: 'banks', url: '/api/banks' },
+          { key: 'vendors', url: '/api/vendors' },
+          { key: 'consultants', url: '/api/consultants' },
+          { key: 'developer', url: '/api/developers' },
           { key: 'projects', url: '/api/projects' },
           { key: 'templates', url: '/api/templates' },
-          { key: 'invoices', url: '/api/invoices' }
+          { key: 'invoices', url: '/api/templates' }
         ];
 
         const results = await Promise.all(
           endpoints.map(ep => 
-            fetch(ep.url).then(res => res.json()).then(data => ({ key: ep.key, count: data.length })).catch(err => ({ key: ep.key, count: 0 }))
+            fetch(ep.url, { credentials: "include" })
+              .then(res => res.json())
+              .then(data => {
+                const count = Array.isArray(data) ? data.length : (data && typeof data === 'object' ? Object.keys(data).length : 0);
+                return { key: ep.key, count };
+              })
+              .catch(err => ({ key: ep.key, count: 0 }))
           )
         );
 
         const newCounts = {};
         results.forEach(r => newCounts[r.key] = r.count);
+        
+        // Sum Companies and Banks for the 'companies' pill
+        newCounts.companies = (newCounts.companies || 0) + (newCounts.banks || 0);
+        delete newCounts.banks; // Clean up temporary banks count
+        
         setCounts(newCounts);
       } catch (error) {
         console.error("Error fetching counts", error);

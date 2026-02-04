@@ -14,6 +14,8 @@ import MoreVertIcon from "@mui/icons-material/MoreVert";
 import EditIcon from "@mui/icons-material/Edit";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import DeleteIcon from "@mui/icons-material/Delete";
+import FingerprintIcon from "@mui/icons-material/Fingerprint";
+import BadgeIcon from "@mui/icons-material/Badge";
 import LoadMask from "./LoadMask";
 
 const COUNTRIES = [
@@ -261,13 +263,14 @@ export default function Projects() {
         {filteredProjects.map((project, idx) => (
           <Grid item xs={12} sm={6} md={4} key={idx} sx={{ p: 1 }}>
             <Fade in>
-              <Card elevation={4} sx={{
+              <Card elevation={0} sx={{
                 borderRadius: 3,
-                bgcolor: "#f6f8fa",
-                ":hover": { boxShadow: 8, borderColor: "primary.light" },
-                border: "1px solid #f0f2fa",
+                bgcolor: "background.paper",
+                ":hover": { boxShadow: (theme) => theme.shadows[4], borderColor: "primary.main" },
+                border: "1px solid",
+                borderColor: "divider",
                 position: "relative",
-                width:'300px',
+                transition: 'all 0.2s ease-in-out'
               }}>
                 <CardHeader
                   avatar={
@@ -276,9 +279,17 @@ export default function Projects() {
                     </Avatar>
                   }
                   title={
-                    <Typography variant="h6" sx={{ fontWeight: "bold", color: "#161d33" }}>
+                    <Typography variant="h6" sx={{ fontWeight: "bold", color: "text.primary" }}>
                       {project.name}
                     </Typography>
+                  }
+                  subheader={
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.2 }}>
+                      <BadgeIcon sx={{ fontSize: 12, color: 'text.secondary', opacity: 0.7 }} />
+                      <Typography sx={{ fontSize: 10, fontWeight: 'medium', color: 'text.secondary', opacity: 0.7 }}>
+                        ID: {project.id}
+                      </Typography>
+                    </Box>
                   }
                   action={
                     <IconButton onClick={(e) => handleMenuOpen(e, project.id)} sx={{ color: "#868ca0" }}>
@@ -286,7 +297,10 @@ export default function Projects() {
                     </IconButton>
                   }
                   sx={{
-                    background: "#f0f2fa", borderBottom: "1px solid #e0e2ea", minHeight: 60
+                    background: (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.05)' : "#f0f2fa", 
+                    borderBottom: "1px solid",
+                    borderColor: "divider",
+                    minHeight: 60
                   }}
                 />
                 <Menu anchorEl={menuAnchorEls[project.id]} open={Boolean(menuAnchorEls[project.id])} onClose={() => handleMenuClose(project.id)}
@@ -305,14 +319,14 @@ export default function Projects() {
                 <Divider sx={{ mb: 2, mt: 0 }} />
                 <CardContent>
                   <Box sx={{ display: "grid", gap: 1 }}>
-                    <Typography sx={{ fontSize: 15, color: "grey.700" }}><b>Description:</b> {project.description ?? "None"}</Typography>
-                    <Typography sx={{ fontSize: 15, color: "grey.700" }}><b>Given By:</b> {project.given_by}</Typography>
-                    <Typography sx={{ fontSize: 15, color: "grey.700" }}><b>Taken By:</b> {project.taken_by}</Typography>
-                    <Typography sx={{ fontSize: 15, color: "grey.700" }}><b>Start Date:</b> {project.start_date}</Typography>
-                    <Typography sx={{ fontSize: 15, color: "grey.700" }}><b>End Date:</b> {project.end_date}</Typography>
-                    <Typography sx={{ fontSize: 15, color: "grey.700" }}><b>Rate Mode:</b> {project.rate_mode}</Typography>
-                    <Typography sx={{ fontSize: 15, color: "grey.700" }}><b>Rate Amount:</b> {project.rate_amount}</Typography>
-                    <Typography sx={{ fontSize: 15, color: "grey.700" }}><b>Currency:</b> {project.currency}</Typography>
+                    <Typography sx={{ fontSize: 15, color: "text.secondary" }}><b>Description:</b> {project.description ?? "None"}</Typography>
+                    <Typography sx={{ fontSize: 15, color: "text.secondary" }}><b>Given By:</b> {project.given_by}</Typography>
+                    <Typography sx={{ fontSize: 15, color: "text.secondary" }}><b>Taken By:</b> {project.taken_by}</Typography>
+                    <Typography sx={{ fontSize: 15, color: "text.secondary" }}><b>Start Date:</b> {project.start_date}</Typography>
+                    <Typography sx={{ fontSize: 15, color: "text.secondary" }}><b>End Date:</b> {project.end_date}</Typography>
+                    <Typography sx={{ fontSize: 15, color: "text.secondary" }}><b>Rate Mode:</b> {project.rate_mode}</Typography>
+                    <Typography sx={{ fontSize: 15, color: "text.secondary" }}><b>Rate Amount:</b> {project.rate_amount}</Typography>
+                    <Typography sx={{ fontSize: 15, color: "text.secondary" }}><b>Currency:</b> {project.currency}</Typography>
                    </Box>
                 </CardContent>
               </Card>

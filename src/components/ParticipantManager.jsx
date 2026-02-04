@@ -32,6 +32,8 @@ import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import DeleteIcon from "@mui/icons-material/Delete";
 import SearchIcon from "@mui/icons-material/Search";
 import { InputAdornment } from "@mui/material";
+import FingerprintIcon from "@mui/icons-material/Fingerprint";
+import BadgeIcon from "@mui/icons-material/Badge";
 import LoadMask from "./LoadMask";
 
 export const COUNTRIES = [
@@ -536,7 +538,21 @@ export default function ParticipantManager({
                           {item.name}
                         </Typography>
                       }
-                      subheader={subheaderField ? item[subheaderField] : undefined}
+                      subheader={
+                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.2 }}>
+                          {subheaderField && (
+                            <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                              {item[subheaderField]}
+                            </Typography>
+                          )}
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                            <BadgeIcon sx={{ fontSize: 12, color: 'text.secondary', opacity: 0.7 }} />
+                            <Typography sx={{ fontSize: 10, fontWeight: 'medium', color: 'text.secondary', opacity: 0.7 }}>
+                              ID: {item.id}
+                            </Typography>
+                          </Box>
+                        </Box>
+                      }
                       action={
                         <IconButton
                           onClick={(e) => handleMenuOpen(e, idx)}
