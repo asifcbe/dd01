@@ -136,7 +136,7 @@ export default function DashboardLayout({ user, onLogout }) {
         results.forEach(r => newCounts[r.key] = r.count);
         
         // Sum Companies and Banks for the 'companies' pill
-        newCounts.companies = (newCounts.companies || 0) + (newCounts.banks || 0);
+        newCounts.companies = (newCounts.companies || 0);
         delete newCounts.banks; // Clean up temporary banks count
         
         setCounts(newCounts);
