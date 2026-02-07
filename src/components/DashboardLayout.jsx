@@ -13,7 +13,12 @@ import {
   Button,
   AppBar,
   Badge,
-  Tooltip
+  Tooltip,
+  Menu,
+  MenuItem,
+  Divider,
+  ListItemIcon,
+  ListItemText
 } from "@mui/material";
 import LogoutIcon from "@mui/icons-material/Logout";
 import SettingsIcon from "@mui/icons-material/Settings";
@@ -90,6 +95,9 @@ export default function DashboardLayout({ user, onLogout }) {
   const pathParts = location.pathname.split("/").filter(Boolean);
   const currentKey = pathParts[0] || "clients"; // Default to clients
   
+  const [anchorEl, setAnchorEl] = useState(null);
+  const menuOpen = Boolean(anchorEl);
+  
   const [counts, setCounts] = useState({
     clients: 0,
     companies: 0,
@@ -104,6 +112,24 @@ export default function DashboardLayout({ user, onLogout }) {
   // Find index for Tabs
   const currentTabValue = dashboardItems.findIndex(item => item.key === currentKey);
   const tabValue = currentTabValue !== -1 ? currentTabValue : false;
+
+  const handleMenuOpen = (event) => {
+    setAnchorEl(event.currentTarget);
+  };
+
+  const handleMenuClose = () => {
+    setAnchorEl(null);
+  };
+
+  const handleSettingsClick = () => {
+    navigate('/settings');
+    handleMenuClose();
+  };
+
+  const handleLogoutClick = () => {
+    onLogout();
+    handleMenuClose();
+  };
 
   useEffect(() => {
     const fetchCounts = async () => {
@@ -189,39 +215,89 @@ export default function DashboardLayout({ user, onLogout }) {
             </Box>
           </Box>
 
-          {/* Right Section: Theme, Notifications, User */}
-          <Box display="flex" alignItems="center" gap={2}>
-              <Button 
-                startIcon={<SettingsIcon />} 
-                variant="outlined" 
-                size="small"
-                onClick={() => navigate('/settings')}
+          {/* Right Section: User Menu */}
+          <Box display="flex" alignItems="center" gap={1}>
+              <Box 
+                onClick={handleMenuOpen}
                 sx={{ 
-                    borderRadius: '20px', 
-                    textTransform: 'none', 
-                    borderColor: 'divider', 
-                    color: 'text.primary' 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: 1.5,
+                  cursor: 'pointer',
+                  px: 1.5,
+                  py: 0.5,
+                  borderRadius: '24px',
+                  transition: 'all 0.2s',
+                  '&:hover': {
+                    bgcolor: 'action.hover'
+                  }
                 }}
               >
-                Theme
-              </Button>
-              
-              <Box sx={{ bgcolor: 'action.hover', borderRadius: '50%', p: 0.5 }}>
-                 <Avatar src={user.avatar} sx={{ width: 32, height: 32 }} alt={user.email} /> 
+                <Box sx={{ bgcolor: 'action.hover', borderRadius: '50%', p: 0.5 }}>
+                  <Avatar src={user.avatar} sx={{ width: 32, height: 32 }} alt={user.email} /> 
+                </Box>
+                <Box sx={{ display: { xs: 'none', md: 'block' }, textAlign: 'left' }}>
+                  <Typography sx={{ fontWeight: 600, fontSize: '0.875rem', lineHeight: 1.2, color: 'text.primary' }}>
+                    {user.email}
+                  </Typography>
+                  <Typography sx={{ fontWeight: 400, fontSize: '0.75rem', color: 'text.secondary', lineHeight: 1 }}>
+                    {user.org}
+                  </Typography>
+                </Box>
               </Box>
-              <Box sx={{ display: { xs: 'none', md: 'block' } }}>
-                <Typography sx={{ fontWeight: 600, fontSize: '0.875rem', lineHeight: 1.2, color: 'text.primary' }}>
-                   {user.email}
-                </Typography>
-                <Typography sx={{ fontWeight: 400, fontSize: '0.75rem', color: 'text.secondary', lineHeight: 1 }}>
-                   {user.org}
-                </Typography>
-              </Box>
-              <Tooltip title="Logout">
-                <IconButton onClick={onLogout} color="primary">
-                  <LogoutIcon />
-                </IconButton>
-              </Tooltip>
+
+              {/* User Dropdown Menu */}
+              <Menu
+                anchorEl={anchorEl}
+                open={menuOpen}
+                onClose={handleMenuClose}
+                onClick={handleMenuClose}
+                PaperProps={{
+                  elevation: 3,
+                  sx: {
+                    overflow: 'visible',
+                    filter: 'drop-shadow(0px 2px 8px rgba(0,0,0,0.12))',
+                    mt: 1.5,
+                    minWidth: 200,
+                    borderRadius: 2,
+                    border: '1px solid',
+                    borderColor: 'divider',
+                    bgcolor: 'background.paper',
+                    '&::before': {
+                      content: '""',
+                      display: 'block',
+                      position: 'absolute',
+                      top: 0,
+                      left: 28,
+                      width: 12,
+                      height: 12,
+                      bgcolor: 'background.menuBox',
+                      transform: 'translateY(-50%) rotate(45deg)',
+                      zIndex: 0,
+                      border: '1px solid',
+                      borderColor: 'divider',
+                      borderRight: 'none',
+                      borderBottom: 'none',
+                    },
+                  },
+                }}
+                transformOrigin={{ horizontal: 'left', vertical: 'top' }}
+                anchorOrigin={{ horizontal: 'left', vertical: 'bottom' }}
+              >
+                <MenuItem onClick={handleSettingsClick} sx={{ py: 1.5 }}>
+                  <ListItemIcon>
+                    <SettingsIcon fontSize="small" />
+                  </ListItemIcon>
+                  <ListItemText>Settings</ListItemText>
+                </MenuItem>
+                <Divider />
+                <MenuItem onClick={handleLogoutClick} sx={{ py: 1.5, color: 'error.main' }}>
+                  <ListItemIcon>
+                    <LogoutIcon fontSize="small" color="error" />
+                  </ListItemIcon>
+                  <ListItemText>Logout</ListItemText>
+                </MenuItem>
+              </Menu>
           </Box>
         </Toolbar>
 

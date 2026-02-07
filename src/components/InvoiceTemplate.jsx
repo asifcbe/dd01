@@ -1265,7 +1265,7 @@ const renderExpenseRows = (mainIdx) => {
                     const bankId = String(b.id || b.bank_id || b._id);
                     return (
                       <MenuItem key={bankId} value={bankId} sx={{ fontSize: 13 }}>
-                        {b.name} - {b.country}
+                        {b.name} - {b.account_number || 'N/A'}
                       </MenuItem>
                     );
                   })
@@ -1277,9 +1277,28 @@ const renderExpenseRows = (mainIdx) => {
               </Select>
             </FormControl>
           ) : bank ? (
-            <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2 }}>
-              <Typography variant="body2" color="text.secondary">
-               {bank.name} ,{bank.country}
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 0.5 }}>
+              <Typography variant="body2" fontWeight={600} color="text.primary">
+                {bank.name}
+              </Typography>
+              <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2, fontSize: 13 }}>
+                <Typography variant="caption" color="text.secondary">
+                  Account: {bank.account_number || 'N/A'}
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  Holder: {bank.account_holder_name || 'N/A'}
+                </Typography>
+              </Box>
+              <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2, fontSize: 13 }}>
+                <Typography variant="caption" color="text.secondary">
+                  SWIFT: {bank.swift_code || 'N/A'}
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  Code: {bank.code || 'N/A'}
+                </Typography>
+              </Box>
+              <Typography variant="caption" color="text.secondary">
+                {bank.branch ? `${bank.branch}, ` : ''}{bank.city ? `${bank.city}, ` : ''}{bank.country || 'N/A'}
               </Typography>
             </Box>
           ) : (

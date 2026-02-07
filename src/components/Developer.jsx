@@ -3,12 +3,12 @@ import {
 } from "@mui/icons-material";
 import ParticipantManager from "./ParticipantManager";
 
-const developerTypes = ["Individual", "Company", "Organization"];
+// const developerTypes = ["Individual", "Company", "Organization"];
 
 const fields = [
   { name: "name", label: "Name", type: "text" },
   { name: "email", label: "Email", type: "text" },
-  { name: "type", label: "Type", type: "select", options: developerTypes },
+  // { name: "type", label: "Type", type: "select", options: developerTypes },
   { name: "mobile", label: "Mobile", type: "text" },
   { name: "address", label: "Address", type: "text" }
 ];
@@ -25,7 +25,7 @@ const initialForm = {
   email: "",
   mobile: "",
   address: "",
-  type: "Individual"
+  // type: "Individual"
 };
 
 export default function Developer() {
@@ -40,8 +40,8 @@ export default function Developer() {
       displayFields={displayFields}
       subheaderField="type2"
       initialForm={initialForm}
-      type2={(item) => item.type}
-      type3="NotApplicable"
+      // type2={(item) => item.type}
+      // type3="NotApplicable"
     />
   );
 }

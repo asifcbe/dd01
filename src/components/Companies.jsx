@@ -7,17 +7,35 @@ import { Tabs, Tab, Box } from "@mui/material";
 import ParticipantManager from "./ParticipantManager";
 
 
+const COUNTRY_OPTIONS = [
+  "United States",
+  "United Kingdom",
+  "India",
+  "Germany",
+  "France",
+  "Japan",
+  "Canada",
+  "Australia",
+  "China",
+];
+
 const companyFields = [
   { name: "name", label: "Name", type: "text" },
   { name: "email", label: "Email", type: "text" },
   { name: "mobile", label: "Mobile", type: "text" },
-  { name: "address", label: "Address", type: "text" }];
+  { name: "address", label: "Address", type: "text" },
+  { name: "country", label: "Country", type: "select", options: COUNTRY_OPTIONS },
+  { name: "vat_num", label: "VAT Number", type: "text" },
+  { name: "reg_num", label: "Reg Number", type: "text" },
+];
 
 const companyDisplayFields = [
   { name: "email", label: "Email" },
   { name: "mobile", label: "Mobile" },
   { name: "address", label: "Address" },
   { name: "country", label: "Country" },
+  { name: "vat_num", label: "VAT Number" },
+  { name: "reg_num", label: "Reg Number" },
 ];
 
 const companyInitialForm = {
@@ -26,13 +44,15 @@ const companyInitialForm = {
   mobile: "",
   address: "",
   country: "",
+  vat_num: "",
+  reg_num: "",
 };
 
 const bankFields = [
   { name: "name", label: "Name", type: "text" },
   { name: "code", label: "Code", type: "text" },
   { name: "swift_code", label: "Swift Code", type: "text" },
-  { name: "country", label: "Country", type: "text" },
+  { name: "country", label: "Country", type: "select", options: COUNTRY_OPTIONS },
   { name: "branch", label: "Branch", type: "text" },
   { name: "city", label: "City", type: "text" },
   { name: "account_number", label: "Account Number", type: "text" },

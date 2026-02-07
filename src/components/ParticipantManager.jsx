@@ -150,9 +150,25 @@ export default function ParticipantManager({
     setNewItemCountryCode("");
   };
 
-  const handleEditOpen = (idx) => {
-    const item = items[idx];
-    setEditItem(item);
+  const handleEditOpen = (item) => {
+    // Map type2 back to type for the edit form
+    const mappedItem = {
+      ...item,
+      type: (item.type2 || item.type || "").trim(),
+    };
+    const normalizedItem = fields.reduce((acc, field) => {
+      if (field.type === "select" && acc[field.name]) {
+        const match = field.options?.find((option) => {
+          const optionValue = option?.value ?? option;
+          return String(optionValue).toLowerCase() === String(acc[field.name]).toLowerCase();
+        });
+        if (match !== undefined) {
+          acc[field.name] = match?.value ?? match;
+        }
+      }
+      return acc;
+    }, { ...mappedItem });
+    setEditItem(normalizedItem);
     // Parse backend phone data for edit form
     setEditItemPhoneNumber(item.mobile || "");
     const country = COUNTRIES.find(c => c.shortCode === item.country);
@@ -172,6 +188,7 @@ export default function ParticipantManager({
       ...initialForm,
       ...item,
       name: `${item.name} (Copy)`,
+      type: item.type2 || item.type,
     });
     setNewItemPhoneNumber(item.mobile || "");
     const country = COUNTRIES.find(c => c.shortCode === item.country);
@@ -226,22 +243,6 @@ export default function ParticipantManager({
   const handleAdd = () => {
     const backendPhoneNumber = getPhoneNumberForBackend(newItemPhoneNumber);
     
-    if (apiType === "Bank") {
-      const newId = Math.max(...items.map(item => item.id), 0) + 1;
-      const itemToAdd = {
-        ...newItem,
-        id: newId,
-        mobile: backendPhoneNumber,
-        type1: apiType,
-        type2: type2 ? type2(newItem) : "NotApplicable",
-        type3,
-      };
-      setItems(prev => [...prev, itemToAdd]);
-      handleClose();
-      setSuccess("Bank added successfully!");
-      return;
-    }
-    
     const itemToAdd = {
       ...newItem,
       mobile: backendPhoneNumber,
@@ -275,25 +276,17 @@ export default function ParticipantManager({
   const handleEdit = () => {
     const backendPhoneNumber = getPhoneNumberForBackend(editItemPhoneNumber);
     
-    if (apiType === "Bank") {
-      setItems((prev) =>
-        prev.map((item) => (item.id === editItem.id ? {
-          ...editItem,
-          mobile: backendPhoneNumber
-        } : item))
-      );
-      handleEditClose();
-      setSuccess("Bank updated successfully!");
-      return;
-    }
-    
     const updatedItem = {
       ...editItem,
       mobile: backendPhoneNumber,
+      type2: type2 ? type2(editItem) : editItem.type2 || "NotApplicable",
     };
     
-    fetch(`/api/participant/${editItem.id}`, {
-      method: "PUT",
+    const idParam = `${apiDetailTypeSingle}_id`;
+    const endpoint = `/api/${apiDetailTypeSingle}?${idParam}=${editItem.id}`;
+    
+    fetch(endpoint, {
+      method: "PATCH",
       headers: {
         "Content-Type": "application/json",
       },
@@ -301,11 +294,8 @@ export default function ParticipantManager({
       credentials: "include",
     })
       .then((res) => handleApiError(res, `Failed to update ${title.toLowerCase()}`))
-      .then((response) => response.json())
-      .then((updatedItemFromServer) => {
-        setItems((prev) =>
-          prev.map((item) => (item.id === updatedItemFromServer.id ? updatedItemFromServer : item))
-        );
+      .then(() => {
+        fetchItems();
         handleEditClose();
         setSuccess(`${title.slice(0, -1)} updated successfully!`);
       })
@@ -315,22 +305,18 @@ export default function ParticipantManager({
       });
   };
 
-  const handleDelete = (idx) => {
-    if (apiType === "Bank") {
-      setItems((prev) => prev.filter((_, i) => i !== idx));
-      setMenuAnchorEls((prev) => prev.filter((_, i) => i !== idx));
-      setSuccess("Bank deleted successfully!");
-      return;
-    }
-    const itemToDelete = items[idx];
-    fetch(`/api/participant?participant_id=${itemToDelete.id}`, {
+  const handleDelete = (item) => {
+    const idParam = `${apiDetailTypeSingle}_id`;
+    const endpoint = `/api/${apiDetailTypeSingle}?${idParam}=${item.id}`;
+
+    fetch(endpoint, {
       method: "DELETE",
       credentials: "include",
     })
       .then((res) => handleApiError(res, `Failed to delete ${title.toLowerCase()}`))
       .then(() => {
-        setItems((prev) => prev.filter((_, i) => i !== idx));
-        setMenuAnchorEls((prev) => prev.filter((_, i) => i !== idx));
+        setItems((prev) => prev.filter((i) => i.id !== item.id));
+        setMenuAnchorEls((prev) => prev.filter((_, i) => i !== items.findIndex(it => it.id === item.id)));
         setSuccess(`${title.slice(0, -1)} deleted successfully!`);
       })
       .catch((error) => {
@@ -578,7 +564,7 @@ export default function ParticipantManager({
                   >
                     <MenuItem
                       onClick={() => {
-                        handleEditOpen(idx);
+                        handleEditOpen(item);
                         handleMenuClose(idx);
                       }}
                     >
@@ -594,7 +580,7 @@ export default function ParticipantManager({
                     </MenuItem>
                     <MenuItem
                       onClick={() => {
-                        handleDelete(idx);
+                        handleDelete(item);
                         handleMenuClose(idx);
                       }}
                     >

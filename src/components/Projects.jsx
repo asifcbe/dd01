@@ -156,8 +156,11 @@ export default function Projects() {
       });
   };
   const handleEditProject = () => {
-    fetch(`/api/project/${editProject.id}`, {
-      method: "PUT",
+    const idParam = 'project_id';
+    const endpoint = `/api/project?${idParam}=${editProject.id}`;
+    
+    fetch(endpoint, {
+      method: "PATCH",
       headers: {
         "Content-Type": "application/json",
       },
@@ -165,13 +168,20 @@ export default function Projects() {
       credentials: "include"
     })
       .then((res) => handleApiError(res, "Failed to update project"))
-      .then((response) => response.json())
-      .then((updatedProject) => {
-        setProjects((prev) =>
-          prev.map((p) => (p.id === editProject.id ? updatedProject : p))
-        );
-        handleEditClose();
-        setSuccess("Project updated successfully!");
+      .then(() => {
+        // Refetch projects to get the latest data
+        fetch("api/projects", { method: "GET" })
+          .then((res) => handleApiError(res, "Failed to fetch projects"))
+          .then((response) => response.json())
+          .then((data) => {
+            setProjects(data);
+            handleEditClose();
+            setSuccess("Project updated successfully!");
+          })
+          .catch((error) => {
+            console.error("Error fetching projects:", error);
+            setError(error.message);
+          });
       })
       .catch((error) => {
         console.error("Error updating project:", error);
@@ -448,16 +458,6 @@ export default function Projects() {
               setEditProject((prev) => ({ ...prev, currency: newValue || "" }));
             }}
             renderInput={(params) => <TextField {...params} label="Currency" margin="normal" />}
-            fullWidth
-          />
-          <Autocomplete
-            options={COUNTRIES}
-            getOptionLabel={(option) => option.name}
-            value={COUNTRIES.find(c => c.code === editProject.country) || null}
-            onChange={(event, newValue) => {
-              setEditProject((prev) => ({ ...prev, country: newValue ? newValue.code : "" }));
-            }}
-            renderInput={(params) => <TextField {...params} label="Country" margin="normal" />}
             fullWidth
           />
         </DialogContent>

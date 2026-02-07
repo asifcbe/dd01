@@ -20,6 +20,7 @@ export const themes = {
       background: {
         default: '#f8f9fa', // Very light grey background
         paper: '#ffffff',
+        menuBox:'#ffffff'
       },
       text: {
         primary: '#1a202c',
@@ -80,6 +81,7 @@ export const themes = {
       background: {
         default: '#121212',
         paper: '#1e1e1e',
+        menuBox:'#313131'
       },
     },
   },
@@ -92,16 +94,17 @@ export const themes = {
       background: {
         default: '#0a1929',
         paper: '#001e3c',
+        menuBox:'#15314c'
       },
     },
   },
 };
 
 export const AppThemeProvider = ({ children }) => {
-  const [currentThemeName, setCurrentThemeName] = useState('light');
+  const [currentThemeName, setCurrentThemeName] = useState('navy');
 
   const theme = useMemo(() => {
-    return createTheme(themes[currentThemeName] || themes.light);
+    return createTheme(themes[currentThemeName] || themes.navy);
   }, [currentThemeName]);
 
   const changeTheme = (name) => {

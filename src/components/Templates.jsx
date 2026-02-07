@@ -219,6 +219,23 @@ export default function Templates() {
     });
   };
 
+  const handleCloneTemplate = (template) => {
+    const projectIds = Array.isArray(template.project_ids)
+      ? template.project_ids
+      : Array.isArray(template.projects)
+        ? template.projects.map((project) => project.id)
+        : [];
+    setNewTemplate({
+      name: `${template.name || "Template"} (Copy)`,
+      description: template.description || "",
+      currency: template.currency || "",
+      project_ids: projectIds,
+      bank_id: template.bank_id || 0
+    });
+    setOpen(true);
+    handleMenuClose(template.id);
+  };
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setNewTemplate((prev) => ({
@@ -494,9 +511,9 @@ export default function Templates() {
                         }}
                       >
                         <MenuItem
-                          onClick={() => handleEditOpen(template)}
+                          onClick={() => handleCloneTemplate(template)}
                         >
-                          <EditIcon fontSize="small" sx={{ mr: 1 }} /> Edit
+                          <EditIcon fontSize="small" sx={{ mr: 1 }} /> Clone
                         </MenuItem>
                         <MenuItem
                           onClick={() => handleDeleteConfirm(template.id)}
@@ -643,8 +660,6 @@ export default function Templates() {
           <TextField
             margin="normal"
             fullWidth
-            multiline
-            rows={3}
             label="Description"
             name="description"
             value={newTemplate.description}
@@ -724,8 +739,6 @@ export default function Templates() {
           <TextField
             margin="normal"
             fullWidth
-            multiline
-            rows={3}
             label="Description"
             name="description"
             value={editTemplate.description}

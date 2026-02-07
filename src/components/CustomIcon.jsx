@@ -6,7 +6,7 @@ export default function CustomIcon() {
     <img
       src={dd01Icon}
       alt="Invoice Icon"
-      style={{ width: 50, height: 50 }}
+      style={{ width: 50, height: 50,borderRadius: '8px' }}
     />
   );
 }
