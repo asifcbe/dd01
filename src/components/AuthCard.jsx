@@ -25,6 +25,7 @@ export default function AuthCard({ onLogin, onSignup }) {
     confirmPassword: "",
   });
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(true); // <-- loading state
 
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -63,6 +64,7 @@ export default function AuthCard({ onLogin, onSignup }) {
   const handleInputChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
     setError("");
+    setSuccess("");
   };
 
   const handleSignIn = async (e) => {
@@ -110,8 +112,10 @@ export default function AuthCard({ onLogin, onSignup }) {
         },
         { withCredentials: true }
       );
-      if (res.status === 200) {
-        onSignup();
+      if (res.status == 201) {
+        // onSignup();
+        setSuccess("Sign up successful! Please sign in with your credentials.");
+        setForm({ org: form.org.trim(), email: form.email.trim(), password: "", confirmPassword: "" });
         setTab("signin");
       }
     } catch (err) {
@@ -135,7 +139,7 @@ export default function AuthCard({ onLogin, onSignup }) {
     setLoading(false);
   };
 
-  if (loading) {
+  if (loading && !success) {
     return (
       <LoadMask text="Loggin In"/>
     );
@@ -200,32 +204,6 @@ export default function AuthCard({ onLogin, onSignup }) {
               <Tab label="Sign In" value="signin" />
               <Tab label="Sign Up" value="signup" />
             </Tabs>
-
-            {error && (
-              <Snackbar
-                open={!!error}
-                autoHideDuration={6000}
-                onClose={() => setError("")}
-                anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
-              >
-                <Alert
-                  onClose={() => setError("")}
-                  severity="error"
-                  variant="filled"
-                  sx={{
-                    width: "100%",
-                    maxWidth: 600,
-                    fontSize: "1rem",
-                    fontWeight: 500,
-                    boxShadow: 3,
-                    borderRadius: 2,
-                    whiteSpace: 'pre-wrap',
-                  }}
-                >
-                  {error}
-                </Alert>
-              </Snackbar>
-            )}
 
             {tab === "signin" ? (
               <Box
@@ -343,6 +321,58 @@ export default function AuthCard({ onLogin, onSignup }) {
           </>
         )}
       </Container>
+
+      {/* Snackbars - Moved outside to persist across tab changes */}
+      {error && (
+        <Snackbar
+          open={!!error}
+          autoHideDuration={6000}
+          onClose={() => setError("")}
+          anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+        >
+          <Alert
+            onClose={() => setError("")}
+            severity="error"
+            variant="filled"
+            sx={{
+              width: "100%",
+              maxWidth: 600,
+              fontSize: "1rem",
+              fontWeight: 500,
+              boxShadow: 3,
+              borderRadius: 2,
+              whiteSpace: 'pre-wrap',
+            }}
+          >
+            {error}
+          </Alert>
+        </Snackbar>
+      )}
+
+      {success && (
+        <Snackbar
+          open={!!success}
+          autoHideDuration={6000}
+          onClose={() => setSuccess("")}
+          anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+        >
+          <Alert
+            onClose={() => setSuccess("")}
+            severity="success"
+            variant="filled"
+            sx={{
+              width: "100%",
+              maxWidth: 600,
+              fontSize: "1rem",
+              fontWeight: 500,
+              boxShadow: 3,
+              borderRadius: 2,
+            }}
+          >
+            {success}
+          </Alert>
+        </Snackbar>
+      )}
     </Box>
   );
 }

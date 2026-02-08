@@ -33,6 +33,7 @@ import {
   DesignServices as TemplatesIcon,
   ReceiptLong as InvoicesIcon,
 } from "@mui/icons-material";
+import AccountBalanceIcon from "@mui/icons-material/AccountBalance";
 import CustomIcon from "./CustomIcon";
 import { useNavigate, useLocation, Outlet, Link } from "react-router-dom";
 import LoadMask from "./LoadMask";
@@ -49,6 +50,7 @@ const Invoices = lazy(() => import("./Invoice"));
 const dashboardItems = [
   { key: "clients", label: "Clients", icon: <ClientsIcon />, path: "clients" },
   { key: "companies", label: "Companies", icon: <CompaniesIcon />, path: "companies" },
+  { key: "banks", label: "Banks", icon: <AccountBalanceIcon />, path: "banks" },
   { key: "vendors", label: "Vendors", icon: <VendorsIcon />, path: "vendors" },
   { key: "developer", label: "Developers", icon: <DeveloperIcon />, path: "developer" }, 
   { key: "consultants", label: "Consultants", icon: <ConsultantsIcon />, path: "consultants" },
@@ -101,6 +103,7 @@ export default function DashboardLayout({ user, onLogout }) {
   const [counts, setCounts] = useState({
     clients: 0,
     companies: 0,
+    banks:0,
     vendors: 0,
     consultants: 0,
     developer: 0,
@@ -163,7 +166,7 @@ export default function DashboardLayout({ user, onLogout }) {
         
         // Sum Companies and Banks for the 'companies' pill
         newCounts.companies = (newCounts.companies || 0);
-        delete newCounts.banks; // Clean up temporary banks count
+        
         
         setCounts(newCounts);
       } catch (error) {
@@ -358,7 +361,8 @@ export default function DashboardLayout({ user, onLogout }) {
                     <Route index element={<Clients />} />
                     <Route path="clients" element={<Clients />} />
                     <Route path="developer" element={<Developer />} />
-                    <Route path="companies" element={<Companies />} />
+                    <Route path="companies" element={<Companies isBank={false}/>} />
+                    <Route path="banks" element={<Companies isBank={true} />} />
                     <Route path="vendors" element={<Vendors />} />
                     <Route path="consultants" element={<Consultants />} />
                     <Route path="projects" element={<Projects />} />
