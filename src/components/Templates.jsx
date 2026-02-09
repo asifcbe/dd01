@@ -1,5 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { handleApiError } from "./utils";
+import { useThemeContext } from "../context/ThemeContext";
+import { useToast } from "../context/ToastContext";
+import { useSearch } from "../context/SearchContext";
 import {
   DesignServices as TemplatesIcon,
   AccountBalance as AccountBalanceIcon
@@ -31,11 +34,7 @@ import {
   InputLabel,
   Select,
   Autocomplete,
-  Snackbar,
-  Alert,
-  InputAdornment
 } from "@mui/material";
-import SearchIcon from "@mui/icons-material/Search";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -103,7 +102,15 @@ function mermaidToReactFlow(scriptArr) {
 }
 
 export default function Templates() {
+  const { showSuccess, showError } = useToast();
+  const { searchValue: search } = useSearch();
   const [tabIdx, setTabIdx] = useState(0);
+  const { currentThemeName } = useThemeContext();
+  const borderColor = {
+    light: "black",
+    dark: "white",
+    navy: "rgb(0, 188, 212)"
+  };
   const [templateList, setTemplateList] = useState([]);
   const [selectedTemplateId, setSelectedTemplateId] = useState(null);
   const [nodes, setNodes] = useState([]);
@@ -113,9 +120,6 @@ export default function Templates() {
   const [editOpen, setEditOpen] = useState(false);
   const [projects, setProjects] = useState([]);
   const [banks, setBanks] = useState([]);
-  const [search, setSearch] = useState("");
-  const [error, setError] = useState(null);
-  const [success, setSuccess] = useState(null);
   const [newTemplate, setNewTemplate] = useState({
     name: "",
     description: "",
@@ -268,7 +272,7 @@ export default function Templates() {
 
   const handleAddTemplate = () => {
     if (!newTemplate.name || !newTemplate.currency || !newTemplate.bank_id) {
-      setError("Please fill in all required fields");
+      showError("Please fill in all required fields");
       return;
     }
 
@@ -292,17 +296,17 @@ export default function Templates() {
           })
           .catch(console.error);
         handleClose();
-        setSuccess("Template added successfully!");
+        showSuccess("Template added successfully!");
       })
       .catch((error) => {
         console.error("Error adding template:", error);
-        setError(error.message);
+        showError(error.message,error);
       });
   };
 
   const handleEditSubmit = () => {
     if (!editTemplate.name || !editTemplate.currency || !editTemplate.bank_id) {
-      setError("Please fill in all required fields");
+      showError("Please fill in all required fields");
       return;
     }
 
@@ -332,11 +336,11 @@ export default function Templates() {
           })
           .catch(console.error);
         handleEditClose();
-        setSuccess("Template updated successfully!");
+        showSuccess("Template updated successfully!");
       })
       .catch((error) => {
         console.error("Error updating template:", error);
-        setError(error.message);
+        showError(error.message,error);
       });
   };
 
@@ -361,11 +365,11 @@ export default function Templates() {
           })
           .catch(console.error);
         handleMenuClose(templateId);
-        setSuccess("Template deleted successfully!");
+        showSuccess("Template deleted successfully!");
       })
       .catch((error) => {
         console.error("Error deleting template:", error);
-        setError(error.message);
+        showError(error.message,error);
       });
   };
 
@@ -379,59 +383,131 @@ export default function Templates() {
 
   return (
     <Box>
-      <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", mb: 4, position: 'relative' }}>
-          
-          {/* Centered Search Bar */}
-          <TextField
-             placeholder="Search Templates..."
-             variant="outlined"
-             value={search}
-             onChange={(e) => setSearch(e.target.value)}
-             sx={{ 
-                width: '100%', 
-                maxWidth: 500,
-                '& .MuiOutlinedInput-root': {
-                    borderRadius: '50px',
-                    bgcolor: 'background.paper',
-                    boxShadow: '0 4px 20px rgba(0,0,0,0.05)',
-                    '& fieldset': { border: '1px solid', borderColor: 'divider' },
-                    '&:hover fieldset': { borderColor: 'primary.main' },
-                    '&.Mui-focused fieldset': { borderColor: 'primary.main' },
-                    pl: 2
-                }
-             }}
-             InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <SearchIcon color="action" />
-                  </InputAdornment>
-                ),
-             }}
-          />
-
-          {/* Add Button positioned absolutely to the right */}
+      <Box sx={{ display: "flex", justifyContent: "flex-end", alignItems: "center", mb: 4, position: 'relative' }}>
+          {/* Add Button */}
           <Button 
             variant="contained" 
             size="large" 
             onClick={handleOpen}
             sx={{ 
-                position: { md: 'absolute' }, 
-                right: { md: 0 },
-                top: { md: '50%' },
-                transform: { md: 'translateY(-50%)' },
                 borderRadius: '50px',
                 px: 3,
                 textTransform: 'none',
-                ml: { xs: 2, md: 0 }, // Margin for mobile where it might wrap or sit next
                 boxShadow: '0 4px 14px rgba(0, 163, 255, 0.3)'
             }}
           >
             Add Template
           </Button>
       </Box>
-      <Tabs value={tabIdx} onChange={(_, v) => setTabIdx(v)} sx={{ mb: 2 }}>
-        <Tab label="List Templates" />
-        <Tab label="Tree View" disabled={!selectedTemplateId} />
+      <Tabs 
+        value={tabIdx} 
+        onChange={(_, v) => setTabIdx(v)}
+        sx={{
+          minHeight: '52px',
+          mb: 0,
+          '& .MuiTabs-indicator': {
+            display: 'none',
+          },
+          '& .MuiTabs-flexContainer': {
+            gap: '8px',
+          },
+        }}
+      >
+        <Tab 
+          label="List Templates" 
+          sx={{
+            position: 'relative',
+            minHeight: '52px',
+            minWidth: '140px',
+            fontWeight: 700,
+            textTransform: 'none',
+            fontSize: '1rem',
+            letterSpacing: '0.3px',
+            color: tabIdx === 0 ? '#ffffff !important' : 'text.secondary',
+            bgcolor: tabIdx === 0 ? 'primary.main' : 'background.default',
+            border: tabIdx === 0 ? 'none' : `1px solid ${borderColor[currentThemeName]}`,
+            borderRadius: 0,
+            px: 4,
+            py: 1.5,
+            clipPath: tabIdx === 0 
+              ? 'polygon(0% 0%, 85% 0%, 100% 100%, 0% 100%)'
+              : 'polygon(0% 0%, calc(85% - 1px) 0%, calc(100% - 1px) 100%, 0% 100%)',
+            boxShadow: tabIdx === 0 ? '0 4px 12px rgba(0, 163, 255, 0.3)' : 'none',
+            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+            zIndex: tabIdx === 0 ? 2 : 1,
+            '&::before': tabIdx !== 0 ? {
+              content: '""',
+              position: 'absolute',
+              top: '-2px',
+              right: '0',
+              bottom: '-2px',
+              width: '16%',
+              background: borderColor[currentThemeName],
+              clipPath: 'polygon(100% 0%, 0% 0%, 100% 100%)',
+              zIndex: 2,
+            } : {},
+            '&:hover': {
+              bgcolor: tabIdx === 0 ? 'primary.main' : 'action.hover',
+              boxShadow: tabIdx === 0 
+                ? '0 6px 16px rgba(0, 163, 255, 0.4)' 
+                : '0 2px 8px rgba(0, 0, 0, 0.1)',
+            },
+            '&:active': {
+              transform: 'translateY(0)',
+            },
+            '& .MuiTab-wrapper': {
+              color: tabIdx === 0 ? '#ffffff !important' : 'inherit',
+            },
+          }}
+        />
+        <Tab 
+          label="Tree View" 
+          disabled={!selectedTemplateId}
+          sx={{
+            position: 'relative',
+            minHeight: '52px',
+            minWidth: '140px',
+            fontWeight: 700,
+            textTransform: 'none',
+            fontSize: '1rem',
+            letterSpacing: '0.3px',
+            color: tabIdx === 1 ? '#ffffff !important' : 'text.secondary',
+            bgcolor: tabIdx === 1 ? 'primary.main' : 'background.default',
+            border: tabIdx === 1 ? 'none' : `1px solid ${borderColor[currentThemeName]}`,
+            borderRadius: 0,
+            px: 4,
+            py: 1.5,
+            clipPath: tabIdx === 1 
+              ? 'polygon(0% 0%, 85% 0%, 100% 100%, 0% 100%)'
+              : 'polygon(0% 0%, calc(85% - 1px) 0%, calc(100% - 1px) 100%, 0% 100%)',
+            boxShadow: tabIdx === 1 ? '0 4px 12px rgba(0, 163, 255, 0.3)' : 'none',
+            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+            zIndex: tabIdx === 1 ? 2 : 1,
+            '&::before': tabIdx !== 1 ? {
+              content: '""',
+              position: 'absolute',
+              top: '-2px',
+              right: '0',
+              bottom: '-2px',
+              width: '16%',
+              background: borderColor[currentThemeName],
+              clipPath: 'polygon(100% 0%, 0% 0%, 100% 100%)',
+              zIndex: 2,
+            } : {},
+            '&:hover': {
+              bgcolor: tabIdx === 1 ? 'primary.main' : 'action.hover',
+              boxShadow: tabIdx === 1 
+                ? '0 6px 16px rgba(0, 163, 255, 0.4)' 
+                : '0 2px 8px rgba(0, 0, 0, 0.1)',
+            },
+            '&:active': {
+              transform: 'translateY(0)',
+            },
+            '& .MuiTab-wrapper': {
+              color: tabIdx === 1 ? '#ffffff !important' : 'inherit',
+            },
+          }}
+        />
       </Tabs>
       {tabIdx === 0 && (
         <Grid container spacing={4}>
@@ -444,7 +520,7 @@ export default function Templates() {
               sm={6}
               md={4}
               key={template.id}
-              sx={{ display: "flex", justifyContent: "center", p: 1 }}
+              sx={{ display: "flex", justifyContent: "center", p: 1,pl: 0, pr: 0 ,pt:3}}
             >
               <Card
                 elevation={0}
@@ -806,53 +882,6 @@ export default function Templates() {
           </Button>
         </DialogActions>
       </Dialog>
-
-      {/* Error Snackbar */}
-      <Snackbar
-        open={!!error}
-        autoHideDuration={6000}
-        onClose={() => setError(null)}
-        anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
-      >
-        <Alert
-          onClose={() => setError(null)}
-          severity="error"
-          variant="filled"
-          sx={{
-            width: "100%",
-            maxWidth: 600,
-            fontSize: "1rem",
-            fontWeight: 500,
-            boxShadow: 3,
-            borderRadius: 2,
-            whiteSpace: 'pre-wrap',
-          }}
-        >
-          {error}
-        </Alert>
-      </Snackbar>
-      <Snackbar
-        open={!!success}
-        autoHideDuration={3000}
-        onClose={() => setSuccess(null)}
-        anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
-      >
-        <Alert
-          onClose={() => setSuccess(null)}
-          severity="success"
-          variant="filled"
-          sx={{
-            width: "100%",
-            maxWidth: 600,
-            fontSize: "1rem",
-            fontWeight: 500,
-            boxShadow: 3,
-            borderRadius: 2,
-          }}
-        >
-          {success}
-        </Alert>
-      </Snackbar>
     </Box>
   );
 }

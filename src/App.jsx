@@ -7,6 +7,7 @@ import axios from "axios";
 import "./App.scss";
 import LoadMask from "./components/LoadMask.jsx";
 import { AppThemeProvider } from "./context/ThemeContext";
+import { ToastProvider } from "./context/ToastContext";
 import "@fontsource/inter"; // Import the font
 
 // Settings page lazy load
@@ -38,8 +39,9 @@ export default function App() {
 
   return (
     <AppThemeProvider>
-      <CssBaseline />
-      <div className="app">
+      <ToastProvider>
+        <CssBaseline />
+        <div className="app">
         <BrowserRouter>
           <Routes>
             <Route
@@ -75,7 +77,8 @@ export default function App() {
             <Route path="*" element={<Navigate replace to="/" />} />
           </Routes>
         </BrowserRouter>
-      </div>
+        </div>
+      </ToastProvider>
     </AppThemeProvider>
   );
 }

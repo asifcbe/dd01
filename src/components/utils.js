@@ -59,6 +59,20 @@ async function handleApiError(response, defaultMsg = "An error occurred") {
     } else if (errorData.error) {
       errMsg = errorData.error;
     }
+
+    if(errorData.detail?.field){
+      let errMsgArray = errMsg.split('•');
+      let newErrMsgArray = [];
+      errMsgArray.forEach(e => {
+        if(e[0] != '•'){
+        newErrMsgArray.push(`• ${e}`);
+        } else {
+          newErrMsgArray.push(e);
+        }
+      });
+      newErrMsgArray.push(`• Field: ${errorData.detail.field}`)
+      errMsg = [...newErrMsgArray].reverse().join('\n');
+    }
   } catch (e) {
     // If parsing fails, fall back to status codes
     if (response.status === 404) errMsg = "Resource not found";

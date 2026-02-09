@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { handleApiError } from "./utils";
+import { useToast } from "../context/ToastContext";
+import { useSearch } from "../context/SearchContext";
 import {
   Box, Button, Card, CardContent, CardHeader, IconButton, Typography, Grid,
   Dialog, DialogTitle, DialogContent, DialogActions, TextField, Menu, MenuItem,
-  Fade, Avatar, Divider, FormControl, InputLabel, Select, Snackbar, Alert, Autocomplete,
-  InputAdornment
+  Fade, Avatar, Divider, FormControl, InputLabel, Select, Autocomplete,
 } from "@mui/material";
-import SearchIcon from "@mui/icons-material/Search";
 import {
   Assignment as ProjectsIcon
 } from "@mui/icons-material";
@@ -31,21 +31,20 @@ const COUNTRIES = [
 
 const CURRENCIES = ['USD', 'EUR', 'GBP', 'INR', 'JPY', 'CAD', 'AUD'];
 
-export default function Projects() {
+export default function Projects({type}) {
+  const { showSuccess, showError } = useToast();
+  const { searchValue: search } = useSearch();
   const [projects, setProjects] = useState([]);
   const [dataLoaded, setDataLoaded] = useState(false);
   const [participants, setParticipants] = useState([]);
   const [open, setOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
-  const [search, setSearch] = useState("");
   const filteredProjects = projects.filter(project =>
     project.name.toLowerCase().includes(search.toLowerCase()) ||
     project.description?.toLowerCase().includes(search.toLowerCase()) ||
     project.given_by?.toLowerCase().includes(search.toLowerCase()) ||
     project.taken_by?.toLowerCase().includes(search.toLowerCase())
   );
-  const [error, setError] = useState(null);
-  const [success, setSuccess] = useState(null);
   const [newProject, setNewProject] = useState({
     name: "",
     description: "",
@@ -147,12 +146,12 @@ export default function Projects() {
           .catch((error) => {
             console.error("Error refetching projects:", error);
             handleClose();
-            setSuccess("Project added successfully!");
+            showSuccess("Project added successfully!");
           });
       })
       .catch((error) => {
         console.error("Error adding project:", error);
-        setError(error.message);
+        showError(error.message,error);
       });
   };
   const handleEditProject = () => {
@@ -176,16 +175,16 @@ export default function Projects() {
           .then((data) => {
             setProjects(data);
             handleEditClose();
-            setSuccess("Project updated successfully!");
+            showSuccess("Project updated successfully!");
           })
           .catch((error) => {
             console.error("Error fetching projects:", error);
-            setError(error.message);
+            showError(error.message,error);
           });
       })
       .catch((error) => {
         console.error("Error updating project:", error);
-        setError(error.message);
+        showError(error.message,error);
       });
   };
   const handleDeleteProject = (projectId) => {
@@ -198,11 +197,11 @@ export default function Projects() {
       .then((response) => {
         setProjects((prev) => prev.filter(p => p.id !== projectId));
         // No need to filter menuAnchorEls since it's by id
-        setSuccess("Project deleted successfully!");
+        showSuccess("Project deleted successfully!");
       })
       .catch((error) => {
         console.error("Error deleting project:", error);
-        setError(error.message);
+        showError(error.message,error);
       });
   };
   const handleClone = (project) => {
@@ -218,55 +217,21 @@ export default function Projects() {
   const handleMenuClose = (projectId) => { setMenuAnchorEls((prev) => ({ ...prev, [projectId]: null })); };
 
   return (
-    !dataLoaded ? <LoadMask text='Loading Projects' /> : <Box>
-      <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", mb: 4, position: 'relative' }}>
-          
-          {/* Centered Search Bar */}
-          <TextField
-             placeholder="Search Projects..."
-             variant="outlined"
-             value={search}
-             onChange={(e) => setSearch(e.target.value)}
-             sx={{ 
-                width: '100%', 
-                maxWidth: 500,
-                '& .MuiOutlinedInput-root': {
-                    borderRadius: '50px',
-                    bgcolor: 'background.paper',
-                    boxShadow: '0 4px 20px rgba(0,0,0,0.05)',
-                    '& fieldset': { border: '1px solid', borderColor: 'divider' },
-                    '&:hover fieldset': { borderColor: 'primary.main' },
-                    '&.Mui-focused fieldset': { borderColor: 'primary.main' },
-                    pl: 2
-                }
-             }}
-             InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <SearchIcon color="action" />
-                  </InputAdornment>
-                ),
-             }}
-          />
-
-          {/* Add Button positioned absolutely to the right */}
+    !dataLoaded ? <LoadMask text={`Loading ${type === 'contracts' ? 'Contracts' : 'Projects'}`} /> : <Box>
+      <Box sx={{ display: "flex", justifyContent: "flex-end", alignItems: "center", mb: 4 }}>
+          {/* Add Button */}
           <Button 
             variant="contained" 
             size="large" 
             onClick={handleOpen}
             sx={{ 
-                position: { md: 'absolute' }, 
-                right: { md: 0 },
-                top: { md: '50%' },
-                transform: { md: 'translateY(-50%)' },
                 borderRadius: '50px',
                 px: 3,
                 textTransform: 'none',
-                ml: { xs: 2, md: 0 }, // Margin for mobile where it might wrap or sit next
                 boxShadow: '0 4px 14px rgba(0, 163, 255, 0.3)'
             }}
           >
-            Add Project
+            Add {type === 'contracts' ? 'Contract' : 'Project'}
           </Button>
         </Box>
       <Grid container spacing={3} >
@@ -348,7 +313,7 @@ export default function Projects() {
         <Button variant="contained" size="large" onClick={handleOpen}>Add Project</Button>
       </Box> */}
       <Dialog open={open} onClose={() => {}} disableEscapeKeyDown={true}>
-        <DialogTitle>Add Project</DialogTitle>
+        <DialogTitle>Add {type === 'contracts' ? 'Contract' : 'Project'}</DialogTitle>
         <DialogContent>
           <TextField margin="normal" fullWidth label="Name" name="name" value={newProject.name} onChange={handleChange} />
           <TextField margin="normal" fullWidth label="Description" name="description" value={newProject.description} onChange={handleChange} />
@@ -466,51 +431,6 @@ export default function Projects() {
           <Button onClick={handleEditProject} variant="contained">Save</Button>
         </DialogActions>
       </Dialog>
-      <Snackbar
-        open={!!error}
-        autoHideDuration={6000}
-        onClose={() => setError(null)}
-        anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
-      >
-        <Alert
-          onClose={() => setError(null)}
-          severity="error"
-          variant="filled"
-          sx={{
-            width: "100%",
-            maxWidth: 600,
-            fontSize: "1rem",
-            fontWeight: 500,
-            boxShadow: 3,
-            borderRadius: 2,
-            whiteSpace: 'pre-wrap',
-          }}
-        >
-          {error}
-        </Alert>
-      </Snackbar>
-      <Snackbar
-        open={!!success}
-        autoHideDuration={3000}
-        onClose={() => setSuccess(null)}
-        anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
-      >
-        <Alert
-          onClose={() => setSuccess(null)}
-          severity="success"
-          variant="filled"
-          sx={{
-            width: "100%",
-            maxWidth: 600,
-            fontSize: "1rem",
-            fontWeight: 500,
-            boxShadow: 3,
-            borderRadius: 2,
-          }}
-        >
-          {success}
-        </Alert>
-      </Snackbar>
     </Box>
   );
 }

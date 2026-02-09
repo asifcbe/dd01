@@ -1,5 +1,6 @@
 import React, { useState, useEffect, lazy, Suspense } from "react";
 import { handleApiError } from "./utils";
+import { useThemeContext } from "../context/ThemeContext";
 import {
   Box,
   Tabs,
@@ -13,13 +14,10 @@ import {
   TableRow,
   TableContainer,
   Paper,
-  Snackbar,
-  Alert,
   CircularProgress,
-  TextField,
-  InputAdornment
 } from "@mui/material";
-import SearchIcon from "@mui/icons-material/Search";
+import { useToast } from "../context/ToastContext";
+import { useSearch } from "../context/SearchContext";
 
 const InvoiceTemplate = lazy(() => import("./InvoiceTemplate")); // lazy-load heavy template
 
@@ -91,20 +89,26 @@ function extractInvoiceViewData(data) {
 function TabPanel({ children, value, index }) {
   return (
     <div role="tabpanel" hidden={value !== index} aria-labelledby={`tab-${index}`}>
-      {value === index && <Box sx={{ p: 3 }}>{children}</Box>}
+      {value === index && <Box sx={{ p: 3,pl:0,pr:0 }}>{children}</Box>}
     </div>
   );
 }
 
 export default function Invoices() {
+  const { showError } = useToast();
+  const { searchValue: search } = useSearch();
   const [tabIndex, setTabIndex] = useState(0);
+  const { currentThemeName } = useThemeContext();
+  const borderColor = {
+    light: "black",
+    dark: "white",
+    navy: "rgb(0, 188, 212)"
+  };
   const [templates, setTemplates] = useState({});
   const [loadingTemplates, setLoadingTemplates] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState(null);
   const [invoiceData, setInvoiceData] = useState(null);
   const [loadingInvoice, setLoadingInvoice] = useState(false);
-  const [notification, setNotification] = useState(null);
-  const [search, setSearch] = useState("");
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -117,7 +121,7 @@ export default function Invoices() {
         setLoadingTemplates(false);
       })
       .catch((error) => {
-        setNotification({ severity: "error", message: error.message });
+        showError(error.message,error);
         setLoadingTemplates(false);
       });
   }, []);
@@ -134,7 +138,7 @@ export default function Invoices() {
         setLoadingInvoice(false);
       })
       .catch((error) => {
-        setNotification({ severity: "error", message: error.message });
+        showError(error.message,error);
         setLoadingInvoice(false);
       });
   };
@@ -147,38 +151,118 @@ export default function Invoices() {
 
   return (
     <Box>
-      <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", mb: 2, mt: 2, position: 'relative' }}>
-          <TextField
-             placeholder="Search Invoices/Templates..."
-             variant="outlined"
-             value={search}
-             onChange={(e) => setSearch(e.target.value)}
-             sx={{ 
-                width: '100%', 
-                maxWidth: 500,
-                '& .MuiOutlinedInput-root': {
-                    borderRadius: '50px',
-                    bgcolor: 'background.paper',
-                    boxShadow: '0 4px 20px rgba(0,0,0,0.05)',
-                    '& fieldset': { border: '1px solid', borderColor: 'divider' },
-                    '&:hover fieldset': { borderColor: 'primary.main' },
-                    '&.Mui-focused fieldset': { borderColor: 'primary.main' },
-                    pl: 2
-                }
-             }}
-             InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <SearchIcon color="action" />
-                  </InputAdornment>
-                ),
-             }}
-          />
-      </Box>
-
-      <Tabs value={tabIndex} onChange={(_, v) => setTabIndex(v)} aria-label="Invoice tabs">
-        <Tab label="Templates" id="invoice-tab-0" aria-controls="invoice-tabpanel-0" />
-        <Tab label="Invoice" id="invoice-tab-1" aria-controls="invoice-tabpanel-1" />
+      <Tabs 
+        value={tabIndex} 
+        onChange={(_, v) => setTabIndex(v)}
+        sx={{
+          minHeight: '52px',
+          mb: 0,
+          '& .MuiTabs-indicator': {
+            display: 'none',
+          },
+          '& .MuiTabs-flexContainer': {
+            gap: '8px',
+          },
+        }}
+      >
+        <Tab 
+          label="Templates" 
+          id="invoice-tab-0" 
+          aria-controls="invoice-tabpanel-0"
+          sx={{
+            position: 'relative',
+            minHeight: '52px',
+            minWidth: '140px',
+            fontWeight: 700,
+            textTransform: 'none',
+            fontSize: '1rem',
+            letterSpacing: '0.3px',
+            color: tabIndex === 0 ? '#ffffff !important' : 'text.secondary',
+            bgcolor: tabIndex === 0 ? 'primary.main' : 'background.default',
+            border: tabIndex === 0 ? 'none' : `1px solid ${borderColor[currentThemeName]}`,
+            borderRadius: 0,
+            px: 4,
+            py: 1.5,
+            clipPath: tabIndex === 0 
+              ? 'polygon(0% 0%, 85% 0%, 100% 100%, 0% 100%)'
+              : 'polygon(0% 0%, calc(85% - 1px) 0%, calc(100% - 1px) 100%, 0% 100%)',
+            boxShadow: tabIndex === 0 ? '0 4px 12px rgba(0, 163, 255, 0.3)' : 'none',
+            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+            zIndex: tabIndex === 0 ? 2 : 1,
+            '&::before': tabIndex !== 0 ? {
+              content: '""',
+              position: 'absolute',
+              top: '-2px',
+              right: '0',
+              bottom: '-2px',
+              width: '16%',
+              background: borderColor[currentThemeName],
+              clipPath: 'polygon(100% 0%, 0% 0%, 100% 100%)',
+              zIndex: 2,
+            } : {},
+            '&:hover': {
+              bgcolor: tabIndex === 0 ? 'primary.main' : 'action.hover',
+              boxShadow: tabIndex === 0 
+                ? '0 6px 16px rgba(0, 163, 255, 0.4)' 
+                : '0 2px 8px rgba(0, 0, 0, 0.1)',
+            },
+            '&:active': {
+              transform: 'translateY(0)',
+            },
+            '& .MuiTab-wrapper': {
+              color: tabIndex === 0 ? '#ffffff !important' : 'inherit',
+            },
+          }}
+        />
+        <Tab 
+          label="Invoice" 
+          id="invoice-tab-1" 
+          aria-controls="invoice-tabpanel-1"
+          sx={{
+            position: 'relative',
+            minHeight: '52px',
+            minWidth: '140px',
+            fontWeight: 700,
+            textTransform: 'none',
+            fontSize: '1rem',
+            letterSpacing: '0.3px',
+            color: tabIndex === 1 ? '#ffffff !important' : 'text.secondary',
+            bgcolor: tabIndex === 1 ? 'primary.main' : 'background.default',
+            border: tabIndex === 1 ? 'none' : `1px solid ${borderColor[currentThemeName]}`,
+            borderRadius: 0,
+            px: 4,
+            py: 1.5,
+            clipPath: tabIndex === 1 
+              ? 'polygon(0% 0%, 85% 0%, 100% 100%, 0% 100%)'
+              : 'polygon(0% 0%, calc(85% - 1px) 0%, calc(100% - 1px) 100%, 0% 100%)',
+            boxShadow: tabIndex === 1 ? '0 4px 12px rgba(0, 163, 255, 0.3)' : 'none',
+            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+            zIndex: tabIndex === 1 ? 2 : 1,
+            '&::before': tabIndex !== 1 ? {
+              content: '""',
+              position: 'absolute',
+              top: '-2px',
+              right: '0',
+              bottom: '-2px',
+              width: '16%',
+              background: borderColor[currentThemeName],
+              clipPath: 'polygon(100% 0%, 0% 0%, 100% 100%)',
+              zIndex: 2,
+            } : {},
+            '&:hover': {
+              bgcolor: tabIndex === 1 ? 'primary.main' : 'action.hover',
+              boxShadow: tabIndex === 1 
+                ? '0 6px 16px rgba(0, 163, 255, 0.4)' 
+                : '0 2px 8px rgba(0, 0, 0, 0.1)',
+            },
+            '&:active': {
+              transform: 'translateY(0)',
+            },
+            '& .MuiTab-wrapper': {
+              color: tabIndex === 1 ? '#ffffff !important' : 'inherit',
+            },
+          }}
+        />
       </Tabs>
 
       <TabPanel value={tabIndex} index={0}>
@@ -232,23 +316,6 @@ export default function Invoices() {
           </Typography>
         )}
       </TabPanel>
-
-      <Snackbar
-        open={Boolean(notification)}
-        autoHideDuration={3000}
-        onClose={() => setNotification(null)}
-        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
-      >
-        {notification && (
-          <Alert
-            onClose={() => setNotification(null)}
-            severity={notification.severity}
-            sx={{ width: "100%" }}
-          >
-            {notification.message}
-          </Alert>
-        )}
-      </Snackbar>
     </Box>
   );
 }

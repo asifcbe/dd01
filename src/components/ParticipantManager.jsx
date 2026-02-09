@@ -1,5 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { handleApiError } from "./utils";
+import { useToast } from "../context/ToastContext";
+import { useSearch } from "../context/SearchContext";
 import {
   Box,
   Button,
@@ -22,16 +24,12 @@ import {
   FormControl,
   InputLabel,
   Select,
-  Snackbar,
-  Alert,
   Autocomplete,
 } from "@mui/material";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import EditIcon from "@mui/icons-material/Edit";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import DeleteIcon from "@mui/icons-material/Delete";
-import SearchIcon from "@mui/icons-material/Search";
-import { InputAdornment } from "@mui/material";
 import FingerprintIcon from "@mui/icons-material/Fingerprint";
 import BadgeIcon from "@mui/icons-material/Badge";
 import LoadMask from "./LoadMask";
@@ -61,6 +59,8 @@ export default function ParticipantManager({
   type2,
   type3 = "NotApplicable",
 }) {
+  const { showSuccess, showError } = useToast();
+  const { searchValue: search } = useSearch();
   const Icon = icon;
   const [items, setItems] = useState([]);
   const [dataLoaded, setDataLoaded] = useState(false);
@@ -69,9 +69,6 @@ export default function ParticipantManager({
   const [menuAnchorEls, setMenuAnchorEls] = useState([]);
   const [newItem, setNewItem] = useState(initialForm);
   const [editItem, setEditItem] = useState(initialForm);
-  const [error, setError] = useState(null);
-  const [success, setSuccess] = useState(null);
-  const [search, setSearch] = useState("");
   const [addFields, setAddFields] = useState(fields);
   const [editFields, setEditFields] = useState(fields);
   
@@ -106,7 +103,7 @@ export default function ParticipantManager({
       .catch((error) => {
         console.error(`Error fetching ${title.toLowerCase()}:`, error);
         setDataLoaded(true);
-        setError(error.message);
+        showError(error.message,error);
       });
   }, [apiType, title, apiDetailType]);
 
@@ -265,11 +262,11 @@ export default function ParticipantManager({
       .then(() => {
         fetchItems(); 
         handleClose();
-        setSuccess(`${title.slice(0, -1)} added successfully!`);
+        showSuccess(`${title.slice(0, -1)} added successfully!`);
       })
       .catch((error) => {
         console.error(`Error adding ${title.toLowerCase()}:`, error);
-        setError(error.message);
+        showError(error.message,error);
       });
   };
 
@@ -297,11 +294,11 @@ export default function ParticipantManager({
       .then(() => {
         fetchItems();
         handleEditClose();
-        setSuccess(`${title.slice(0, -1)} updated successfully!`);
+        showSuccess(`${title.slice(0, -1)} updated successfully!`);
       })
       .catch((error) => {
         console.error(`Error updating ${title.toLowerCase()}:`, error);
-        setError(error.message);
+        showError(error.message,error);
       });
   };
 
@@ -317,11 +314,11 @@ export default function ParticipantManager({
       .then(() => {
         setItems((prev) => prev.filter((i) => i.id !== item.id));
         setMenuAnchorEls((prev) => prev.filter((_, i) => i !== items.findIndex(it => it.id === item.id)));
-        setSuccess(`${title.slice(0, -1)} deleted successfully!`);
+        showSuccess(`${title.slice(0, -1)} deleted successfully!`);
       })
       .catch((error) => {
         console.error(`Error deleting ${title.toLowerCase()}:`, error);
-        setError(error.message);
+        showError(error.message,error);
       });
   };
 
@@ -357,7 +354,7 @@ export default function ParticipantManager({
               label="Code"
               value={currentCountryCode}
               InputProps={{ readOnly: true }}
-              size="small"
+              size="large"
               sx={{ width: '80px' }}
             />
             <TextField
@@ -431,51 +428,16 @@ export default function ParticipantManager({
       <LoadMask text={`Loading ${title}`} />
     ) : (
       <Box>
-        {/* Header Bar with Centered Search and Add Button */}
-        <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", mb: 4, position: 'relative' }}>
-          
-          {/* Centered Search Bar */}
-          <TextField
-             placeholder={`Search ${title}...`}
-             variant="outlined"
-             value={search}
-             onChange={(e) => setSearch(e.target.value)}
-             sx={{ 
-                width: '100%', 
-                maxWidth: 500,
-                '& .MuiOutlinedInput-root': {
-                    borderRadius: '50px',
-                    bgcolor: 'background.paper',
-                    boxShadow: '0 4px 20px rgba(0,0,0,0.05)',
-                    '& fieldset': { border: '1px solid', borderColor: 'divider' },
-                    '&:hover fieldset': { borderColor: 'primary.main' },
-                    '&.Mui-focused fieldset': { borderColor: 'primary.main' },
-                    pl: 2
-                }
-             }}
-             InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <SearchIcon color="action" />
-                  </InputAdornment>
-                ),
-             }}
-          />
-
-          {/* Add Button positioned absolutely to the right */}
+        {/* Header Bar with Add Button */}
+        <Box sx={{ display: "flex", justifyContent: "flex-end", alignItems: "center", mb: 4 }}>
           <Button 
             variant="contained" 
             size="large" 
             onClick={handleOpen}
             sx={{ 
-                position: { md: 'absolute' }, 
-                right: { md: 0 },
-                top: { md: '50%' },
-                transform: { md: 'translateY(-50%)' },
                 borderRadius: '50px',
                 px: 3,
                 textTransform: 'none',
-                ml: { xs: 2, md: 0 }, // Margin for mobile where it might wrap or sit next
                 boxShadow: '0 4px 14px rgba(0, 163, 255, 0.3)'
             }}
           >
@@ -651,52 +613,6 @@ export default function ParticipantManager({
             </Button>
           </DialogActions>
         </Dialog>
-
-        <Snackbar
-          open={!!error}
-          autoHideDuration={6000}
-          onClose={() => setError(null)}
-          anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
-        >
-          <Alert
-            onClose={() => setError(null)}
-            severity="error"
-            variant="filled"
-            sx={{
-              width: "100%",
-              maxWidth: 600,
-              fontSize: "1rem",
-              fontWeight: 500,
-              boxShadow: 3,
-              borderRadius: 2,
-              whiteSpace: 'pre-wrap',
-            }}
-          >
-            {error}
-          </Alert>
-        </Snackbar>
-      <Snackbar
-        open={!!success}
-        autoHideDuration={3000}
-        onClose={() => setSuccess(null)}
-        anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
-      >
-        <Alert
-          onClose={() => setSuccess(null)}
-          severity="success"
-          variant="filled"
-          sx={{
-            width: "100%",
-            maxWidth: 600,
-            fontSize: "1rem",
-            fontWeight: 500,
-            boxShadow: 3,
-            borderRadius: 2,
-          }}
-        >
-          {success}
-        </Alert>
-      </Snackbar>
       </Box>
     )
   );

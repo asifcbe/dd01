@@ -1,12 +1,13 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import {
   Business as CompaniesIcon,
   AccountBalance as BanksIcon
 } from "@mui/icons-material";
 import { Tabs, Tab, Box } from "@mui/material";
 import ParticipantManager from "./ParticipantManager";
+import { useThemeContext } from "../context/ThemeContext";
 
-
+  
 const COUNTRY_OPTIONS = [
   "United States",
   "United Kingdom",
@@ -83,7 +84,12 @@ const bankInitialForm = {
 
 export default function Companies({ isBank }) {
   const [tabValue, setTabValue] = useState(isBank ? 1 : 0);
-
+  const { currentThemeName } = useThemeContext();
+  const borderColor={
+    light: "black",
+    dark: "white",
+    navy: "rgb(0, 188, 212)"
+  }
   // Update tab value when isBank prop changes
   useEffect(() => {
     setTabValue(isBank ? 1 : 0);
@@ -93,7 +99,11 @@ export default function Companies({ isBank }) {
   const handleTabChange = (event, newValue) => {
     setTabValue(newValue);
   };
-
+  
+  // Log it when component mounts
+  useEffect(() => {
+    console.log('Current theme:', currentThemeName);
+  }, [currentThemeName]);
 
   return (
     <Box>
@@ -124,18 +134,32 @@ export default function Companies({ isBank }) {
             letterSpacing: '0.3px',
             color: tabValue === 0 ? '#ffffff !important' : 'text.secondary',
             bgcolor: tabValue === 0 ? 'primary.main' : 'background.default',
-            border: tabValue === 0 ? 'none' : '1px solid',
-            borderColor: 'divider',
+            border: tabValue === 0 ? 'none' : `1px solid ${borderColor[currentThemeName]}`,
             borderRadius: 0,
             px: 4,
             py: 1.5,
-            clipPath: 'polygon(0% 0%, 85% 0%, 100% 100%, 0% 100%)',
+            // Modified clipPath to prevent border cutoff
+            clipPath: tabValue === 0 
+              ? 'polygon(0% 0%, 85% 0%, 100% 100%, 0% 100%)'
+              : 'polygon(0% 0%, calc(85% - 1px) 0%, calc(100% - 1px) 100%, 0% 100%)',
             boxShadow: tabValue === 0 ? '0 4px 12px rgba(0, 163, 255, 0.3)' : 'none',
             transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
             zIndex: tabValue === 0 ? 2 : 1,
+            // Add border styling specifically for the trapezoid shape
+            '&::before': tabValue !== 0 ? {
+              content: '""',
+              position: 'absolute',
+              top: '-2px',
+              right: '0',
+              bottom: '-2px',
+              width: '16%', // Adjust this to match the diagonal edge
+              background: borderColor[currentThemeName],
+              clipPath: 'polygon(100% 0%, 0% 0%, 100% 100%)',
+              zIndex: 2,
+            } : {},
             '&:hover': {
               bgcolor: tabValue === 0 ? 'primary.main' : 'action.hover',
-              transform: tabValue === 0 ? 'translateY(-2px)' : 'translateY(-1px)',
+              // transform: tabValue === 0 ? 'translateY(-1px)' : 'translateY(-1px)',
               boxShadow: tabValue === 0 
                 ? '0 6px 16px rgba(0, 163, 255, 0.4)' 
                 : '0 2px 8px rgba(0, 0, 0, 0.1)',
@@ -160,18 +184,32 @@ export default function Companies({ isBank }) {
             letterSpacing: '0.3px',
             color: tabValue === 1 ? '#ffffff !important' : 'text.secondary',
             bgcolor: tabValue === 1 ? 'primary.main' : 'background.default',
-            border: tabValue === 1 ? 'none' : '1px solid',
-            borderColor: 'divider',
+            border: tabValue === 1 ? 'none' : `1px solid ${borderColor[currentThemeName]}`,
             borderRadius: 0,
             px: 4,
             py: 1.5,
-            clipPath: 'polygon(0% 0%, 85% 0%, 100% 100%, 0% 100%)',
+            // Modified clipPath to prevent border cutoff
+            clipPath: tabValue === 1 
+              ? 'polygon(0% 0%, 85% 0%, 100% 100%, 0% 100%)'
+              : 'polygon(0% 0%, calc(85% - 1px) 0%, calc(100% - 1px) 100%, 0% 100%)',
             boxShadow: tabValue === 1 ? '0 4px 12px rgba(0, 163, 255, 0.3)' : 'none',
             transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
             zIndex: tabValue === 1 ? 2 : 1,
+            // Add border styling specifically for the trapezoid shape
+            '&::before': tabValue !== 1 ? {
+              content: '""',
+              position: 'absolute',
+              top: '-2px',
+              right: '0',
+              bottom: '-2px',
+              width: '16%', // Adjust this to match the diagonal edge
+              background: borderColor[currentThemeName],
+              clipPath: 'polygon(100% 0%, 0% 0%, 100% 100%)',
+              zIndex: 2,
+            } : {},
             '&:hover': {
               bgcolor: tabValue === 1 ? 'primary.main' : 'action.hover',
-              transform: tabValue === 1 ? 'translateY(-2px)' : 'translateY(-1px)',
+              // transform: tabValue === 1 ? 'translateY(-1px)' : 'translateY(-1px)',
               boxShadow: tabValue === 1 
                 ? '0 6px 16px rgba(0, 163, 255, 0.4)' 
                 : '0 2px 8px rgba(0, 0, 0, 0.1)',

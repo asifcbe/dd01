@@ -1,4 +1,4 @@
-import React, { lazy, Suspense, useEffect, useState } from "react";
+import React, { lazy, Suspense, useEffect, useState, useRef } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import {
   Box,
@@ -8,8 +8,6 @@ import {
   IconButton,
   Container,
   Avatar,
-  Tab,
-  Tabs,
   Button,
   AppBar,
   Badge,
@@ -18,8 +16,10 @@ import {
   MenuItem,
   Divider,
   ListItemIcon,
-  ListItemText
+  ListItemText,
+  Chip
 } from "@mui/material";
+import MoreHorizIcon from "@mui/icons-material/MoreHoriz";
 import LogoutIcon from "@mui/icons-material/Logout";
 import SettingsIcon from "@mui/icons-material/Settings";
 import NotificationsIcon from "@mui/icons-material/Notifications";
@@ -37,6 +37,7 @@ import AccountBalanceIcon from "@mui/icons-material/AccountBalance";
 import CustomIcon from "./CustomIcon";
 import { useNavigate, useLocation, Outlet, Link } from "react-router-dom";
 import LoadMask from "./LoadMask";
+import { SearchProvider, CommonSearchBar } from "../context/SearchContext";
 
 const Clients = lazy(() => import("./Clients"));
 const Developer = lazy(() => import("./Developer"));
@@ -54,42 +55,12 @@ const dashboardItems = [
   { key: "vendors", label: "Vendors", icon: <VendorsIcon />, path: "vendors" },
   { key: "developer", label: "Developers", icon: <DeveloperIcon />, path: "developer" }, 
   { key: "consultants", label: "Consultants", icon: <ConsultantsIcon />, path: "consultants" },
+  { key: "contracts", label: "Contracts", icon: <ProjectsIcon />, path: "contracts" },
   { key: "projects", label: "Projects", icon: <ProjectsIcon />, path: "projects" },
   { key: "templates", label: "Templates", icon: <TemplatesIcon />, path: "templates" },
   { key: "invoices", label: "Invoices", icon: <InvoicesIcon />, path: "invoices" },
   // Developer item moved to end or hidden if needed, keeping it for now
 ];
-
-function LinkTab(props) {
-  return (
-    <Tab
-      component={Link}
-      sx={{
-        minHeight: '48px',
-        borderRadius: '24px',
-        px: 3,
-        mx: 0.5,
-        textTransform: 'none',
-        fontWeight: 600,
-        fontSize: '0.9rem',
-        color: 'text.secondary',
-        '&.Mui-selected': {
-          color: 'common.white',
-          bgcolor: 'primary.main',
-        },
-        '&:hover': {
-           bgcolor: 'action.hover',
-           color: 'primary.main',
-           '&.Mui-selected': {
-             color: 'common.white',
-             bgcolor: 'primary.dark',
-           }
-        }
-      }}
-      {...props}
-    />
-  );
-}
 
 export default function DashboardLayout({ user, onLogout }) {
   const navigate = useNavigate();
@@ -100,6 +71,11 @@ export default function DashboardLayout({ user, onLogout }) {
   const [anchorEl, setAnchorEl] = useState(null);
   const menuOpen = Boolean(anchorEl);
   
+  const [overflowAnchorEl, setOverflowAnchorEl] = useState(null);
+  const overflowMenuOpen = Boolean(overflowAnchorEl);
+  const [visibleItemsCount, setVisibleItemsCount] = useState(dashboardItems.length);
+  const navContainerRef = useRef(null);
+  
   const [counts, setCounts] = useState({
     clients: 0,
     companies: 0,
@@ -107,6 +83,7 @@ export default function DashboardLayout({ user, onLogout }) {
     vendors: 0,
     consultants: 0,
     developer: 0,
+    contracts:0,
     projects: 0,
     templates: 0,
     invoices: 0
@@ -134,6 +111,50 @@ export default function DashboardLayout({ user, onLogout }) {
     handleMenuClose();
   };
 
+  const handleOverflowMenuOpen = (event) => {
+    setOverflowAnchorEl(event.currentTarget);
+  };
+
+  const handleOverflowMenuClose = () => {
+    setOverflowAnchorEl(null);
+  };
+
+  // Calculate visible items based on available space
+  useEffect(() => {
+    const calculateVisibleItems = () => {
+      if (!navContainerRef.current) return;
+      
+      const containerWidth = navContainerRef.current.offsetWidth;
+      const dropdownButtonWidth = 120; // Approximate width for dropdown button
+      const availableWidth = containerWidth - dropdownButtonWidth - 40; // padding buffer
+      
+      // Approximate width per tab (adjust based on actual rendering)
+      const approxTabWidth = 180; // Approximate width including icon, label, count badge
+      
+      const maxVisibleItems = Math.max(1, Math.floor(availableWidth / approxTabWidth));
+      
+      if (maxVisibleItems < dashboardItems.length) {
+        setVisibleItemsCount(maxVisibleItems);
+      } else {
+        setVisibleItemsCount(dashboardItems.length);
+      }
+    };
+
+    calculateVisibleItems();
+    
+    const resizeObserver = new ResizeObserver(calculateVisibleItems);
+    if (navContainerRef.current) {
+      resizeObserver.observe(navContainerRef.current);
+    }
+    
+    return () => {
+      resizeObserver.disconnect();
+    };
+  }, []);
+
+  const visibleItems = dashboardItems.slice(0, visibleItemsCount);
+  const overflowItems = dashboardItems.slice(visibleItemsCount);
+
   useEffect(() => {
     const fetchCounts = async () => {
       try {
@@ -144,6 +165,7 @@ export default function DashboardLayout({ user, onLogout }) {
           { key: 'vendors', url: '/api/vendors' },
           { key: 'consultants', url: '/api/consultants' },
           { key: 'developer', url: '/api/developers' },
+          { key: 'contracts', url: '/api/contracts' },
           { key: 'projects', url: '/api/projects' },
           { key: 'templates', url: '/api/templates' },
           { key: 'invoices', url: '/api/templates' }
@@ -178,6 +200,7 @@ export default function DashboardLayout({ user, onLogout }) {
   }, []);
 
   return (
+    <SearchProvider currentKey={currentKey}>
     <Box sx={{ display: "flex", flexDirection: "column", minHeight: "100vh", bgcolor: "background.default" }}>
       <CssBaseline />
 
@@ -193,9 +216,9 @@ export default function DashboardLayout({ user, onLogout }) {
           zIndex: 1200 
         }}
       >
-        <Toolbar sx={{ justifyContent: "space-between", py: 1 }}>
+        <Toolbar sx={{ justifyContent: "space-between", py: 1, gap: 2 }}>
           {/* Logo & Title */}
-          <Box sx={{ display: "flex", alignItems: "center" }}>
+          <Box sx={{ display: "flex", alignItems: "center", flexShrink: 0 }}>
             <Box 
               sx={{ 
                 bgcolor: 'primary.main', 
@@ -216,6 +239,11 @@ export default function DashboardLayout({ user, onLogout }) {
                 Business Dashboard
                 </Typography>
             </Box>
+          </Box>
+
+          {/* Center: Global Search Bar */}
+          <Box sx={{ display: { xs: "none", sm: "flex" }, alignItems: "center", justifyContent: "center", flex: 1, px: 2 }}>
+            <CommonSearchBar />
           </Box>
 
           {/* Right Section: User Menu */}
@@ -304,45 +332,185 @@ export default function DashboardLayout({ user, onLogout }) {
           </Box>
         </Toolbar>
 
+        {/* Mobile Search Bar - below nav on small screens */}
+        <Box sx={{ display: { xs: "block", sm: "none" }, px: 2, pb: 2 }}>
+          <CommonSearchBar />
+        </Box>
+
         {/* Navigation Pills */}
-        <Box sx={{ px: 2, pb: 2, pt: 1, bgcolor: "background.paper" }}>
-             <Tabs 
-                value={tabValue} 
-                variant="scrollable" 
-                scrollButtons="auto"
-                allowScrollButtonsMobile
-                sx={{ 
-                    '& .MuiTabs-indicator': { display: 'none' }, // Hide underline indicator
-                    minHeight: '48px'
+        <Box 
+          ref={navContainerRef}
+          sx={{ 
+            px: 2, 
+            pb: 2, 
+            pt: 1, 
+            bgcolor: "background.paper",
+            display: 'flex',
+            alignItems: 'center',
+            gap: 1,
+            overflow: 'hidden'
+          }}
+        >
+          {/* Visible Navigation Pills */}
+          {visibleItems.map((item) => {
+            const itemIndex = dashboardItems.indexOf(item);
+            const isSelected = tabValue === itemIndex;
+            
+            return (
+              <Button
+                key={item.key}
+                component={Link}
+                to={`/${item.path}`}
+                sx={{
+                  minHeight: '48px',
+                  borderRadius: '24px',
+                  px: 3,
+                  textTransform: 'none',
+                  fontWeight: 600,
+                  fontSize: '0.9rem',
+                  color: isSelected ? 'common.white' : 'text.secondary',
+                  bgcolor: isSelected ? 'primary.main' : 'transparent',
+                  whiteSpace: 'nowrap',
+                  '&:hover': {
+                    bgcolor: isSelected ? 'primary.dark' : 'action.hover',
+                    color: isSelected ? 'common.white' : 'primary.main',
+                  }
                 }}
-             >
-                {dashboardItems.map((item) => (
-                    <LinkTab 
-                        key={item.key} 
-                        label={
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                {item.icon}
-                                {item.label}
-                                <Typography 
-                                  component="span" 
-                                  sx={{ 
-                                    bgcolor: tabValue === dashboardItems.indexOf(item) ? 'rgba(255,255,255,0.2)' : 'action.selected',
-                                    color: tabValue === dashboardItems.indexOf(item) ? 'inherit' : 'text.secondary',
-                                    borderRadius: '12px',
-                                    px: 1,
-                                    fontSize: '0.75rem',
-                                    fontWeight: 600,
-                                    transition: 'all 0.2s'
-                                  }}
-                                >
-                                  {counts[item.key] || 0}
-                                </Typography>
-                            </Box>
-                        } 
-                        to={`/${item.path}`} 
-                    />
-                ))}
-             </Tabs>
+              >
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  {item.icon}
+                  {item.label}
+                  <Chip
+                    label={counts[item.key] || 0}
+                    size="small"
+                    sx={{
+                      bgcolor: isSelected ? 'rgba(255,255,255,0.2)' : 'action.selected',
+                      color: isSelected ? 'inherit' : 'text.secondary',
+                      fontSize: '0.75rem',
+                      fontWeight: 600,
+                      height: '24px',
+                      transition: 'all 0.2s'
+                    }}
+                  />
+                </Box>
+              </Button>
+            );
+          })}
+          
+          {/* Overflow Dropdown Button */}
+          {overflowItems.length > 0 && (
+            <>
+              <Button
+                onClick={handleOverflowMenuOpen}
+                sx={{
+                  minHeight: '48px',
+                  borderRadius: '24px',
+                  px: 3,
+                  textTransform: 'none',
+                  fontWeight: 600,
+                  fontSize: '0.9rem',
+                  color: 'text.secondary',
+                  bgcolor: overflowItems.some(item => dashboardItems.indexOf(item) === tabValue) 
+                    ? 'primary.main' 
+                    : 'action.hover',
+                  border: '1px solid',
+                  borderColor: 'divider',
+                  whiteSpace: 'nowrap',
+                  '&:hover': {
+                    bgcolor: overflowItems.some(item => dashboardItems.indexOf(item) === tabValue)
+                      ? 'primary.dark'
+                      : 'action.selected',
+                  }
+                }}
+              >
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <MoreHorizIcon />
+                  <Typography sx={{ fontWeight: 600, fontSize: '0.9rem' }}>
+                    More
+                  </Typography>
+                  <Chip
+                    label={overflowItems.length}
+                    size="small"
+                    sx={{
+                      bgcolor: overflowItems.some(item => dashboardItems.indexOf(item) === tabValue)
+                        ? 'rgba(255,255,255,0.2)'
+                        : 'primary.main',
+                      color: overflowItems.some(item => dashboardItems.indexOf(item) === tabValue)
+                        ? 'common.white'
+                        : 'common.white',
+                      fontSize: '0.75rem',
+                      fontWeight: 600,
+                      height: '24px',
+                    }}
+                  />
+                </Box>
+              </Button>
+              
+              {/* Overflow Menu */}
+              <Menu
+                anchorEl={overflowAnchorEl}
+                open={overflowMenuOpen}
+                onClose={handleOverflowMenuClose}
+                PaperProps={{
+                  elevation: 3,
+                  sx: {
+                    overflow: 'visible',
+                    filter: 'drop-shadow(0px 2px 8px rgba(0,0,0,0.12))',
+                    mt: 1.5,
+                    minWidth: 220,
+                    borderRadius: 2,
+                    border: '1px solid',
+                    borderColor: 'divider',
+                    bgcolor: 'background.paper',
+                  },
+                }}
+                transformOrigin={{ horizontal: 'right', vertical: 'top' }}
+                anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
+              >
+                {overflowItems.map((item) => {
+                  const itemIndex = dashboardItems.indexOf(item);
+                  const isSelected = tabValue === itemIndex;
+                  
+                  return (
+                    <MenuItem
+                      key={item.key}
+                      component={Link}
+                      to={`/${item.path}`}
+                      onClick={handleOverflowMenuClose}
+                      selected={isSelected}
+                      sx={{
+                        py: 1.5,
+                        px: 2,
+                        bgcolor: isSelected ? 'action.selected' : 'transparent',
+                        '&:hover': {
+                          bgcolor: 'action.hover',
+                        }
+                      }}
+                    >
+                      <ListItemIcon>
+                        {item.icon}
+                      </ListItemIcon>
+                      <ListItemText>
+                        {item.label}
+                      </ListItemText>
+                      <Chip
+                        label={counts[item.key] || 0}
+                        size="small"
+                        sx={{
+                          bgcolor: 'action.selected',
+                          color: 'text.secondary',
+                          fontSize: '0.75rem',
+                          fontWeight: 600,
+                          height: '22px',
+                          ml: 1
+                        }}
+                      />
+                    </MenuItem>
+                  );
+                })}
+              </Menu>
+            </>
+          )}
         </Box>
       </AppBar>
 
@@ -365,6 +533,7 @@ export default function DashboardLayout({ user, onLogout }) {
                     <Route path="banks" element={<Companies isBank={true} />} />
                     <Route path="vendors" element={<Vendors />} />
                     <Route path="consultants" element={<Consultants />} />
+                    <Route path="contracts" element={<Projects type={'contracts'}/>} />
                     <Route path="projects" element={<Projects />} />
                     <Route path="templates" element={<Templates />} />
                     <Route path="invoices" element={<Invoices />} />
@@ -373,5 +542,6 @@ export default function DashboardLayout({ user, onLogout }) {
         </Suspense>
       </Container>
     </Box>
+    </SearchProvider>
   );
 }

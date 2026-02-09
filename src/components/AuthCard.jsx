@@ -8,15 +8,14 @@ import {
   Tabs,
   Tab,
   Avatar,
-  Alert,
-  CircularProgress,
-  Snackbar,
 } from "@mui/material";
 import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
 import axios from "axios";
 import LoadMask from "./LoadMask";
+import { useToast } from "../context/ToastContext";
 
 export default function AuthCard({ onLogin, onSignup }) {
+  const { showSuccess, showError } = useToast();
   const [tab, setTab] = useState("signin");
   const [form, setForm] = useState({
     org: "",
@@ -24,9 +23,7 @@ export default function AuthCard({ onLogin, onSignup }) {
     password: "",
     confirmPassword: "",
   });
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
-  const [loading, setLoading] = useState(true); // <-- loading state
+  const [loading, setLoading] = useState(true);
 
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [user, setUser] = useState(null);
@@ -63,13 +60,10 @@ export default function AuthCard({ onLogin, onSignup }) {
 
   const handleInputChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
-    setError("");
-    setSuccess("");
   };
 
   const handleSignIn = async (e) => {
     e.preventDefault();
-    setError("");
     setLoading(true);
     const payload = {
       org: form.org.trim(),
@@ -88,7 +82,7 @@ export default function AuthCard({ onLogin, onSignup }) {
     } catch (err) {
       const errorMsg = err.response?.data?.detail?.message;
       const msg = Array.isArray(errorMsg) ? errorMsg.join('\n') : errorMsg || (err.response?.data?.error) || err.message || "Sign in failed";
-      setError(msg);
+      showError(msg,err.response?.data);
     } finally {
       setLoading(false);
     }
@@ -96,9 +90,8 @@ export default function AuthCard({ onLogin, onSignup }) {
 
   const handleSignUp = async (e) => {
     e.preventDefault();
-    setError("");
     if (form.password !== form.confirmPassword) {
-      setError("Passwords do not match");
+      showError("Passwords do not match");
       return;
     }
     setLoading(true);
@@ -113,15 +106,14 @@ export default function AuthCard({ onLogin, onSignup }) {
         { withCredentials: true }
       );
       if (res.status == 201) {
-        // onSignup();
-        setSuccess("Sign up successful! Please sign in with your credentials.");
+        showSuccess("Sign up successful! Please sign in with your credentials.");
         setForm({ org: form.org.trim(), email: form.email.trim(), password: "", confirmPassword: "" });
         setTab("signin");
       }
     } catch (err) {
       const errorMsg = err.response?.data?.detail?.message;
       const msg = Array.isArray(errorMsg) ? errorMsg.join('\n') : (err.response?.data?.error || err.message || "Sign up failed");
-      setError(msg);
+      showError(msg,err);
     } finally {
       setLoading(false);
     }
@@ -139,7 +131,7 @@ export default function AuthCard({ onLogin, onSignup }) {
     setLoading(false);
   };
 
-  if (loading && !success) {
+  if (loading) {
     return (
       <LoadMask text="Loggin In"/>
     );
@@ -321,58 +313,6 @@ export default function AuthCard({ onLogin, onSignup }) {
           </>
         )}
       </Container>
-
-      {/* Snackbars - Moved outside to persist across tab changes */}
-      {error && (
-        <Snackbar
-          open={!!error}
-          autoHideDuration={6000}
-          onClose={() => setError("")}
-          anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
-        >
-          <Alert
-            onClose={() => setError("")}
-            severity="error"
-            variant="filled"
-            sx={{
-              width: "100%",
-              maxWidth: 600,
-              fontSize: "1rem",
-              fontWeight: 500,
-              boxShadow: 3,
-              borderRadius: 2,
-              whiteSpace: 'pre-wrap',
-            }}
-          >
-            {error}
-          </Alert>
-        </Snackbar>
-      )}
-
-      {success && (
-        <Snackbar
-          open={!!success}
-          autoHideDuration={6000}
-          onClose={() => setSuccess("")}
-          anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
-        >
-          <Alert
-            onClose={() => setSuccess("")}
-            severity="success"
-            variant="filled"
-            sx={{
-              width: "100%",
-              maxWidth: 600,
-              fontSize: "1rem",
-              fontWeight: 500,
-              boxShadow: 3,
-              borderRadius: 2,
-            }}
-          >
-            {success}
-          </Alert>
-        </Snackbar>
-      )}
     </Box>
   );
 }
