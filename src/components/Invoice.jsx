@@ -151,7 +151,9 @@ export default function Invoices() {
 
   return (
     <Box>
-      <Tabs 
+      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 4 }}>
+        
+        <Tabs 
         value={tabIndex} 
         onChange={(_, v) => setTabIndex(v)}
         sx={{
@@ -264,6 +266,7 @@ export default function Invoices() {
           }}
         />
       </Tabs>
+      </Box>
 
       <TabPanel value={tabIndex} index={0}>
         {loadingTemplates ? (

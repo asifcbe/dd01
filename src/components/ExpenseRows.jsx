@@ -1,5 +1,5 @@
 import React from 'react';
-import { IconButton, Box } from "@mui/material";
+import { IconButton, Box, useTheme } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import RemoveIcon from "@mui/icons-material/Remove";
 
@@ -11,6 +11,12 @@ function ExpenseRows({
   handleRemoveExpense,
   handleAddExpense
 }) {
+  const theme = useTheme();
+  const isDark = theme.palette.mode === 'dark';
+  const rowBg = isDark ? 'rgba(255,255,255,0.02)' : theme.palette.background.paper;
+  const inputBg = isDark ? 'rgba(255,255,255,0.05)' : theme.palette.grey[50];
+  const inputBorder = theme.palette.divider;
+
   if (!isEditing) return null;
 
   return (
@@ -19,7 +25,7 @@ function ExpenseRows({
         <tr
           key={`exp-idx-${eIdx}`}
           className="expense-row"
-          style={{ background: "#fff", position: "relative", transition: "background 0.3s" }}
+          style={{ background: rowBg, position: "relative", transition: "background 0.3s" }}
         >
           <td style={{ minWidth: 210 }}>
             <textarea
@@ -27,10 +33,11 @@ function ExpenseRows({
               style={{
                 width: "100%",
                 borderRadius: "5px",
-                border: "1px solid #cdd0d6",
+                border: `1px solid ${inputBorder}`,
                 padding: "6px",
                 fontSize: "15px",
-                background: "#f8fafc",
+                background: inputBg,
+                color: theme.palette.text.primary,
                 resize: "none"
               }}
               placeholder="Enter item name/description"

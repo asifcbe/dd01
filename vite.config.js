@@ -7,7 +7,7 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
-        target: 'https://eleven-glance-divorce-permission.trycloudflare.com/invoice-generator/api',
+        target: 'https://keith-measures-ampland-ultimately.trycloudflare.com/invoice-generator/api',
         changeOrigin: true,
         secure: false, // use this if the target uses self-signed SSL cert
         rewrite: (path) => path.replace(/^\/api/, ''),

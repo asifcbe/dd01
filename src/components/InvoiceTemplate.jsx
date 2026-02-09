@@ -858,10 +858,11 @@ const renderExpenseRows = (mainIdx) => {
                         fontSize: 13,
                         p: "10px",    // Height same as parent
                         pl: "5px",    // Left padding set to 5px
-                        border: "1px solid rgba(0, 0, 0, 0.12)",
+                        border: "1px solid",
+                        borderColor: "divider",
                         borderRadius: 1,
                         mt: 0.5,
-                        backgroundColor: "rgba(255,255,255,0.5)",
+                        bgcolor: isDark ? "rgba(255,255,255,0.05)" : "rgba(255,255,255,0.5)",
                       },
                       "& fieldset": { border: "none" },
                       "& textarea": { lineHeight: 1.5 },
@@ -881,8 +882,10 @@ const renderExpenseRows = (mainIdx) => {
     <Box
       sx={{
         minHeight: "100vh",
-        background:
-          "radial-gradient(circle at top, #e5edff 0%, #f8fafc 40%, #f4f4f5 100%)",
+        background: isDark
+          ? "radial-gradient(circle at top, rgba(0, 163, 255, 0.08) 0%, transparent 40%, transparent 100%)"
+          : "radial-gradient(circle at top, #e5edff 0%, #f8fafc 40%, #f4f4f5 100%)",
+        bgcolor: "background.default",
         display: "flex",
         flexWrap: "wrap",
         justifyContent: "center",
@@ -893,7 +896,7 @@ const renderExpenseRows = (mainIdx) => {
     >
       <Backdrop
         sx={{
-          color: "#fff",
+          color: "common.white",
           zIndex: (theme) => theme.zIndex.drawer + 1,
           flexDirection: "column",
           gap: 2,
@@ -1051,9 +1054,9 @@ const renderExpenseRows = (mainIdx) => {
             py: 1.75,
             borderBottom: "1px solid",
             borderColor: "divider",
-            background: isDark 
-              ? `linear-gradient(90deg, ${theme.accent}22, ${muiTheme.palette.background.paper})` 
-              : `linear-gradient(90deg, ${theme.accent}12, white)`,
+            background: isDark
+              ? `linear-gradient(90deg, ${theme.accent}22, ${muiTheme.palette.background.paper})`
+              : `linear-gradient(90deg, ${theme.accent}12, ${muiTheme.palette.background.paper})`,
           }}
         >
           <Typography

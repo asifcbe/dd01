@@ -383,23 +383,9 @@ export default function Templates() {
 
   return (
     <Box>
-      <Box sx={{ display: "flex", justifyContent: "flex-end", alignItems: "center", mb: 4, position: 'relative' }}>
-          {/* Add Button */}
-          <Button 
-            variant="contained" 
-            size="large" 
-            onClick={handleOpen}
-            sx={{ 
-                borderRadius: '50px',
-                px: 3,
-                textTransform: 'none',
-                boxShadow: '0 4px 14px rgba(0, 163, 255, 0.3)'
-            }}
-          >
-            Add Template
-          </Button>
-      </Box>
-      <Tabs 
+      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 4, flexWrap: 'wrap', gap: 2 }}>
+        
+        <Tabs 
         value={tabIdx} 
         onChange={(_, v) => setTabIdx(v)}
         sx={{
@@ -509,6 +495,22 @@ export default function Templates() {
           }}
         />
       </Tabs>
+        {/* Add Button */}
+        <Button 
+          variant="contained" 
+          size="large" 
+          onClick={handleOpen}
+          sx={{ 
+            flexShrink: 0,
+            borderRadius: '50px',
+            px: 3,
+            textTransform: 'none',
+            boxShadow: '0 4px 14px rgba(0, 163, 255, 0.3)'
+          }}
+        >
+          Add Template
+        </Button>
+      </Box>
       {tabIdx === 0 && (
         <Grid container spacing={4}>
           {templateList
@@ -569,7 +571,7 @@ export default function Templates() {
                     <>
                       <IconButton
                         onClick={(e) => handleMenuOpen(e, template.id)}
-                        sx={{ color: "#868ca0" }}
+                        sx={{ color: "text.secondary" }}
                       >
                         <MoreVertIcon />
                       </IconButton>

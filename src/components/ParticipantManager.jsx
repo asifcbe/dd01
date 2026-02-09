@@ -428,8 +428,11 @@ export default function ParticipantManager({
       <LoadMask text={`Loading ${title}`} />
     ) : (
       <Box>
-        {/* Header Bar with Add Button */}
-        <Box sx={{ display: "flex", justifyContent: "flex-end", alignItems: "center", mb: 4 }}>
+        {/* Header Bar: Title and Add Button in same row */}
+        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 4 }}>
+          <Typography variant="h5" sx={{ fontWeight: 700, color: 'text.primary' }}>
+            {title}
+          </Typography>
           <Button 
             variant="contained" 
             size="large" 

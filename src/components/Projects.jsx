@@ -218,8 +218,10 @@ export default function Projects({type}) {
 
   return (
     !dataLoaded ? <LoadMask text={`Loading ${type === 'contracts' ? 'Contracts' : 'Projects'}`} /> : <Box>
-      <Box sx={{ display: "flex", justifyContent: "flex-end", alignItems: "center", mb: 4 }}>
-          {/* Add Button */}
+      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 4 }}>
+          <Typography variant="h5" sx={{ fontWeight: 700, color: 'text.primary' }}>
+            {type === 'contracts' ? 'Contracts' : 'Projects'}
+          </Typography>
           <Button 
             variant="contained" 
             size="large" 
@@ -267,7 +269,7 @@ export default function Projects({type}) {
                     </Box>
                   }
                   action={
-                    <IconButton onClick={(e) => handleMenuOpen(e, project.id)} sx={{ color: "#868ca0" }}>
+                    <IconButton onClick={(e) => handleMenuOpen(e, project.id)} sx={{ color: "text.secondary" }}>
                       <MoreVertIcon />
                     </IconButton>
                   }
