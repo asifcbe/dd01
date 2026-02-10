@@ -447,8 +447,7 @@ export default function Templates() {
           }}
         />
         <Tab 
-          label="Tree View" 
-          disabled={!selectedTemplateId}
+          label="Tree View"
           sx={{
             position: 'relative',
             minHeight: '52px',
@@ -709,15 +708,22 @@ export default function Templates() {
           ))}
         </Grid>
       )}
+      {tabIdx===0 && templateList.length===0 && (
+        <Typography sx={{ p: 2 }}>No templates found</Typography>
+      )}
       {tabIdx === 1 && (
-        <Box sx={{ height: 600, bgcolor: "action.hover", borderRadius: 2 }}>
+        <Box sx={{ height: 600, bgcolor: selectedTemplateId?"action.hover":"", borderRadius: 2 }}>
           {nodes.length > 0 ? (
             <ReactFlow nodes={nodes} edges={edges} fitView>
               <Background color="#aaa" />
               <Controls showInteractive={false} showZoom={true} />
             </ReactFlow>
-          ) : (
+          ) : selectedTemplateId ? (
             <Typography sx={{ p: 2 }}>Loading tree view...</Typography>
+          ) : (
+            <Typography sx={{ p: 2 }}>
+              Please select a template and click &apos;View Tree&apos; to see the tree view.
+            </Typography>
           )}
         </Box>
       )}

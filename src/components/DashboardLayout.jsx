@@ -5,8 +5,9 @@ import {
   CssBaseline,
   Toolbar,
   Typography,
-  IconButton,
   Container,
+  useTheme,
+  useMediaQuery,
   Avatar,
   Button,
   AppBar,
@@ -65,6 +66,8 @@ const dashboardItems = [
 export default function DashboardLayout({ user, onLogout }) {
   const navigate = useNavigate();
   const location = useLocation();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const pathParts = location.pathname.split("/").filter(Boolean);
   const currentKey = pathParts[0] || "clients"; // Default to clients
   
@@ -73,7 +76,6 @@ export default function DashboardLayout({ user, onLogout }) {
   
   const [overflowAnchorEl, setOverflowAnchorEl] = useState(null);
   const overflowMenuOpen = Boolean(overflowAnchorEl);
-  const [visibleItemsCount, setVisibleItemsCount] = useState(dashboardItems.length);
   const navContainerRef = useRef(null);
   
   const [counts, setCounts] = useState({
@@ -119,41 +121,17 @@ export default function DashboardLayout({ user, onLogout }) {
     setOverflowAnchorEl(null);
   };
 
-  // Calculate visible items based on available space
-  useEffect(() => {
-    const calculateVisibleItems = () => {
-      if (!navContainerRef.current) return;
-      
-      const containerWidth = navContainerRef.current.offsetWidth;
-      const dropdownButtonWidth = 120; // Approximate width for dropdown button
-      const availableWidth = containerWidth - dropdownButtonWidth - 40; // padding buffer
-      
-      // Approximate width per tab (adjust based on actual rendering)
-      const approxTabWidth = 180; // Approximate width including icon, label, count badge
-      
-      const maxVisibleItems = Math.max(1, Math.floor(availableWidth / approxTabWidth));
-      
-      if (maxVisibleItems < dashboardItems.length) {
-        setVisibleItemsCount(maxVisibleItems);
-      } else {
-        setVisibleItemsCount(dashboardItems.length);
-      }
-    };
+  const handleOverflowItemClick = () => {
+    handleOverflowMenuClose();
+  };
 
-    calculateVisibleItems();
-    
-    const resizeObserver = new ResizeObserver(calculateVisibleItems);
-    if (navContainerRef.current) {
-      resizeObserver.observe(navContainerRef.current);
-    }
-    
-    return () => {
-      resizeObserver.disconnect();
-    };
-  }, []);
-
-  const visibleItems = dashboardItems.slice(0, visibleItemsCount);
-  const overflowItems = dashboardItems.slice(visibleItemsCount);
+  // Mobile: 1 pill (current item) + More. Desktop: 3 pills + More
+  const selectedIndex = currentTabValue >= 0 ? currentTabValue : 0;
+  const startIndex = Math.max(0, Math.min(selectedIndex - 1, dashboardItems.length - 3));
+  const visibleItems = isMobile
+    ? [dashboardItems[selectedIndex]]
+    : dashboardItems.slice(startIndex, startIndex + 3);
+  const overflowItems = dashboardItems.filter((item) => !visibleItems.includes(item));
 
   useEffect(() => {
     const fetchCounts = async () => {
@@ -337,7 +315,7 @@ export default function DashboardLayout({ user, onLogout }) {
           <CommonSearchBar />
         </Box>
 
-        {/* Navigation Pills */}
+        {/* Navigation Pills - 3 pills + More, center aligned */}
         <Box 
           ref={navContainerRef}
           sx={{ 
@@ -346,12 +324,14 @@ export default function DashboardLayout({ user, onLogout }) {
             pt: 1, 
             bgcolor: "background.paper",
             display: 'flex',
+            justifyContent: 'center',
             alignItems: 'center',
             gap: 1,
-            overflow: 'hidden'
+            flexWrap: 'wrap'
           }}
         >
-          {/* Visible Navigation Pills */}
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap', justifyContent: 'center' }}>
+          {/* First 3 visible pills */}
           {visibleItems.map((item) => {
             const itemIndex = dashboardItems.indexOf(item);
             const isSelected = tabValue === itemIndex;
@@ -396,8 +376,7 @@ export default function DashboardLayout({ user, onLogout }) {
               </Button>
             );
           })}
-          
-          {/* Overflow Dropdown Button */}
+          {/* More button - 4th slot, always shown when there are overflow items */}
           {overflowItems.length > 0 && (
             <>
               <Button
@@ -476,7 +455,7 @@ export default function DashboardLayout({ user, onLogout }) {
                       key={item.key}
                       component={Link}
                       to={`/${item.path}`}
-                      onClick={handleOverflowMenuClose}
+                      onClick={handleOverflowItemClick}
                       selected={isSelected}
                       sx={{
                         py: 1.5,
@@ -511,6 +490,7 @@ export default function DashboardLayout({ user, onLogout }) {
               </Menu>
             </>
           )}
+          </Box>
         </Box>
       </AppBar>
 

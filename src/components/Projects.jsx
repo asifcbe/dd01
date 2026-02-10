@@ -36,7 +36,8 @@ export default function Projects({type}) {
   const { searchValue: search } = useSearch();
   const [projects, setProjects] = useState([]);
   const [dataLoaded, setDataLoaded] = useState(false);
-  const [participants, setParticipants] = useState([]);
+  const [givenByOptions, setGivenByOptions] = useState([]);
+  const [takenByOptions, setTakenByOptions] = useState([]);
   const [open, setOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const filteredProjects = projects.filter(project =>
@@ -83,16 +84,30 @@ export default function Projects({type}) {
         console.error("Error fetching projects:", error);
       });
 
-    fetch("api/participants", { method: "GET" })
-      .then((res) => handleApiError(res, "Failed to fetch participants"))
-      .then((response) => response.json())
-      .then((data) => {
-        setParticipants(data);
-      })
-      .catch((error) => {
-        console.error("Error fetching participants:", error);
+    if (type === 'contracts') {
+      Promise.all([
+        fetch("api/companies", { method: "GET" }).then(r => r.json()).catch(() => []),
+        fetch("api/developers", { method: "GET" }).then(r => r.json()).catch(() => []),
+        fetch("api/consultants", { method: "GET" }).then(r => r.json()).catch(() => []),
+      ]).then(([companies, developers, consultants]) => {
+        const devs = Array.isArray(developers) ? developers : Object.values(developers || {});
+        const cons = Array.isArray(consultants) ? consultants : Object.values(consultants || {});
+        const comps = Array.isArray(companies) ? companies : Object.values(companies || {});
+        setGivenByOptions(comps);
+        setTakenByOptions([...devs, ...cons]);
       });
-  }, []);
+    } else {
+      Promise.all([
+        fetch("api/clients", { method: "GET" }).then(r => r.json()).catch(() => []),
+        fetch("api/companies", { method: "GET" }).then(r => r.json()).catch(() => []),
+      ]).then(([clients, companies]) => {
+        const cl = Array.isArray(clients) ? clients : Object.values(clients || {});
+        const comps = Array.isArray(companies) ? companies : Object.values(companies || {});
+        setGivenByOptions(cl);
+        setTakenByOptions(comps);
+      });
+    }
+  }, [type]);
 
   const handleOpen = () => setOpen(true);
   const handleClose = () => {
@@ -111,10 +126,12 @@ export default function Projects({type}) {
   };
   const handleEditOpen = (projectId) => {
     const project = projects.find(p => p.id === projectId);
+    const givenById = givenByOptions.find(p => p.name === project.given_by || String(p.id) === String(project.given_by))?.id || "";
+    const takenById = takenByOptions.find(p => p.name === project.taken_by || String(p.id) === String(project.taken_by))?.id || "";
     setEditProject({
       ...project,
-      given_by: participants.find(p => p.name === project.given_by)?.id || "",
-      taken_by: participants.find(p => p.name === project.taken_by)?.id || "",
+      given_by: givenById,
+      taken_by: takenById,
     });
     setEditOpen(true);
   };
@@ -205,11 +222,13 @@ export default function Projects({type}) {
       });
   };
   const handleClone = (project) => {
+    const givenById = givenByOptions.find(p => p.name === project.given_by || String(p.id) === String(project.given_by))?.id || "";
+    const takenById = takenByOptions.find(p => p.name === project.taken_by || String(p.id) === String(project.taken_by))?.id || "";
     setNewProject({
       ...project,
       name: `${project.name} (Copy)`,
-      given_by: participants.find(p => p.name === project.given_by)?.id || "",
-      taken_by: participants.find(p => p.name === project.taken_by)?.id || "",
+      given_by: givenById,
+      taken_by: takenById,
     });
     setOpen(true);
   };
@@ -320,9 +339,9 @@ export default function Projects({type}) {
           <TextField margin="normal" fullWidth label="Name" name="name" value={newProject.name} onChange={handleChange} />
           <TextField margin="normal" fullWidth label="Description" name="description" value={newProject.description} onChange={handleChange} />
           <Autocomplete
-            options={participants}
-            getOptionLabel={(option) => option.name}
-            value={participants.find(p => p.id === newProject.given_by) || null}
+            options={givenByOptions}
+            getOptionLabel={(option) => option.name || ""}
+            value={givenByOptions.find(p => String(p.id) === String(newProject.given_by)) || null}
             onChange={(event, newValue) => {
               setNewProject((prev) => ({ ...prev, given_by: newValue ? newValue.id : "" }));
             }}
@@ -330,9 +349,9 @@ export default function Projects({type}) {
             fullWidth
           />
           <Autocomplete
-            options={participants}
-            getOptionLabel={(option) => option.name}
-            value={participants.find(p => p.id === newProject.taken_by) || null}
+            options={takenByOptions}
+            getOptionLabel={(option) => option.name || ""}
+            value={takenByOptions.find(p => String(p.id) === String(newProject.taken_by)) || null}
             onChange={(event, newValue) => {
               setNewProject((prev) => ({ ...prev, taken_by: newValue ? newValue.id : "" }));
             }}
@@ -375,14 +394,14 @@ export default function Projects({type}) {
         </DialogActions>
       </Dialog>
       <Dialog open={editOpen} onClose={() => {}} disableEscapeKeyDown={true}>
-        <DialogTitle>Edit Project</DialogTitle>
+        <DialogTitle>Edit {type === 'contracts' ? 'Contract' : 'Project'}</DialogTitle>
         <DialogContent>
           <TextField margin="normal" fullWidth label="Name" name="name" value={editProject.name} onChange={handleEditChange} />
           <TextField margin="normal" fullWidth label="Description" name="description" value={editProject.description} onChange={handleEditChange} />
           <Autocomplete
-            options={participants}
-            getOptionLabel={(option) => option.name}
-            value={participants.find(p => p.id === editProject.given_by) || null}
+            options={givenByOptions}
+            getOptionLabel={(option) => option.name || ""}
+            value={givenByOptions.find(p => String(p.id) === String(editProject.given_by)) || null}
             onChange={(event, newValue) => {
               setEditProject((prev) => ({ ...prev, given_by: newValue ? newValue.id : "" }));
             }}
@@ -390,9 +409,9 @@ export default function Projects({type}) {
             fullWidth
           />
           <Autocomplete
-            options={participants}
-            getOptionLabel={(option) => option.name}
-            value={participants.find(p => p.id === editProject.taken_by) || null}
+            options={takenByOptions}
+            getOptionLabel={(option) => option.name || ""}
+            value={takenByOptions.find(p => String(p.id) === String(editProject.taken_by)) || null}
             onChange={(event, newValue) => {
               setEditProject((prev) => ({ ...prev, taken_by: newValue ? newValue.id : "" }));
             }}

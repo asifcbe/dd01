@@ -2,7 +2,7 @@
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "https://keith-measures-ampland-ultimately.trycloudflare.com/invoice-generator/api/:path*"
+      "destination": "https://eating-care-census-expanded.trycloudflare.com/invoice-generator/api/:path*"
     },
     {
       "source": "/((?!api/).*)",
