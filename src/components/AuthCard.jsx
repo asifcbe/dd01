@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { Outlet } from "react-router-dom";  
 import {
   Box,
   Container,
@@ -138,6 +139,7 @@ export default function AuthCard({ onLogin, onSignup }) {
   }
 
   return (
+    <>
     <Box
       sx={{
         height: "100vh",
@@ -314,6 +316,8 @@ export default function AuthCard({ onLogin, onSignup }) {
         )}
       </Container>
     </Box>
+    <Outlet />
+    </>
   );
 }
 

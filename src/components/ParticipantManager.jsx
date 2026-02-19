@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
-import { handleApiError } from "./utils";
+import { handleApiError, errorLabels } from "./utils";
 import { useToast } from "../context/ToastContext";
+import { useErrorScreen } from "../context/ErrorContext";
 import { useSearch } from "../context/SearchContext";
 import {
   Box,
@@ -60,6 +61,7 @@ export default function ParticipantManager({
   type3 = "NotApplicable",
 }) {
   const { showSuccess, showError } = useToast();
+  const { showErrorOnScreen } = useErrorScreen();
   const { searchValue: search } = useSearch();
   const Icon = icon;
   const [items, setItems] = useState([]);
@@ -103,7 +105,11 @@ export default function ParticipantManager({
       .catch((error) => {
         console.error(`Error fetching ${title.toLowerCase()}:`, error);
         setDataLoaded(true);
-        showError(error.message,error);
+        if(errorLabels[error?.status]) {
+          showErrorOnScreen(error?.status, error?.message);
+        } else {
+          showError(error.message, error);
+        }
       });
   }, [apiType, title, apiDetailType]);
 
@@ -265,8 +271,13 @@ export default function ParticipantManager({
         showSuccess(`${title.slice(0, -1)} added successfully!`);
       })
       .catch((error) => {
-        console.error(`Error adding ${title.toLowerCase()}:`, error);
-        showError(error.message,error);
+          console.error(`Error adding ${title.toLowerCase()}:`, error);
+          
+        if(errorLabels.hasOwnProperty(error?.status)) {
+          showErrorOnScreen(error?.status, error?.message);
+        } else {
+          showError(error.message, error);
+        }
       });
   };
 
@@ -298,7 +309,11 @@ export default function ParticipantManager({
       })
       .catch((error) => {
         console.error(`Error updating ${title.toLowerCase()}:`, error);
-        showError(error.message,error);
+        if(errorLabels.hasOwnProperty(error?.status)) {
+          showErrorOnScreen(error?.status, error?.message);
+        } else {
+          showError(error.message, error);
+        }
       });
   };
 
@@ -318,7 +333,11 @@ export default function ParticipantManager({
       })
       .catch((error) => {
         console.error(`Error deleting ${title.toLowerCase()}:`, error);
-        showError(error.message,error);
+        if(errorLabels.hasOwnProperty(error?.status)) {
+          showErrorOnScreen(error?.status, error?.message);
+        } else {
+          showError(error.message, error);
+        }
       });
   };
 

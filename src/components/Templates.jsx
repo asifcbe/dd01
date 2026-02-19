@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { handleApiError } from "./utils";
 import { useThemeContext } from "../context/ThemeContext";
 import { useToast } from "../context/ToastContext";
+import { useErrorScreen } from "../context/ErrorContext";
 import { useSearch } from "../context/SearchContext";
 import {
   DesignServices as TemplatesIcon,
@@ -103,6 +104,7 @@ function mermaidToReactFlow(scriptArr) {
 
 export default function Templates() {
   const { showSuccess, showError } = useToast();
+  const { showErrorOnScreen } = useErrorScreen();
   const { searchValue: search } = useSearch();
   const [tabIdx, setTabIdx] = useState(0);
   const { currentThemeName } = useThemeContext();
@@ -300,7 +302,8 @@ export default function Templates() {
       })
       .catch((error) => {
         console.error("Error adding template:", error);
-        showError(error.message,error);
+        showError(error.message, error);
+        showErrorOnScreen(error?.status, error?.message);
       });
   };
 
@@ -340,7 +343,8 @@ export default function Templates() {
       })
       .catch((error) => {
         console.error("Error updating template:", error);
-        showError(error.message,error);
+        showError(error.message, error);
+        showErrorOnScreen(error?.status, error?.message);
       });
   };
 
@@ -369,7 +373,8 @@ export default function Templates() {
       })
       .catch((error) => {
         console.error("Error deleting template:", error);
-        showError(error.message,error);
+        showError(error.message, error);
+        showErrorOnScreen(error?.status, error?.message);
       });
   };
 

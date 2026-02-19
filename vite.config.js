@@ -1,13 +1,17 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
-
 export default defineConfig({
   plugins: [react()],
+  test: {
+    globals: true,
+    environment: 'jsdom',
+    setupFiles: './src/test/setup.js',
+  },
   server: {
     proxy: {
       '/api': {
-        target: 'https://eating-care-census-expanded.trycloudflare.com/invoice-generator/api',
+        target: 'https://invoice-generator-bq6g.onrender.com/invoice-generator/api',
         changeOrigin: true,
         secure: false, // use this if the target uses self-signed SSL cert
         rewrite: (path) => path.replace(/^\/api/, ''),

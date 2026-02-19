@@ -1,6 +1,7 @@
 import React, { useState, useEffect, lazy, Suspense } from "react";
 import { handleApiError } from "./utils";
 import { useThemeContext } from "../context/ThemeContext";
+import { useErrorScreen } from "../context/ErrorContext";
 import {
   Box,
   Tabs,
@@ -96,6 +97,7 @@ function TabPanel({ children, value, index }) {
 
 export default function Invoices() {
   const { showError } = useToast();
+  const { showErrorOnScreen } = useErrorScreen();
   const { searchValue: search } = useSearch();
   const [tabIndex, setTabIndex] = useState(0);
   const { currentThemeName } = useThemeContext();
@@ -121,8 +123,9 @@ export default function Invoices() {
         setLoadingTemplates(false);
       })
       .catch((error) => {
-        showError(error.message,error);
+        showError(error.message, error);
         setLoadingTemplates(false);
+        showErrorOnScreen(error?.status, error?.message);
       });
   }, []);
 
@@ -138,8 +141,9 @@ export default function Invoices() {
         setLoadingInvoice(false);
       })
       .catch((error) => {
-        showError(error.message,error);
+        showError(error.message, error);
         setLoadingInvoice(false);
+        showErrorOnScreen(error?.status, error?.message);
       });
   };
 

@@ -29,6 +29,16 @@ function getInvoiceData(actualInvoice) {
     bank_id: actualInvoice.bank_id,
   }
 }
+const errorLabels = {
+  401: "Authentication Failed. Please check your credentials.",
+  403: "Authorization Failed. You don't have permission to do this.",
+  404: "We couldn't find what you're looking for",
+  500: "Something went wrong on our end. Please try again later.",
+  501: "Not implemented. Please try again later.",
+  502: "Service temporarily unavailable. Please try again.",
+  503: "Service is busy. Please try again in a moment.",
+  504: "Request took too long. Please try again.",
+}
 
 
 async function handleApiError(response, defaultMsg = "An error occurred") {
@@ -74,15 +84,17 @@ async function handleApiError(response, defaultMsg = "An error occurred") {
       errMsg = [...newErrMsgArray].reverse().join('\n');
     }
   } catch (e) {
-    // If parsing fails, fall back to status codes
-    if (response.status === 404) errMsg = "Resource not found";
-    else if (response.status === 409) errMsg = "Conflict: Resource already exists";
-    else if (response.status === 500) errMsg = "Internal Server Error";
-    else if (response.status === 401) errMsg = "Unauthorized";
-    else if (response.status === 403) errMsg = "Forbidden";
+    // If parsing fails, use user-friendly fallback messages
+    if (response.status === 400) errMsg = "Invalid request. Please check your input.";
+    else if (errorLabels.hasOwnProperty(response.status)) errMsg = errorLabels[response.status];
   }
 
-  throw new Error(errMsg);
+  const err = new Error(errMsg);
+  err.status = response.status;
+  throw err;
 }
 
-export { getInvoiceData, handleApiError };
+
+
+
+export { getInvoiceData, handleApiError, errorLabels };

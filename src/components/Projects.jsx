@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { handleApiError } from "./utils";
 import { useToast } from "../context/ToastContext";
+import { useErrorScreen } from "../context/ErrorContext";
 import { useSearch } from "../context/SearchContext";
 import {
   Box, Button, Card, CardContent, CardHeader, IconButton, Typography, Grid,
@@ -33,6 +34,7 @@ const CURRENCIES = ['USD', 'EUR', 'GBP', 'INR', 'JPY', 'CAD', 'AUD'];
 
 export default function Projects({type}) {
   const { showSuccess, showError } = useToast();
+  const { showErrorOnScreen } = useErrorScreen();
   const { searchValue: search } = useSearch();
   const [projects, setProjects] = useState([]);
   const [dataLoaded, setDataLoaded] = useState(false);
@@ -82,6 +84,8 @@ export default function Projects({type}) {
       .catch((error) => {
         setDataLoaded(true);
         console.error("Error fetching projects:", error);
+        showError(error?.message ?? "Failed to load projects", error);
+        showErrorOnScreen(error?.status, error?.message ?? "Failed to load projects");
       });
 
     if (type === 'contracts') {
@@ -168,7 +172,8 @@ export default function Projects({type}) {
       })
       .catch((error) => {
         console.error("Error adding project:", error);
-        showError(error.message,error);
+        showError(error.message, error);
+        showErrorOnScreen(error?.status, error?.message);
       });
   };
   const handleEditProject = () => {
@@ -196,12 +201,14 @@ export default function Projects({type}) {
           })
           .catch((error) => {
             console.error("Error fetching projects:", error);
-            showError(error.message,error);
+            showError(error.message, error);
+            showErrorOnScreen(error?.status, error?.message);
           });
       })
       .catch((error) => {
         console.error("Error updating project:", error);
-        showError(error.message,error);
+        showError(error.message, error);
+        showErrorOnScreen(error?.status, error?.message);
       });
   };
   const handleDeleteProject = (projectId) => {
@@ -218,7 +225,8 @@ export default function Projects({type}) {
       })
       .catch((error) => {
         console.error("Error deleting project:", error);
-        showError(error.message,error);
+        showError(error.message, error);
+        showErrorOnScreen(error?.status, error?.message);
       });
   };
   const handleClone = (project) => {

@@ -137,16 +137,16 @@ export default function DashboardLayout({ user, onLogout }) {
     const fetchCounts = async () => {
       try {
         const endpoints = [
-          { key: 'clients', url: '/api/clients' },
-          { key: 'companies', url: '/api/companies' },
-          { key: 'banks', url: '/api/banks' },
-          { key: 'vendors', url: '/api/vendors' },
-          { key: 'consultants', url: '/api/consultants' },
-          { key: 'developer', url: '/api/developers' },
-          { key: 'contracts', url: '/api/contracts' },
-          { key: 'projects', url: '/api/projects' },
-          { key: 'templates', url: '/api/templates' },
-          { key: 'invoices', url: '/api/templates' }
+          { key: 'clients', url: '/api/clients/count' },
+          { key: 'companies', url: '/api/companies/count' },
+          { key: 'banks', url: '/api/banks/count' },
+          { key: 'vendors', url: '/api/vendors/count' },
+          { key: 'consultants', url: '/api/consultants/count' },
+          { key: 'developer', url: '/api/developers/count' },
+          { key: 'contracts', url: '/api/contracts/count' },
+          { key: 'projects', url: '/api/projects/count' },
+          { key: 'templates', url: '/api/templates/count' },
+          { key: 'invoices', url: '/api/invoices/count' }
         ];
 
         const results = await Promise.all(
@@ -154,7 +154,7 @@ export default function DashboardLayout({ user, onLogout }) {
             fetch(ep.url, { credentials: "include" })
               .then(res => res.json())
               .then(data => {
-                const count = Array.isArray(data) ? data.length : (data && typeof data === 'object' ? Object.keys(data).length : 0);
+                const count = data.count;
                 return { key: ep.key, count };
               })
               .catch(err => ({ key: ep.key, count: 0 }))

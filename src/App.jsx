@@ -8,6 +8,8 @@ import "./App.scss";
 import LoadMask from "./components/LoadMask.jsx";
 import { AppThemeProvider } from "./context/ThemeContext";
 import { ToastProvider } from "./context/ToastContext";
+import { ErrorProvider } from "./context/ErrorContext";
+import ErrorScreen from "./components/ErrorScreen.jsx";
 import "@fontsource/inter"; // Import the font
 
 // Settings page lazy load
@@ -40,8 +42,10 @@ export default function App() {
   return (
     <AppThemeProvider>
       <ToastProvider>
-        <CssBaseline />
-        <div className="app">
+        <ErrorProvider>
+          <CssBaseline />
+          <ErrorScreen />
+          <div className="app">
         <BrowserRouter>
           <Routes>
             <Route
@@ -78,6 +82,7 @@ export default function App() {
           </Routes>
         </BrowserRouter>
         </div>
+        </ErrorProvider>
       </ToastProvider>
     </AppThemeProvider>
   );
