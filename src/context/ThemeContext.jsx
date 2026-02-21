@@ -101,7 +101,7 @@ export const themes = {
 };
 
 export const AppThemeProvider = ({ children }) => {
-  const [currentThemeName, setCurrentThemeName] = useState('navy');
+  const [currentThemeName, setCurrentThemeName] = useState('light');
 
   const theme = useMemo(() => {
     return createTheme(themes[currentThemeName] || themes.navy);

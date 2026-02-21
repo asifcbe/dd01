@@ -1,3 +1,15 @@
+/**
+ * ParticipantManager tests: Add (POST), Edit (PATCH), Delete (DELETE), Clone.
+ *
+ * Run all tests:
+ *   npm run test:run
+ *
+ * Run only this file:
+ *   npm run test:run -- src/components/ParticipantManager.test.jsx
+ *
+ * Run in watch mode (re-run on file changes):
+ *   npm test -- src/components/ParticipantManager.test.jsx
+ */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, within, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -14,6 +26,9 @@ vi.mock('../context/ToastContext', () => ({
 }));
 vi.mock('../context/SearchContext', () => ({
   useSearch: () => ({ searchValue: '' }),
+}));
+vi.mock('../context/ErrorContext', () => ({
+  useErrorScreen: () => ({ showErrorOnScreen: vi.fn() }),
 }));
 vi.mock('./LoadMask', () => ({ default: () => null }));
 
@@ -333,6 +348,70 @@ describe('ParticipantManager', () => {
           expect(url).toContain(`/api/${config.apiDetailTypeSingle}`);
           expect(url).toContain(`${config.apiDetailTypeSingle}_id=99`);
         });
+      });
+    });
+  });
+
+  describe('Clone', () => {
+    entityConfigs.forEach((config) => {
+      it(`${config.name}: opens Add dialog with cloned data (name with " (Copy)") when Clone is clicked`, async () => {
+        const mockItem = {
+          id: 10,
+          name: 'Original Item',
+          email: 'orig@test.com',
+          mobile: '1111111111',
+          address: 'Some address',
+          type2: config.apiType === 'Client' ? 'Individual' : config.apiType === 'Company' ? 'Company' : config.apiType === 'Bank' ? 'Bank' : config.apiType === 'Vendor' ? 'Company' : undefined,
+          type: config.apiType === 'Client' ? 'Individual' : config.apiType === 'Consultant' ? 'PartTime' : undefined,
+        };
+        if (config.apiType === 'Bank') {
+          mockItem.code = 'BANK1';
+          mockItem.branch = 'Main';
+        }
+
+        global.fetch.mockResolvedValueOnce({
+          ok: true,
+          json: () => Promise.resolve([mockItem]),
+        });
+
+        renderWithTheme(
+          <ParticipantManager
+            title={config.title}
+            icon={config.icon}
+            apiType={config.apiType}
+            apiDetailType={config.apiDetailType}
+            apiDetailTypeSingle={config.apiDetailTypeSingle}
+            fields={config.fields}
+            displayFields={config.fields.slice(0, 2)}
+            initialForm={config.initialForm}
+            type2={config.type2}
+            type3={config.type3 ?? 'NotApplicable'}
+          />
+        );
+
+        await waitFor(() => {
+          expect(global.fetch).toHaveBeenCalledWith(
+            `/api/${config.apiDetailType}`,
+            expect.any(Object)
+          );
+        });
+
+        const buttons = screen.getAllByRole('button');
+        const moreButton = buttons.find((b) => !b.textContent.match(/Add|Cancel|Save/) && b.querySelector('svg'));
+        expect(moreButton).toBeTruthy();
+        await userEvent.click(moreButton);
+
+        const cloneMenuItem = await screen.findByRole('menuitem', { name: /clone/i });
+        await userEvent.click(cloneMenuItem);
+
+        await waitFor(() => expect(screen.getByRole('dialog')).toBeInTheDocument());
+
+        const dialog = screen.getByRole('dialog');
+        expect(dialog).toHaveAccessibleName(new RegExp(`Add ${config.apiType}`, 'i'));
+        const nameInput = within(dialog).queryByLabelText(/name/i);
+        if (nameInput) {
+          expect(nameInput).toHaveValue('Original Item (Copy)');
+        }
       });
     });
   });

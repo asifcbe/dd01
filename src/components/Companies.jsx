@@ -24,7 +24,7 @@ const companyFields = [
   { name: "mobile", label: "Mobile", type: "text" },
   { name: "address", label: "Address", type: "text" },
   // { name: "country", label: "Country", type: "select", options: COUNTRY_OPTIONS },
-  { name: "vat_num", label: "VAT Number", type: "text" },
+  { name: "tax_id", label: "Tax Id", type: "text" },
   { name: "reg_num", label: "Reg Number", type: "text" },
 ];
 
@@ -33,7 +33,7 @@ const companyDisplayFields = [
   { name: "mobile", label: "Mobile" },
   { name: "address", label: "Address" },
   { name: "country", label: "Country" },
-  { name: "vat_num", label: "VAT Number" },
+  { name: "tax_id", label: "Tax Id" },
   { name: "reg_num", label: "Reg Number" },
 ];
 
@@ -43,7 +43,7 @@ const companyInitialForm = {
   mobile: "",
   address: "",
   country: "",
-  vat_num: "",
+  tax_id: "",
   reg_num: "",
 };
 

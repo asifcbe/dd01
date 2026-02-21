@@ -3,10 +3,11 @@ import { handleApiError } from "./utils";
 import { useToast } from "../context/ToastContext";
 import { useErrorScreen } from "../context/ErrorContext";
 import { useSearch } from "../context/SearchContext";
+import { useThemeContext } from "../context/ThemeContext";
 import {
   Box, Button, Card, CardContent, CardHeader, IconButton, Typography, Grid,
   Dialog, DialogTitle, DialogContent, DialogActions, TextField, Menu, MenuItem,
-  Fade, Avatar, Divider, FormControl, InputLabel, Select, Autocomplete,
+  Fade, Avatar, Divider, FormControl, InputLabel, Select, Autocomplete, Tabs, Tab,
 } from "@mui/material";
 import {
   Assignment as ProjectsIcon
@@ -32,10 +33,24 @@ const COUNTRIES = [
 
 const CURRENCIES = ['USD', 'EUR', 'GBP', 'INR', 'JPY', 'CAD', 'AUD'];
 
-export default function Projects({type}) {
+const PROJECT_TABS = [
+  { label: "to Companies", projectType: "ClientToCompany" },
+  { label: "to Vendors", projectType: "CompanyToVendor" },
+];
+const CONTRACT_TABS = [
+  { label: "to Developers", projectType: "CompanyToDeveloper" },
+  { label: "to Consultants", projectType: "VendorToDeveloper" },
+];
+
+export default function Projects({ type }) {
   const { showSuccess, showError } = useToast();
   const { showErrorOnScreen } = useErrorScreen();
   const { searchValue: search } = useSearch();
+  const { currentThemeName } = useThemeContext();
+  const borderColor = { light: "black", dark: "white", navy: "rgb(0, 188, 212)" };
+  const internalTabs = type === "contracts" ? CONTRACT_TABS : PROJECT_TABS;
+  const [internalTabIdx, setInternalTabIdx] = useState(0);
+  const currentProjectType = internalTabs[internalTabIdx]?.projectType ?? internalTabs[0].projectType;
   const [projects, setProjects] = useState([]);
   const [dataLoaded, setDataLoaded] = useState(false);
   const [givenByOptions, setGivenByOptions] = useState([]);
@@ -73,11 +88,13 @@ export default function Projects({type}) {
   const [menuAnchorEls, setMenuAnchorEls] = useState({});
 
   useEffect(() => {
-    fetch("api/projects", { method: "GET" })
+    setDataLoaded(false);
+    const url = `api/projects?project_type=${encodeURIComponent(currentProjectType)}`;
+    fetch(url, { method: "GET" })
       .then((res) => handleApiError(res, "Failed to fetch projects"))
       .then((response) => response.json())
       .then((data) => {
-        setProjects(data);
+        setProjects(Array.isArray(data) ? data : Object.values(data ?? {}));
         setDataLoaded(true);
         setMenuAnchorEls({});
       })
@@ -87,31 +104,58 @@ export default function Projects({type}) {
         showError(error?.message ?? "Failed to load projects", error);
         showErrorOnScreen(error?.status, error?.message ?? "Failed to load projects");
       });
+  }, [type, currentProjectType]);
 
-    if (type === 'contracts') {
-      Promise.all([
-        fetch("api/companies", { method: "GET" }).then(r => r.json()).catch(() => []),
-        fetch("api/developers", { method: "GET" }).then(r => r.json()).catch(() => []),
-        fetch("api/consultants", { method: "GET" }).then(r => r.json()).catch(() => []),
-      ]).then(([companies, developers, consultants]) => {
-        const devs = Array.isArray(developers) ? developers : Object.values(developers || {});
-        const cons = Array.isArray(consultants) ? consultants : Object.values(consultants || {});
-        const comps = Array.isArray(companies) ? companies : Object.values(companies || {});
-        setGivenByOptions(comps);
-        setTakenByOptions([...devs, ...cons]);
-      });
-    } else {
-      Promise.all([
-        fetch("api/clients", { method: "GET" }).then(r => r.json()).catch(() => []),
-        fetch("api/companies", { method: "GET" }).then(r => r.json()).catch(() => []),
-      ]).then(([clients, companies]) => {
-        const cl = Array.isArray(clients) ? clients : Object.values(clients || {});
-        const comps = Array.isArray(companies) ? companies : Object.values(companies || {});
-        setGivenByOptions(cl);
-        setTakenByOptions(comps);
-      });
+  // Given by / Taken by per tab:
+  // to Companies: Given by Client, Taken by Company
+  // to Vendors: Given by Company, Taken by Vendor
+  // to Developers: Given by Company, Taken by Developer
+  // to Consultants: Given by Vendor, Taken by Consultant
+  useEffect(() => {
+    const toArray = (data) => Array.isArray(data) ? data : Object.values(data || {});
+
+    switch (currentProjectType) {
+      case "ClientToCompany":
+        Promise.all([
+          fetch("api/clients", { method: "GET" }).then(r => r.json()).catch(() => []),
+          fetch("api/companies", { method: "GET" }).then(r => r.json()).catch(() => []),
+        ]).then(([clients, companies]) => {
+          setGivenByOptions(toArray(clients));
+          setTakenByOptions(toArray(companies));
+        });
+        break;
+      case "CompanyToVendor":
+        Promise.all([
+          fetch("api/companies", { method: "GET" }).then(r => r.json()).catch(() => []),
+          fetch("api/vendors", { method: "GET" }).then(r => r.json()).catch(() => []),
+        ]).then(([companies, vendors]) => {
+          setGivenByOptions(toArray(companies));
+          setTakenByOptions(toArray(vendors));
+        });
+        break;
+      case "CompanyToDeveloper":
+        Promise.all([
+          fetch("api/companies", { method: "GET" }).then(r => r.json()).catch(() => []),
+          fetch("api/developers", { method: "GET" }).then(r => r.json()).catch(() => []),
+        ]).then(([companies, developers]) => {
+          setGivenByOptions(toArray(companies));
+          setTakenByOptions(toArray(developers));
+        });
+        break;
+      case "VendorToDeveloper":
+        Promise.all([
+          fetch("api/vendors", { method: "GET" }).then(r => r.json()).catch(() => []),
+          fetch("api/consultants", { method: "GET" }).then(r => r.json()).catch(() => []),
+        ]).then(([vendors, consultants]) => {
+          setGivenByOptions(toArray(vendors));
+          setTakenByOptions(toArray(consultants));
+        });
+        break;
+      default:
+        setGivenByOptions([]);
+        setTakenByOptions([]);
     }
-  }, [type]);
+  }, [currentProjectType]);
 
   const handleOpen = () => setOpen(true);
   const handleClose = () => {
@@ -145,22 +189,23 @@ export default function Projects({type}) {
   const handleChange = (e) => { setNewProject((prev) => ({ ...prev, [e.target.name]: e.target.value })); };
   const handleEditChange = (e) => { setEditProject((prev) => ({ ...prev, [e.target.name]: e.target.value })); };
   const handleAddProject = () => {
+    const payload = { ...newProject, type: currentProjectType };
     fetch("/api/project", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify(newProject),
+      body: JSON.stringify(payload),
       credentials: "include"
     })
       .then((res) => handleApiError(res, "Failed to add project"))
       .then((response) => response.json())
       .then(() => {
         // Refetch projects to ensure the list is up to date with names
-        fetch("api/projects", { method: "GET" })
+        fetch(`api/projects?project_type=${encodeURIComponent(currentProjectType)}`, { method: "GET" })
           .then((response) => response.json())
           .then((data) => {
-            setProjects(data);
+            setProjects(Array.isArray(data) ? data : Object.values(data ?? {}));
             setMenuAnchorEls({});
             handleClose();
           })
@@ -191,11 +236,11 @@ export default function Projects({type}) {
       .then((res) => handleApiError(res, "Failed to update project"))
       .then(() => {
         // Refetch projects to get the latest data
-        fetch("api/projects", { method: "GET" })
+        fetch(`api/projects?project_type=${encodeURIComponent(currentProjectType)}`, { method: "GET" })
           .then((res) => handleApiError(res, "Failed to fetch projects"))
           .then((response) => response.json())
           .then((data) => {
-            setProjects(data);
+            setProjects(Array.isArray(data) ? data : Object.values(data ?? {}));
             handleEditClose();
             showSuccess("Project updated successfully!");
           })
@@ -243,26 +288,80 @@ export default function Projects({type}) {
   const handleMenuOpen = (event, projectId) => { setMenuAnchorEls((prev) => ({ ...prev, [projectId]: event.currentTarget })); };
   const handleMenuClose = (projectId) => { setMenuAnchorEls((prev) => ({ ...prev, [projectId]: null })); };
 
+  const tabSx = (idx) => ({
+    position: "relative",
+    minHeight: "52px",
+    minWidth: "140px",
+    fontWeight: 700,
+    textTransform: "none",
+    fontSize: "1rem",
+    letterSpacing: "0.3px",
+    color: internalTabIdx === idx ? "#ffffff !important" : "text.secondary",
+    bgcolor: internalTabIdx === idx ? "primary.main" : "background.default",
+    border: internalTabIdx === idx ? "none" : `1px solid ${borderColor[currentThemeName]}`,
+    borderRadius: 0,
+    px: 4,
+    py: 1.5,
+    clipPath: internalTabIdx === idx
+      ? "polygon(0% 0%, 85% 0%, 100% 100%, 0% 100%)"
+      : "polygon(0% 0%, calc(85% - 1px) 0%, calc(100% - 1px) 100%, 0% 100%)",
+    boxShadow: internalTabIdx === idx ? "0 4px 12px rgba(0, 163, 255, 0.3)" : "none",
+    transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+    zIndex: internalTabIdx === idx ? 2 : 1,
+    "&::before": internalTabIdx !== idx ? {
+      content: '""',
+      position: "absolute",
+      top: "-2px",
+      right: "0",
+      bottom: "-2px",
+      width: "16%",
+      background: borderColor[currentThemeName],
+      clipPath: "polygon(100% 0%, 0% 0%, 100% 100%)",
+      zIndex: 2,
+    } : {},
+    "&:hover": {
+      bgcolor: internalTabIdx === idx ? "primary.main" : "action.hover",
+      boxShadow: internalTabIdx === idx ? "0 6px 16px rgba(0, 163, 255, 0.4)" : "0 2px 8px rgba(0, 0, 0, 0.1)",
+    },
+    "& .MuiTab-wrapper": {
+      color: internalTabIdx === idx ? "#ffffff !important" : "inherit",
+    },
+  });
+
   return (
     !dataLoaded ? <LoadMask text={`Loading ${type === 'contracts' ? 'Contracts' : 'Projects'}`} /> : <Box>
-      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 4 }}>
-          <Typography variant="h5" sx={{ fontWeight: 700, color: 'text.primary' }}>
-            {type === 'contracts' ? 'Contracts' : 'Projects'}
-          </Typography>
-          <Button 
-            variant="contained" 
-            size="large" 
-            onClick={handleOpen}
-            sx={{ 
-                borderRadius: '50px',
-                px: 3,
-                textTransform: 'none',
-                boxShadow: '0 4px 14px rgba(0, 163, 255, 0.3)'
-            }}
-          >
-            Add {type === 'contracts' ? 'Contract' : 'Project'}
-          </Button>
-        </Box>
+      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 4, flexWrap: "wrap", gap: 2 }}>
+        <Tabs
+          value={internalTabIdx}
+          onChange={(_, v) => setInternalTabIdx(v)}
+          sx={{
+            minHeight: "52px",
+            mb: 0,
+            "& .MuiTabs-indicator": { display: "none" },
+            "& .MuiTabs-flexContainer": { gap: "8px"},
+            "& button": { paddingRight: "auto !important",paddingLeft: "10px !important" }
+          
+          }}
+        >
+          {internalTabs.map((tab, idx) => (
+            <Tab key={tab.projectType} label={tab.label} sx={tabSx(idx)} />
+          ))}
+        </Tabs>
+        <Button
+          variant="contained"
+          size="large"
+          onClick={handleOpen}
+          sx={{
+            flexShrink: 0,
+            borderRadius: "50px",
+            px: 3,
+            textTransform: "none",
+            boxShadow: "0 4px 14px rgba(0, 163, 255, 0.3)",
+          }}
+        >
+          Add {type === "contracts" ? "Contract" : "Project"}
+        </Button>
+      </Box>
       <Grid container spacing={3} >
         {filteredProjects.map((project, idx) => (
           <Grid item xs={12} sm={6} md={4} key={idx} sx={{ p: 1 }}>
