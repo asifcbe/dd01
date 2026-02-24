@@ -143,8 +143,8 @@ export default function DashboardLayout({ user, onLogout }) {
           { key: 'vendors', url: '/api/vendors/count' },
           { key: 'consultants', url: '/api/consultants/count' },
           { key: 'developer', url: '/api/developers/count' },
-          { key: 'contracts', url: '/api/contracts/count' },
-          { key: 'projects', url: '/api/projects/count' },
+          { key: 'contracts', url: '/api/projects/count?type=CompanyToDeveloper' },
+          { key: 'projects', url: '/api/projects/count?type=CompanyToDeveloper' },
           { key: 'templates', url: '/api/templates/count' },
           { key: 'invoices', url: '/api/invoices/count' }
         ];

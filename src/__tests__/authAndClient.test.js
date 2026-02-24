@@ -499,4 +499,108 @@ describe('Auth and participants flow (Client, Company, Bank, Consultant, Develop
     const res = await request('DELETE', `/api/vendor?vendor_id=${clonedVendorId}`);
     expect(res.ok).toBe(true);
   }, 15000);
+
+  //Load data for each entity
+  test('Load clients', async () => {
+    const res = await request('GET', '/api/clients');
+    expect(res.status).toBe(200);
+    
+  });
+  test('Load companies', async () => {
+    const res = await request('GET', '/api/companies');
+    expect(res.status).toBe(200);
+    
+  });
+  test('Load banks', async () => {
+    const res = await request('GET', '/api/banks');
+    expect(res.status).toBe(200);
+    
+  });
+  test('Load vendors', async () => {
+    const res = await request('GET', '/api/vendors');
+    expect(res.status).toBe(200);
+    
+  });
+  test('Load consultants', async () => {
+    const res = await request('GET', '/api/consultants');
+    expect(res.status).toBe(200);
+    
+  });
+  test('Load developers', async () => {
+    const res = await request('GET', '/api/developers');
+    expect(res.status).toBe(200);
+    
+  });
+  test('Load contracts', async () => {
+    const res = await request('GET', '/api/projects?type=CompanyToDeveloper');
+    expect(res.status).toBe(200);
+    
+
+  });
+  test('Load projects', async () => {
+    const res = await request('GET', '/api/projects?type=CompanyToDeveloper');
+    expect(res.status).toBe(200);
+    
+  });
+  // test('Load templates', async () => {
+  //   const res = await request('GET', '/api/templates');
+  //   expect(res.status).toBe(200);
+    
+  // });
+  // test('Load invoices', async () => {
+  //   const res = await request('GET', '/api/invoices');
+  //   expect(res.status).toBe(200);
+    
+  // });
+  // —— Fetch counts ——
+  test('Fetch clients count', async () => {
+    const res = await request('GET', '/api/clients/count');
+    expect(res.status).toBe(200);
+    
+  });
+  test('Fetch companies count', async () => {
+    const res = await request('GET','/api/companies/count');
+    expect(res.status).toBe(200);
+    
+  });
+  test('Fetch banks count', async () => {
+    const res = await request('GET','/api/banks/count');
+    expect(res.status).toBe(200);
+    
+  });
+  test('Fetch vendors count', async () => {
+    const res = await request('GET','/api/vendors/count');
+    expect(res.status).toBe(200);
+    
+  });
+  test('Fetch consultants count', async () => {
+    const res = await request('GET','/api/consultants/count');
+    expect(res.status).toBe(200);
+    
+  });
+  test('Fetch developers count', async () => {
+    const res = await request('GET','/api/developers/count');
+    expect(res.status).toBe(200);
+    
+  });
+  test('Fetch contracts count', async () => {
+    const res = await request('GET','/api/contracts/count');
+    expect(res.status).toBe(200);
+    
+  });
+  test('Fetch projects count', async () => {
+    const res = await request('GET','/api/projects/count');
+    expect(res.status).toBe(200);
+    
+  });
+  test('Fetch templates count', async () => {
+    const res = await request('GET','/api/templates/count');
+    expect(res.status).toBe(200);
+    
+  });
+  test('Fetch invoices count', async () => {
+    const res = await request('GET','/api/invoices/count');
+    expect(res.status).toBe(200);
+    
+  });
 });

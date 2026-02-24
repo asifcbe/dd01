@@ -89,7 +89,7 @@ export default function Projects({ type }) {
 
   useEffect(() => {
     setDataLoaded(false);
-    const url = `api/projects?project_type=${encodeURIComponent(currentProjectType)}`;
+    const url = `api/projects?type=${encodeURIComponent(currentProjectType)}`;
     fetch(url, { method: "GET" })
       .then((res) => handleApiError(res, "Failed to fetch projects"))
       .then((response) => response.json())
@@ -202,7 +202,7 @@ export default function Projects({ type }) {
       .then((response) => response.json())
       .then(() => {
         // Refetch projects to ensure the list is up to date with names
-        fetch(`api/projects?project_type=${encodeURIComponent(currentProjectType)}`, { method: "GET" })
+        fetch(`api/projects?type=${encodeURIComponent(currentProjectType)}`, { method: "GET" })
           .then((response) => response.json())
           .then((data) => {
             setProjects(Array.isArray(data) ? data : Object.values(data ?? {}));
@@ -236,7 +236,7 @@ export default function Projects({ type }) {
       .then((res) => handleApiError(res, "Failed to update project"))
       .then(() => {
         // Refetch projects to get the latest data
-        fetch(`api/projects?project_type=${encodeURIComponent(currentProjectType)}`, { method: "GET" })
+        fetch(`api/projects?type=${encodeURIComponent(currentProjectType)}`, { method: "GET" })
           .then((res) => handleApiError(res, "Failed to fetch projects"))
           .then((response) => response.json())
           .then((data) => {
