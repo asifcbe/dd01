@@ -9,9 +9,11 @@ lerna-debug.log*
 
 node_modules
 dist
+jest-report
+jest_html_reporters.html
 dist-ssr
 *.local
-
+jest-html-reporters-attach
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
