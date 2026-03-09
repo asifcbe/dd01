@@ -14,6 +14,8 @@ jest_html_reporters.html
 dist-ssr
 *.local
 jest-html-reporters-attach
+# Test credentials (created by authAndClient.test.js)
+src/__tests__/.test-credentials.json
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

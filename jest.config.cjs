@@ -9,6 +9,7 @@ module.exports = {
     '^.+\\.(js|jsx)$': 'babel-jest',
   },
   testMatch: ['**/__tests__/**/*.test.[jt]s?(x)', '**/*.test.[jt]s?(x)'],
+  testSequencer: '<rootDir>/src/__tests__/testSequencer.cjs',
   transformIgnorePatterns: ['/node_modules/(?!(@mui)/)'],
   testTimeout: 30000,
   reporters: [
