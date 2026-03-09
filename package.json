@@ -10,6 +10,7 @@
     "preview": "vite preview",
     "test": "jest",
     "test:integration": "jest --runInBand",
+    "populate": "jest populateData --runInBand",
     "test:watch": "jest --watch",
     "test:ui": "jest --reporters=default --reporters=jest-html-reporters"
   },

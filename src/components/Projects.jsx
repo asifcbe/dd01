@@ -7,7 +7,7 @@ import { useThemeContext } from "../context/ThemeContext";
 import {
   Box, Button, Card, CardContent, CardHeader, IconButton, Typography, Grid,
   Dialog, DialogTitle, DialogContent, DialogActions, TextField, Menu, MenuItem,
-  Fade, Avatar, Divider, FormControl, InputLabel, Select, Autocomplete, Tabs, Tab,
+  Fade, Avatar, Divider, FormControl, InputLabel, Select, Autocomplete,
 } from "@mui/material";
 import {
   Assignment as ProjectsIcon
@@ -33,14 +33,36 @@ const COUNTRIES = [
 
 const CURRENCIES = ['USD', 'EUR', 'GBP', 'INR', 'JPY', 'CAD', 'AUD'];
 
-const PROJECT_TABS = [
-  { label: "to Companies", projectType: "ClientToCompany" },
-  { label: "to Vendors", projectType: "CompanyToVendor" },
+// Project dropdown options: From (Client/Company) → To (Company/Vendor)
+// To is determined by From: Client→Company, Company→Vendor
+const PROJECT_FROM_OPTIONS = [
+  { value: "Client", label: "Client" },
+  { value: "Company", label: "Company" },
 ];
-const CONTRACT_TABS = [
-  { label: "to Developers", projectType: "CompanyToDeveloper" },
-  { label: "to Consultants", projectType: "VendorToDeveloper" },
+const PROJECT_TO_MAP = {
+  Client: [{ value: "Company", label: "Company" }],
+  Company: [{ value: "Vendor", label: "Vendor" }],
+};
+const PROJECT_TYPE_MAP = {
+  Client: { Company: "ClientToCompany" },
+  Company: { Vendor: "CompanyToVendor" },
+};
+
+// Contract dropdown options: From (Company/Vendor) → To (Developer/Consultant)
+const CONTRACT_FROM_OPTIONS = [
+  { value: "Company", label: "Company" },
+  { value: "Vendor", label: "Vendor" },
 ];
+const CONTRACT_TO_OPTIONS = [
+  { value: "Developer", label: "Developer" },
+  { value: "Consultant", label: "Consultant" },
+];
+
+// Maps (From, To) to backend project type
+const CONTRACT_TYPE_MAP = {
+  Company: { Developer: "CompanyToDeveloper", Consultant: "CompanyToConsultant" },
+  Vendor: { Developer: "VendorToDeveloper", Consultant: "VendorToDeveloper" },
+};
 
 export default function Projects({ type }) {
   const { showSuccess, showError } = useToast();
@@ -48,9 +70,23 @@ export default function Projects({ type }) {
   const { searchValue: search } = useSearch();
   const { currentThemeName } = useThemeContext();
   const borderColor = { light: "black", dark: "white", navy: "rgb(0, 188, 212)" };
-  const internalTabs = type === "contracts" ? CONTRACT_TABS : PROJECT_TABS;
-  const [internalTabIdx, setInternalTabIdx] = useState(0);
-  const currentProjectType = internalTabs[internalTabIdx]?.projectType ?? internalTabs[0].projectType;
+  const [projectFrom, setProjectFrom] = useState("Client");
+  const [projectTo, setProjectTo] = useState("Company");
+  const [contractFrom, setContractFrom] = useState("Company");
+  const [contractTo, setContractTo] = useState("Developer");
+  const currentProjectType = type === "contracts"
+    ? (CONTRACT_TYPE_MAP[contractFrom]?.[contractTo] ?? "CompanyToDeveloper")
+    : (PROJECT_TYPE_MAP[projectFrom]?.[projectTo] ?? "ClientToCompany");
+
+  // Auto-select projectTo when projectFrom changes
+  useEffect(() => {
+    if (type === "projects") {
+      const toOptions = PROJECT_TO_MAP[projectFrom];
+      if (toOptions?.length) {
+        setProjectTo(toOptions[0].value);
+      }
+    }
+  }, [type, projectFrom]);
   const [projects, setProjects] = useState([]);
   const [dataLoaded, setDataLoaded] = useState(false);
   const [givenByOptions, setGivenByOptions] = useState([]);
@@ -106,56 +142,41 @@ export default function Projects({ type }) {
       });
   }, [type, currentProjectType]);
 
-  // Given by / Taken by per tab:
-  // to Companies: Given by Client, Taken by Company
-  // to Vendors: Given by Company, Taken by Vendor
-  // to Developers: Given by Company, Taken by Developer
-  // to Consultants: Given by Vendor, Taken by Consultant
+  // Given by / Taken by:
+  // Projects: From (Client/Company) → To (Company/Vendor)
+  // Contracts: From (Company/Vendor) → To (Developer/Consultant)
   useEffect(() => {
     const toArray = (data) => Array.isArray(data) ? data : Object.values(data || {});
 
-    switch (currentProjectType) {
-      case "ClientToCompany":
-        Promise.all([
-          fetch("api/clients", { method: "GET" }).then(r => r.json()).catch(() => []),
-          fetch("api/companies", { method: "GET" }).then(r => r.json()).catch(() => []),
-        ]).then(([clients, companies]) => {
-          setGivenByOptions(toArray(clients));
-          setTakenByOptions(toArray(companies));
-        });
-        break;
-      case "CompanyToVendor":
-        Promise.all([
-          fetch("api/companies", { method: "GET" }).then(r => r.json()).catch(() => []),
-          fetch("api/vendors", { method: "GET" }).then(r => r.json()).catch(() => []),
-        ]).then(([companies, vendors]) => {
-          setGivenByOptions(toArray(companies));
-          setTakenByOptions(toArray(vendors));
-        });
-        break;
-      case "CompanyToDeveloper":
-        Promise.all([
-          fetch("api/companies", { method: "GET" }).then(r => r.json()).catch(() => []),
-          fetch("api/developers", { method: "GET" }).then(r => r.json()).catch(() => []),
-        ]).then(([companies, developers]) => {
-          setGivenByOptions(toArray(companies));
-          setTakenByOptions(toArray(developers));
-        });
-        break;
-      case "VendorToDeveloper":
-        Promise.all([
-          fetch("api/vendors", { method: "GET" }).then(r => r.json()).catch(() => []),
-          fetch("api/consultants", { method: "GET" }).then(r => r.json()).catch(() => []),
-        ]).then(([vendors, consultants]) => {
-          setGivenByOptions(toArray(vendors));
-          setTakenByOptions(toArray(consultants));
-        });
-        break;
-      default:
-        setGivenByOptions([]);
-        setTakenByOptions([]);
+    if (type === "contracts") {
+      const fromApi = contractFrom === "Company" ? "api/companies" : "api/vendors";
+      const toApi = contractTo === "Developer" ? "api/developers" : "api/consultants";
+      Promise.all([
+        fetch(fromApi, { method: "GET" }).then(r => r.json()).catch(() => []),
+        fetch(toApi, { method: "GET" }).then(r => r.json()).catch(() => []),
+      ]).then(([fromData, toData]) => {
+        setGivenByOptions(toArray(fromData));
+        setTakenByOptions(toArray(toData));
+      });
+      return;
     }
-  }, [currentProjectType]);
+
+    if (type === "projects") {
+      const fromApi = projectFrom === "Client" ? "api/clients" : "api/companies";
+      const toApi = projectTo === "Company" ? "api/companies" : "api/vendors";
+      Promise.all([
+        fetch(fromApi, { method: "GET" }).then(r => r.json()).catch(() => []),
+        fetch(toApi, { method: "GET" }).then(r => r.json()).catch(() => []),
+      ]).then(([fromData, toData]) => {
+        setGivenByOptions(toArray(fromData));
+        setTakenByOptions(toArray(toData));
+      });
+      return;
+    }
+
+    setGivenByOptions([]);
+    setTakenByOptions([]);
+  }, [type, currentProjectType, contractFrom, contractTo, projectFrom, projectTo]);
 
   const handleOpen = () => setOpen(true);
   const handleClose = () => {
@@ -224,7 +245,7 @@ export default function Projects({ type }) {
   const handleEditProject = () => {
     const idParam = 'project_id';
     const endpoint = `/api/project?${idParam}=${editProject.id}`;
-    
+
     fetch(endpoint, {
       method: "PATCH",
       headers: {
@@ -288,65 +309,140 @@ export default function Projects({ type }) {
   const handleMenuOpen = (event, projectId) => { setMenuAnchorEls((prev) => ({ ...prev, [projectId]: event.currentTarget })); };
   const handleMenuClose = (projectId) => { setMenuAnchorEls((prev) => ({ ...prev, [projectId]: null })); };
 
-  const tabSx = (idx) => ({
-    position: "relative",
-    minHeight: "52px",
-    minWidth: "140px",
-    fontWeight: 700,
-    textTransform: "none",
-    fontSize: "1rem",
-    letterSpacing: "0.3px",
-    color: internalTabIdx === idx ? "#ffffff !important" : "text.secondary",
-    bgcolor: internalTabIdx === idx ? "primary.main" : "background.default",
-    border: internalTabIdx === idx ? "none" : `1px solid ${borderColor[currentThemeName]}`,
-    borderRadius: 0,
-    px: 4,
-    py: 1.5,
-    clipPath: internalTabIdx === idx
-      ? "polygon(0% 0%, 85% 0%, 100% 100%, 0% 100%)"
-      : "polygon(0% 0%, calc(85% - 1px) 0%, calc(100% - 1px) 100%, 0% 100%)",
-    boxShadow: internalTabIdx === idx ? "0 4px 12px rgba(0, 163, 255, 0.3)" : "none",
-    transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-    zIndex: internalTabIdx === idx ? 2 : 1,
-    "&::before": internalTabIdx !== idx ? {
-      content: '""',
-      position: "absolute",
-      top: "-2px",
-      right: "0",
-      bottom: "-2px",
-      width: "16%",
-      background: borderColor[currentThemeName],
-      clipPath: "polygon(100% 0%, 0% 0%, 100% 100%)",
-      zIndex: 2,
-    } : {},
-    "&:hover": {
-      bgcolor: internalTabIdx === idx ? "primary.main" : "action.hover",
-      boxShadow: internalTabIdx === idx ? "0 6px 16px rgba(0, 163, 255, 0.4)" : "0 2px 8px rgba(0, 0, 0, 0.1)",
-    },
-    "& .MuiTab-wrapper": {
-      color: internalTabIdx === idx ? "#ffffff !important" : "inherit",
-    },
-  });
-
   return (
     !dataLoaded ? <LoadMask text={`Loading ${type === 'contracts' ? 'Contracts' : 'Projects'}`} /> : <Box>
       <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 4, flexWrap: "wrap", gap: 2 }}>
-        <Tabs
-          value={internalTabIdx}
-          onChange={(_, v) => setInternalTabIdx(v)}
-          sx={{
-            minHeight: "52px",
-            mb: 0,
-            "& .MuiTabs-indicator": { display: "none" },
-            "& .MuiTabs-flexContainer": { gap: "8px"},
-            "& button": { paddingRight: "auto !important",paddingLeft: "10px !important" }
-          
-          }}
-        >
-          {internalTabs.map((tab, idx) => (
-            <Tab key={tab.projectType} label={tab.label} sx={tabSx(idx)} />
-          ))}
-        </Tabs>
+        {(type === "contracts" || type === "projects") ? (
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "flex-end",
+              gap: 2,
+              flexWrap: "wrap",
+              flex: 1,
+              minWidth: 0,
+            }}
+          >
+            <Box sx={{ display: "flex", flexDirection: "row", gap: 1, alignItems: "center" }}>
+              <Typography
+                sx={{
+                  fontWeight: 700,
+                  fontSize: "0.875rem",
+                  color: "common.white",
+                  bgcolor: "primary.main",
+                  borderRadius: "50px",
+                  px: 2,
+                  py: 2,
+                  boxShadow: "0 4px 14px rgba(0, 163, 255, 0.3)",
+                }}
+              >
+                From
+              </Typography>
+              <FormControl
+                size="medium"
+                sx={{
+                  minWidth: 140,
+                  "& .MuiOutlinedInput-root": {
+                    minHeight: 52,
+                    borderRadius: 2,
+                    bgcolor: "background.default",
+                    fontWeight: 700,
+                    fontSize: "1rem",
+                    letterSpacing: "0.3px",
+                    textTransform: "none",
+                    border: `1px solid ${borderColor[currentThemeName]}`,
+                    boxShadow: "0 2px 8px rgba(0, 0, 0, 0.08)",
+                    transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+                    "& fieldset": { border: "none" },
+                    "&:hover": {
+                      bgcolor: "action.hover",
+                      boxShadow: "0 2px 8px rgba(0, 0, 0, 0.1)",
+                    },
+                    "&.Mui-focused": {
+                      borderColor: "primary.main",
+                      boxShadow: "0 4px 12px rgba(0, 163, 255, 0.3)",
+                    },
+                  },
+                  "& .MuiSelect-select": { py: 1.5, px: 2 },
+                }}
+              >
+                <Select
+                  value={type === "projects" ? projectFrom : contractFrom}
+                  onChange={(e) => {
+                    if (type === "projects") {
+                      setProjectFrom(e.target.value);
+                    } else {
+                      setContractFrom(e.target.value);
+                    }
+                  }}
+                >
+                  {(type === "projects" ? PROJECT_FROM_OPTIONS : CONTRACT_FROM_OPTIONS).map((opt) => (
+                    <MenuItem key={opt.value} value={opt.value} sx={{ fontWeight: 600 }}>{opt.label}</MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Box>
+            <Box sx={{ display: "flex", flexDirection: "row", gap: 1, alignItems: "center" }}>
+              <Typography
+                sx={{
+                  fontWeight: 700,
+                  fontSize: "0.875rem",
+                  color: "common.white",
+                  bgcolor: "primary.main",
+                  borderRadius: "50px",
+                  px: 2,
+                  py: 2,
+                  boxShadow: "0 4px 14px rgba(0, 163, 255, 0.3)",
+                }}
+              >
+                To
+              </Typography>
+              <FormControl
+                size="medium"
+                sx={{
+                  minWidth: 140,
+                  "& .MuiOutlinedInput-root": {
+                    minHeight: 52,
+                    borderRadius: 2,
+                    bgcolor: "background.default",
+                    fontWeight: 700,
+                    fontSize: "1rem",
+                    letterSpacing: "0.3px",
+                    textTransform: "none",
+                    border: `1px solid ${borderColor[currentThemeName]}`,
+                    boxShadow: "0 2px 8px rgba(0, 0, 0, 0.08)",
+                    transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+                    "& fieldset": { border: "none" },
+                    "&:hover": {
+                      bgcolor: "action.hover",
+                      boxShadow: "0 2px 8px rgba(0, 0, 0, 0.1)",
+                    },
+                    "&.Mui-focused": {
+                      borderColor: "primary.main",
+                      boxShadow: "0 4px 12px rgba(0, 163, 255, 0.3)",
+                    },
+                  },
+                  "& .MuiSelect-select": { py: 1.5, px: 2 },
+                }}
+              >
+                <Select
+                  value={type === "projects" ? projectTo : contractTo}
+                  onChange={(e) => {
+                    if (type === "projects") {
+                      setProjectTo(e.target.value);
+                    } else {
+                      setContractTo(e.target.value);
+                    }
+                  }}
+                >
+                  {(type === "projects" ? (PROJECT_TO_MAP[projectFrom] || []) : CONTRACT_TO_OPTIONS).map((opt) => (
+                    <MenuItem key={opt.value} value={opt.value} sx={{ fontWeight: 600 }}>{opt.label}</MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Box>
+          </Box>
+        ) : null}
         <Button
           variant="contained"
           size="large"
@@ -400,7 +496,7 @@ export default function Projects({ type }) {
                     </IconButton>
                   }
                   sx={{
-                    background: (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.05)' : "#f0f2fa", 
+                    background: (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.05)' : "#f0f2fa",
                     borderBottom: "1px solid",
                     borderColor: "divider",
                     minHeight: 60
@@ -430,7 +526,7 @@ export default function Projects({ type }) {
                     <Typography sx={{ fontSize: 15, color: "text.secondary" }}><b>Rate Mode:</b> {project.rate_mode}</Typography>
                     <Typography sx={{ fontSize: 15, color: "text.secondary" }}><b>Rate Amount:</b> {project.rate_amount}</Typography>
                     <Typography sx={{ fontSize: 15, color: "text.secondary" }}><b>Currency:</b> {project.currency}</Typography>
-                   </Box>
+                  </Box>
                 </CardContent>
               </Card>
             </Fade>
@@ -440,7 +536,7 @@ export default function Projects({ type }) {
       {/* <Box sx={{ mt: 5, textAlign: "left" ,p: 1}}>
         <Button variant="contained" size="large" onClick={handleOpen}>Add Project</Button>
       </Box> */}
-      <Dialog open={open} onClose={() => {}} disableEscapeKeyDown={true}>
+      <Dialog open={open} onClose={() => { }} disableEscapeKeyDown={true}>
         <DialogTitle>Add {type === 'contracts' ? 'Contract' : 'Project'}</DialogTitle>
         <DialogContent>
           <TextField margin="normal" fullWidth label="Name" name="name" value={newProject.name} onChange={handleChange} />
@@ -493,14 +589,14 @@ export default function Projects({ type }) {
             renderInput={(params) => <TextField {...params} label="Currency" margin="normal" />}
             fullWidth
           />
-          
+
         </DialogContent>
         <DialogActions sx={{ p: 2 }}>
           <Button onClick={handleClose}>Cancel</Button>
           <Button onClick={handleAddProject} variant="contained">Add</Button>
         </DialogActions>
       </Dialog>
-      <Dialog open={editOpen} onClose={() => {}} disableEscapeKeyDown={true}>
+      <Dialog open={editOpen} onClose={() => { }} disableEscapeKeyDown={true}>
         <DialogTitle>Edit {type === 'contracts' ? 'Contract' : 'Project'}</DialogTitle>
         <DialogContent>
           <TextField margin="normal" fullWidth label="Name" name="name" value={editProject.name} onChange={handleEditChange} />

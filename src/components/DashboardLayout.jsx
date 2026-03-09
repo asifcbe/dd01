@@ -514,7 +514,7 @@ export default function DashboardLayout({ user, onLogout }) {
                     <Route path="vendors" element={<Vendors />} />
                     <Route path="consultants" element={<Consultants />} />
                     <Route path="contracts" element={<Projects type={'contracts'}/>} />
-                    <Route path="projects" element={<Projects />} />
+                    <Route path="projects" element={<Projects type="projects" />} />
                     <Route path="templates" element={<Templates />} />
                     <Route path="invoices" element={<Invoices />} />
                 </Routes>
