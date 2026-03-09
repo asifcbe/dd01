@@ -53,9 +53,13 @@ export const CommonSearchBar = () => {
       value={searchValue}
       onChange={(e) => setSearchValue(e.target.value)}
       sx={{
-        flex: 1,
-        maxWidth: 400,
-        minWidth: 200,
+        width: {
+          xs: "100%",
+          sm: "min(640px, 100%)",
+          lg: "min(760px, 100%)",
+        },
+        maxWidth: "100%",
+        mx: "auto",
         "& .MuiOutlinedInput-root": {
           borderRadius: "24px",
           bgcolor: "action.hover",

@@ -469,7 +469,14 @@ export default function ParticipantManager({
         
         <Grid container spacing={3}>
           {filteredItems.map((item, idx) => (
-            <Grid item xs={12} sm={6} md={4} key={idx} sx={{ p: 1 }}>
+            <Grid
+              item
+              xs={12}
+              sm={6}
+              md={4}
+              key={idx}
+              sx={{ p: 1, display: "flex", justifyContent: "center" }}
+            >
               <Fade in>
                   <Card
                     elevation={0}
@@ -483,7 +490,10 @@ export default function ParticipantManager({
                       border: "1px solid",
                       borderColor: "divider", // Use theme border
                       position: "relative",
-                      width: '100%', // Flexible width
+                      width: 370,
+                      maxWidth: "100%",
+                      display: "flex",
+                      flexDirection: "column",
                       transition: 'all 0.2s ease-in-out'
                     }}
                   >

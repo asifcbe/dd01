@@ -7,7 +7,7 @@ import { useThemeContext } from "../context/ThemeContext";
 import {
   Box, Button, Card, CardContent, CardHeader, IconButton, Typography, Grid,
   Dialog, DialogTitle, DialogContent, DialogActions, TextField, Menu, MenuItem,
-  Fade, Avatar, Divider, FormControl, InputLabel, Select, Autocomplete,
+  Fade, Avatar, Divider, FormControl, InputLabel, Select, Autocomplete, Tooltip,
 } from "@mui/material";
 import {
   Assignment as ProjectsIcon
@@ -460,17 +460,31 @@ export default function Projects({ type }) {
       </Box>
       <Grid container spacing={3} >
         {filteredProjects.map((project, idx) => (
-          <Grid item xs={12} sm={6} md={4} key={idx} sx={{ p: 1 }}>
+          <Grid
+            item
+            xs={12}
+            sm={6}
+            md={4}
+            key={idx}
+            sx={{ p: 1, display: "flex", justifyContent: "center" }}
+          >
             <Fade in>
-              <Card elevation={0} sx={{
-                borderRadius: 3,
-                bgcolor: "background.paper",
-                ":hover": { boxShadow: (theme) => theme.shadows[4], borderColor: "primary.main" },
-                border: "1px solid",
-                borderColor: "divider",
-                position: "relative",
-                transition: 'all 0.2s ease-in-out'
-              }}>
+              <Card
+                elevation={0}
+                sx={{
+                  borderRadius: 3,
+                  bgcolor: "background.paper",
+                  ":hover": { boxShadow: (theme) => theme.shadows[4], borderColor: "primary.main" },
+                  border: "1px solid",
+                  borderColor: "divider",
+                  position: "relative",
+                  transition: "all 0.2s ease-in-out",
+                  width: 370,
+                  maxWidth: "100%",
+                  display: "flex",
+                  flexDirection: "column",
+                }}
+              >
                 <CardHeader
                   avatar={
                     <Avatar sx={{ bgcolor: "primary.main", width: 40, height: 40 }}>
@@ -478,9 +492,20 @@ export default function Projects({ type }) {
                     </Avatar>
                   }
                   title={
-                    <Typography variant="h6" sx={{ fontWeight: "bold", color: "text.primary" }}>
-                      {project.name}
-                    </Typography>
+                    <Tooltip title={project.name || ""} placement="top" arrow>
+                      <Typography
+                        variant="h6"
+                        sx={{
+                          fontWeight: "bold",
+                          color: "text.primary",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        {project.name}
+                      </Typography>
+                    </Tooltip>
                   }
                   subheader={
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.2 }}>
@@ -518,9 +543,57 @@ export default function Projects({ type }) {
                 <Divider sx={{ mb: 2, mt: 0 }} />
                 <CardContent>
                   <Box sx={{ display: "grid", gap: 1 }}>
-                    <Typography sx={{ fontSize: 15, color: "text.secondary" }}><b>Description:</b> {project.description ?? "None"}</Typography>
-                    <Typography sx={{ fontSize: 15, color: "text.secondary" }}><b>Given By:</b> {project.given_by}</Typography>
-                    <Typography sx={{ fontSize: 15, color: "text.secondary" }}><b>Taken By:</b> {project.taken_by}</Typography>
+                    <Tooltip title={project.description ?? "None"} placement="top" arrow>
+                      <Typography
+                        sx={{
+                          fontSize: 15,
+                          color: "text.secondary",
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 0.5,
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        <b>Description:</b>
+                        <span>{project.description ?? "None"}</span>
+                      </Typography>
+                    </Tooltip>
+                    <Tooltip title={project.given_by || ""} placement="top" arrow>
+                      <Typography
+                        sx={{
+                          fontSize: 15,
+                          color: "text.secondary",
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 0.5,
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        <b>Given By:</b>
+                        <span>{project.given_by}</span>
+                      </Typography>
+                    </Tooltip>
+                    <Tooltip title={project.taken_by || ""} placement="top" arrow>
+                      <Typography
+                        sx={{
+                          fontSize: 15,
+                          color: "text.secondary",
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 0.5,
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        <b>Taken By:</b>
+                        <span>{project.taken_by}</span>
+                      </Typography>
+                    </Tooltip>
                     <Typography sx={{ fontSize: 15, color: "text.secondary" }}><b>Start Date:</b> {project.start_date}</Typography>
                     <Typography sx={{ fontSize: 15, color: "text.secondary" }}><b>End Date:</b> {project.end_date}</Typography>
                     <Typography sx={{ fontSize: 15, color: "text.secondary" }}><b>Rate Mode:</b> {project.rate_mode}</Typography>
