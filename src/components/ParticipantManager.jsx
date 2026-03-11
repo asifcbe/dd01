@@ -490,7 +490,8 @@ export default function ParticipantManager({
                       border: "1px solid",
                       borderColor: "divider", // Use theme border
                       position: "relative",
-                      width: 370,
+                      width: 500,
+                      // minHeight: 350,
                       maxWidth: "100%",
                       display: "flex",
                       flexDirection: "column",

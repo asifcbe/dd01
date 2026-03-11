@@ -326,14 +326,16 @@ export default function Projects({ type }) {
             <Box sx={{ display: "flex", flexDirection: "row", gap: 1, alignItems: "center" }}>
               <Typography
                 sx={{
+                  width: 150,
                   fontWeight: 700,
                   fontSize: "0.875rem",
-                  color: "common.white",
-                  bgcolor: "primary.main",
-                  borderRadius: "50px",
+                  color: "darkslategray",
+                  bgcolor: "#d9e8f1",
+                  borderRadius: "8px",
+                  textAlign: "center",
                   px: 2,
                   py: 2,
-                  boxShadow: "0 4px 14px rgba(0, 163, 255, 0.3)",
+                  border: "1px solid #9bceed",
                 }}
               >
                 From
@@ -341,7 +343,7 @@ export default function Projects({ type }) {
               <FormControl
                 size="medium"
                 sx={{
-                  minWidth: 140,
+                  width: 150,
                   "& .MuiOutlinedInput-root": {
                     minHeight: 52,
                     borderRadius: 2,
@@ -350,10 +352,10 @@ export default function Projects({ type }) {
                     fontSize: "1rem",
                     letterSpacing: "0.3px",
                     textTransform: "none",
-                    border: `1px solid ${borderColor[currentThemeName]}`,
+                    border: `1px solid darkslategray}`,
                     boxShadow: "0 2px 8px rgba(0, 0, 0, 0.08)",
                     transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-                    "& fieldset": { border: "none" },
+                    "& fieldset": { border: "none"},
                     "&:hover": {
                       bgcolor: "action.hover",
                       boxShadow: "0 2px 8px rgba(0, 0, 0, 0.1)",
@@ -367,6 +369,16 @@ export default function Projects({ type }) {
                 }}
               >
                 <Select
+                  sx={{
+                    color: "darkslategray",
+                  }}
+                  MenuProps={{
+                      sx: {
+                        "& .MuiMenuItem-root": {
+                          color: "darkslategray",
+                        },
+                      },
+                  }}
                   value={type === "projects" ? projectFrom : contractFrom}
                   onChange={(e) => {
                     if (type === "projects") {
@@ -385,14 +397,17 @@ export default function Projects({ type }) {
             <Box sx={{ display: "flex", flexDirection: "row", gap: 1, alignItems: "center" }}>
               <Typography
                 sx={{
+                  width: 150,
                   fontWeight: 700,
                   fontSize: "0.875rem",
-                  color: "common.white",
-                  bgcolor: "primary.main",
-                  borderRadius: "50px",
+                  bgcolor: "#d9e8f1",
+                  color: "darkslategray",
+                  border: "1px solid #9bceed",
+                  borderRadius: "8px", 
+                  textAlign: "center",
                   px: 2,
                   py: 2,
-                  boxShadow: "0 4px 14px rgba(0, 163, 255, 0.3)",
+                  
                 }}
               >
                 To
@@ -400,7 +415,7 @@ export default function Projects({ type }) {
               <FormControl
                 size="medium"
                 sx={{
-                  minWidth: 140,
+                  width: 150,
                   "& .MuiOutlinedInput-root": {
                     minHeight: 52,
                     borderRadius: 2,
@@ -409,7 +424,7 @@ export default function Projects({ type }) {
                     fontSize: "1rem",
                     letterSpacing: "0.3px",
                     textTransform: "none",
-                    border: `1px solid ${borderColor[currentThemeName]}`,
+                    border: `1px solid darkslategray}`,
                     boxShadow: "0 2px 8px rgba(0, 0, 0, 0.08)",
                     transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
                     "& fieldset": { border: "none" },
@@ -434,9 +449,19 @@ export default function Projects({ type }) {
                       setContractTo(e.target.value);
                     }
                   }}
+                  sx={{
+                    color: "darkslategray",
+                  }}
+                  MenuProps={{
+                      sx: {
+                        "& .MuiMenuItem-root": {
+                          color: "darkslategray",
+                        },
+                      },
+                  }}
                 >
                   {(type === "projects" ? (PROJECT_TO_MAP[projectFrom] || []) : CONTRACT_TO_OPTIONS).map((opt) => (
-                    <MenuItem key={opt.value} value={opt.value} sx={{ fontWeight: 600 }}>{opt.label}</MenuItem>
+                    <MenuItem key={opt.value} value={opt.value} sx={{ fontWeight: 600, color: "darkslategray" }}>{opt.label}</MenuItem>
                   ))}
                 </Select>
               </FormControl>
