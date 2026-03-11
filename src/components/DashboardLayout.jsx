@@ -194,9 +194,9 @@ export default function DashboardLayout({ user, onLogout }) {
           zIndex: 1200 
         }}
       >
-        <Toolbar sx={{ justifyContent: "space-between", py: 1, gap: 2 }}>
+        <Toolbar sx={{ justifyContent: "space-between", py: 1, gap: 2,alignItems: "flex-start" }}>
           {/* Logo & Title */}
-          <Box sx={{ display: "flex", alignItems: "center", flexShrink: 0 }}>
+          <Box sx={{ display: "flex", alignItems: "flex-start", flexShrink: 0 }}>
             <Box 
               sx={{ 
                 bgcolor: 'primary.main', 
@@ -220,103 +220,9 @@ export default function DashboardLayout({ user, onLogout }) {
           </Box>
 
           {/* Center: Global Search Bar */}
-          <Box sx={{ display: { xs: "none", sm: "flex" }, alignItems: "center", justifyContent: "center", flex: 1, px: 2 }}>
+          <Box sx={{ display: { xs: "none", sm: "flex" }, flexDirection: "column", alignItems: "center", justifyContent: "center", flex: 1, padding: 0,gap: 1 }}>
             <CommonSearchBar />
-          </Box>
-
-          {/* Right Section: User Menu */}
-          <Box display="flex" alignItems="center" gap={1}>
-              <Box 
-                onClick={handleMenuOpen}
-                sx={{ 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  gap: 1.5,
-                  cursor: 'pointer',
-                  px: 1.5,
-                  py: 0.5,
-                  borderRadius: '24px',
-                  transition: 'all 0.2s',
-                  '&:hover': {
-                    bgcolor: 'action.hover'
-                  }
-                }}
-              >
-                <Box sx={{ bgcolor: 'action.hover', borderRadius: '50%', p: 0.5 }}>
-                  <Avatar src={user.avatar} sx={{ width: 32, height: 32 }} alt={user.email} /> 
-                </Box>
-                <Box sx={{ display: { xs: 'none', md: 'block' }, textAlign: 'left' }}>
-                  <Typography sx={{ fontWeight: 600, fontSize: '0.875rem', lineHeight: 1.2, color: 'text.primary' }}>
-                    {user.email}
-                  </Typography>
-                  <Typography sx={{ fontWeight: 400, fontSize: '0.75rem', color: 'text.secondary', lineHeight: 1 }}>
-                    {user.org}
-                  </Typography>
-                </Box>
-              </Box>
-
-              {/* User Dropdown Menu */}
-              <Menu
-                anchorEl={anchorEl}
-                open={menuOpen}
-                onClose={handleMenuClose}
-                onClick={handleMenuClose}
-                PaperProps={{
-                  elevation: 3,
-                  sx: {
-                    overflow: 'visible',
-                    filter: 'drop-shadow(0px 2px 8px rgba(0,0,0,0.12))',
-                    mt: 1.5,
-                    minWidth: 200,
-                    borderRadius: 2,
-                    border: '1px solid',
-                    borderColor: 'divider',
-                    bgcolor: 'background.paper',
-                    '&::before': {
-                      content: '""',
-                      display: 'block',
-                      position: 'absolute',
-                      top: 0,
-                      left: 28,
-                      width: 12,
-                      height: 12,
-                      bgcolor: 'background.menuBox',
-                      transform: 'translateY(-50%) rotate(45deg)',
-                      zIndex: 0,
-                      border: '1px solid',
-                      borderColor: 'divider',
-                      borderRight: 'none',
-                      borderBottom: 'none',
-                    },
-                  },
-                }}
-                transformOrigin={{ horizontal: 'left', vertical: 'top' }}
-                anchorOrigin={{ horizontal: 'left', vertical: 'bottom' }}
-              >
-                <MenuItem onClick={handleSettingsClick} sx={{ py: 1.5 }}>
-                  <ListItemIcon>
-                    <SettingsIcon fontSize="small" />
-                  </ListItemIcon>
-                  <ListItemText>Settings</ListItemText>
-                </MenuItem>
-                <Divider />
-                <MenuItem onClick={handleLogoutClick} sx={{ py: 1.5, color: 'error.main' }}>
-                  <ListItemIcon>
-                    <LogoutIcon fontSize="small" color="error" />
-                  </ListItemIcon>
-                  <ListItemText>Logout</ListItemText>
-                </MenuItem>
-              </Menu>
-          </Box>
-        </Toolbar>
-
-        {/* Mobile Search Bar - below nav on small screens */}
-        <Box sx={{ display: { xs: "block", sm: "none" }, px: 2, pb: 2 }}>
-          <CommonSearchBar />
-        </Box>
-
-        {/* Navigation Pills - 3 pills + More, center aligned */}
-        <Box 
+            <Box 
           ref={navContainerRef}
           sx={{ 
             px: 2, 
@@ -343,6 +249,8 @@ export default function DashboardLayout({ user, onLogout }) {
                 to={`/${item.path}`}
                 sx={{
                   minHeight: '48px',
+                  width:'192.5px',
+                  border: '1px solid rgba(0, 0, 0, 0.12)',
                   borderRadius: '24px',
                   px: 3,
                   textTransform: 'none',
@@ -383,6 +291,7 @@ export default function DashboardLayout({ user, onLogout }) {
                 onClick={handleOverflowMenuOpen}
                 sx={{
                   minHeight: '48px',
+                  width:'192.5px',
                   borderRadius: '24px',
                   px: 3,
                   textTransform: 'none',
@@ -492,6 +401,100 @@ export default function DashboardLayout({ user, onLogout }) {
           )}
           </Box>
         </Box>
+          </Box>
+
+          {/* Right Section: User Menu */}
+          <Box display="flex" alignItems="center" gap={1}>
+              <Box 
+                onClick={handleMenuOpen}
+                sx={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: 1.5,
+                  cursor: 'pointer',
+                  px: 1.5,
+                  borderRadius: '24px',
+                  transition: 'all 0.2s',
+                  '&:hover': {
+                    bgcolor: 'action.hover'
+                  }
+                }}
+              >
+                <Box sx={{ bgcolor: 'action.hover', borderRadius: '50%', p: 0.5 }}>
+                  <Avatar src={user.avatar} sx={{ width: 32, height: 32 }} alt={user.email} /> 
+                </Box>
+                <Box sx={{ display: { xs: 'none', md: 'block' }, textAlign: 'left' }}>
+                  <Typography sx={{ fontWeight: 600, fontSize: '0.875rem', lineHeight: 1.2, color: 'text.primary' }}>
+                    {user.email}
+                  </Typography>
+                  <Typography sx={{ fontWeight: 400, fontSize: '0.75rem', color: 'text.secondary', lineHeight: 1 }}>
+                    {user.org}
+                  </Typography>
+                </Box>
+              </Box>
+
+              {/* User Dropdown Menu */}
+              <Menu
+                anchorEl={anchorEl}
+                open={menuOpen}
+                onClose={handleMenuClose}
+                onClick={handleMenuClose}
+                PaperProps={{
+                  elevation: 3,
+                  sx: {
+                    overflow: 'visible',
+                    filter: 'drop-shadow(0px 2px 8px rgba(0,0,0,0.12))',
+                    mt: 1.5,
+                    minWidth: 200,
+                    borderRadius: 2,
+                    border: '1px solid',
+                    borderColor: 'divider',
+                    bgcolor: 'background.paper',
+                    '&::before': {
+                      content: '""',
+                      display: 'block',
+                      position: 'absolute',
+                      top: 0,
+                      left: 28,
+                      width: 12,
+                      height: 12,
+                      bgcolor: 'background.menuBox',
+                      transform: 'translateY(-50%) rotate(45deg)',
+                      zIndex: 0,
+                      border: '1px solid',
+                      borderColor: 'divider',
+                      borderRight: 'none',
+                      borderBottom: 'none',
+                    },
+                  },
+                }}
+                transformOrigin={{ horizontal: 'left', vertical: 'top' }}
+                anchorOrigin={{ horizontal: 'left', vertical: 'bottom' }}
+              >
+                <MenuItem onClick={handleSettingsClick} sx={{ py: 1.5 }}>
+                  <ListItemIcon>
+                    <SettingsIcon fontSize="small" />
+                  </ListItemIcon>
+                  <ListItemText>Settings</ListItemText>
+                </MenuItem>
+                <Divider />
+                <MenuItem onClick={handleLogoutClick} sx={{ py: 1.5, color: 'error.main' }}>
+                  <ListItemIcon>
+                    <LogoutIcon fontSize="small" color="error" />
+                  </ListItemIcon>
+                  <ListItemText>Logout</ListItemText>
+                </MenuItem>
+              </Menu>
+          </Box>
+        </Toolbar>
+
+        {/* Mobile Search Bar - below nav on small screens */}
+        <Box sx={{ display: { xs: "block", sm: "none" }, px: 2, pb: 2 }}>
+          <CommonSearchBar  />
+        </Box>
+
+        {/* Navigation Pills - 3 pills + More, center aligned */}
+        
       </AppBar>
 
       {/* Main Content */}

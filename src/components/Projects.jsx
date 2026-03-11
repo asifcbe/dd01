@@ -504,8 +504,7 @@ export default function Projects({ type }) {
                   borderColor: "divider",
                   position: "relative",
                   transition: "all 0.2s ease-in-out",
-                  width: 370,
-                  maxWidth: "100%",
+                  width: 500,
                   display: "flex",
                   flexDirection: "column",
                 }}
@@ -525,7 +524,6 @@ export default function Projects({ type }) {
                           color: "text.primary",
                           overflow: "hidden",
                           textOverflow: "ellipsis",
-                          whiteSpace: "nowrap",
                         }}
                       >
                         {project.name}

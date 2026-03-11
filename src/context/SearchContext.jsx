@@ -55,10 +55,10 @@ export const CommonSearchBar = () => {
       sx={{
         width: {
           xs: "100%",
-          sm: "min(640px, 100%)",
-          lg: "min(760px, 100%)",
+          sm: "min(800px, 100%)",
+          lg: "min(900px, 100%)",
         },
-        maxWidth: "100%",
+        // maxWidth: "100%",
         mx: "auto",
         "& .MuiOutlinedInput-root": {
           borderRadius: "24px",
